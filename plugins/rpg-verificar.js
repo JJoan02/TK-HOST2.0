@@ -33,7 +33,7 @@ age = parseInt(age)
 if (age > 50) return m.reply(lenguajeGB.smsVerify4()) 
 if (age < 10) return m.reply(lenguajeGB.smsVerify5())
 if (name.length >= 30) return m.reply(lenguajeGB.smsVerify6())
-user.name = name + 'ͧͧͧͦꙶͣͤ✓ᚲᴳᴮ'.trim()
+user.name = name + 'ͧͧͧͦꙶͣͤ✓ᚲᵀᴷ'.trim()
 user.age = age
 let listaIdiomasTexto = ''
 listaIdiomasTexto += '*╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄୭̥⋆*｡*\n' 
@@ -127,7 +127,7 @@ await m.reply(lenguajeGB.smsVerify8(usedPrefix))
 await m.reply(`${sn}`) 
 }
 }
-handler.command = /^(verify|verificar|reg(ister)?|idiomagb)$/i
+handler.command = /^(verify|verificar|reg(ister)?|idiomatk)$/i
 export default handler
 
 /*import { createHash } from 'crypto'  
