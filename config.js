@@ -13,17 +13,9 @@ import { en, es, id, ar, pt, de, it } from './lib/idiomas/total-idiomas.js'
 // EN ➜ Add the Bot number as priority first
 // EN ➜ If you want to receive reports you must use the three parameters (Number, name and true)
 global.owner = [
-['573147616444', '𝙊𝙬𝙣𝙚𝙧 💖🐈', true], //𝙂𝙖𝙩𝙖𝘽𝙤𝙩𝙇𝙞𝙩𝙚-𝙈𝘿 🌻🐈
-['593968263524', '𝙂𝘽 𝘼𝙨𝙞𝙨𝙩𝙚𝙣𝙘𝙞𝙖 💖🐈', true],
-['593968585383'],
-['595976126756'],
-['5492266466080'], 
-['201066826750'],
-['201033024135'],
-['573012482597'],
-['50492280729'],
-['5492266613038'], 
-['5215649706747']]
+['51971834247', '𝑱𝒐𝒂𝒏-𝑻𝑲', true], //𝙅𝙤𝙖𝙣𝘼𝙙𝙢𝙞𝙣-𝙏𝙆
+['51976673519', '𝑱𝒐𝒂𝒏𝑨𝒅𝒎𝒊𝒏-𝑻𝑲', true],
+['51948705559']]
 
 global.mods = [] 
 global.prems = []
@@ -94,16 +86,16 @@ global.fetch = fetch
 global.axios = axios
 global.moment = moment	
 
-global.packname = '𝙂𝙖𝙩𝙖𝘽𝙤𝙩𝙇𝙞𝙩𝙚-𝙈𝘿 🌻🐈'
-global.author = '𝙂𝙖𝙩𝙖 𝘿𝙞𝙤𝙨'
+global.packname = '𝑱𝒐𝒂𝒏𝑨𝒅𝒎𝒊𝒏-𝑻𝑲'
+global.author = '𝑱𝒐𝒂𝒏-𝑻𝑲'
 
 // ES ➜ Está parte es para mostrar el contacto de alguien al usar #contacto
 // EN ➜ This part is to display someone's contact using #contact
 global.official = [ 
-['18059196237', 'Gata Dios 💻', 1], 
-['5492266466080', '𝗗𝗲𝘀𝗮𝗿𝗿𝗼𝗹𝗹𝗮𝗱𝗼𝗿 𝗢𝗳𝗶𝗰𝗶𝗮𝗹 💻', 1],  
-['59894808483', '𝗖𝘂𝘀𝘁𝗼𝗺𝗲𝗿 𝗦𝘂𝗽𝗽𝗼𝗿𝘁 𝗢𝗳𝗶𝗰𝗶𝗮𝗹 🥏', 1],
-['5521989092076', '𝗗𝗲𝘀𝗮𝗿𝗿𝗼𝗹𝗹𝗮𝗱𝗼𝗿𝗮 𝗢𝗳𝗶𝗰𝗶𝗮𝗹 💻', 1]] 
+['51971834247', '𝑱𝒐𝒂𝒏-𝑻𝑲', 1], //𝙅𝙤𝙖𝙣𝘼𝙙𝙢𝙞𝙣-𝙏𝙆
+['51976673519', '𝑱𝒐𝒂𝒏𝑨𝒅𝒎𝒊𝒏-𝑻𝑲', 1],
+['51948705559', '𝗞𝗮𝘁𝗮𝘀𝗵𝗶 𝗙𝘂𝗸𝘂𝘀𝗵𝗶𝗺𝗮', 1],
+['51948273587', '𝗞𝗮𝘁𝗮𝘀𝗵𝗶 𝗙𝘂𝗸𝘂𝘀𝗵𝗶𝗺𝗮 𝗧𝘄𝗼', 1]]
 
 global.mail = '' //agrega tú correo
 global.desc = '' //agrega una descripción corta
@@ -113,7 +105,7 @@ global.country = '' //agrega tú país ejemplo: 🇪🇨
 global.vs = '1.4.0'
 global.vsJB = '4.5'
 
-global.gt = '𝙂𝙖𝙩𝙖𝘽𝙤𝙩𝙇𝙞𝙩𝙚-𝙈𝘿'
+global.gt = '𝑱𝒐𝒂𝒏𝑨𝒅𝒎𝒊𝒏-𝑻𝑲'
 global.yt = 'https://youtube.com/@gatadios'
 global.yt2 = 'https://www.youtube.com/watch?v=Ko019wvu2Tc&t=71s'
 global.ig = 'https://www.instagram.com/gata_dios'
@@ -136,8 +128,8 @@ global.nnnttt5 = 'https://chat.whatsapp.com/HOCsvLox0Ui7cwzTCeFhPP' //A.T.M.M
 global.paypal = 'https://paypal.me/OficialGD'
 global.asistencia = 'Wa.me/19393844141' //Dudas? escríbeme...
 
-global.wm = '𝙂𝙖𝙩𝙖𝘽𝙤𝙩𝙇𝙞𝙩𝙚-𝙈𝘿 🌻🐈 : 𝙂𝙖𝙩𝙖 𝘿𝙞𝙤𝙨'
-global.igfg = '𝙂𝙖𝙩𝙖𝘽𝙤𝙩𝙇𝙞𝙩𝙚-𝙈𝘿'
+global.wm = '𝑱𝒐𝒂𝒏𝑨𝒅𝒎𝒊𝒏-𝑻𝑲 : 𝑱𝒐𝒂𝒏-𝑻𝑲'
+global.igfg = '𝑱𝒐𝒂𝒏𝑨𝒅𝒎𝒊𝒏-𝑻𝑲'
 global.nomorown = owner[0][0]
 
 global.imagen1 = fs.readFileSync('./media/menus/Menu3.jpg')
