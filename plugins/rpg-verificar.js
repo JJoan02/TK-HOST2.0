@@ -71,12 +71,12 @@ let handler = async function (m, { conn, text, usedPrefix, command }) {
 *⎔ EDAD*
 • ${user.age} años 🥳
 *⎔ INSIGNIA DE VERIFICACIÓN*
-• 'ͧͧͧͦꙶͣͤ✓ᚲᴳᴮ' ✅
+• 'ͧͧͧͦꙶͣͤ✓ᚲᵀᴷ' ✅
 *⎔ ID DE REGISTRO*
 • \`\`\`${sn}\`\`\`
 
 🎊 ¡Felicidades, ahora eres un usuario VIP! 🎊
-✨ Prueba el comando .menu para ver todas las opciones disponibles y disfruta de tu experiencia exclusiva. ✨`.trim();
+✨ Prueba el comando `.menu` para ver todas las opciones disponibles y disfruta de tu experiencia exclusiva. ✨`.trim();
 
     // Envía el mensaje de verificación al usuario
     await conn.sendFile(m.chat, pp, 'gata.jpg', caption, m, false, { mentions: [aa] });
