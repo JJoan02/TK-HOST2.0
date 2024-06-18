@@ -36,32 +36,24 @@ let handler = async function (m, { conn, text, usedPrefix, command }) {
     // Configura el idioma predeterminado como español
     user.GBLanguage = 'es';
 
-    if (codigosIdiomas.includes(user.GBLanguage)) {
-      nombresIdiomas = nombresIdiomas[user.GBLanguage];
-    } else {
-      nombresIdiomas = `IDIOMA NO DETECTADO`;
-    }
-
-    await m.reply(`${lenguajeGB['smsAvisoIIG']()}*EN CASO QUE QUIERA CAMBIAR O ELIMINAR EL IDIOMA DEBE DE ELIMINAR SU REGISTRO PRIMERO*`);
     user.regTime = + new Date;
     user.registered = true;
     let sn = createHash('md5').update(m.sender).digest('hex').slice(0, 6);
-    let caption = `${lenguajeGB.smsVerify7()}
+    let caption = `✅ *V E R I F I C A C I O N* ✅
 *⎔ IDIOMA* 
-• ${nombresIdiomas}
-*⎔ ${lenguajeGB.smsPerfil1()}* 
+• Español
+*⎔ USUARIO* 
 • @${tag}
-*⎔ ${lenguajeGB.smsPerfil2()}* 
+*⎔ NOMBRE* 
 • ${user.name}
-*⎔ ${lenguajeGB.smsPerfil3()}*
+*⎔ EDAD*
 • ${user.age}
-*⎔ ${lenguajeGB.smsVerify9()}*
+*⎔ INSIGNIA DE VERIFICACIÓN*
 • 'ͧͧͧͦꙶͣͤ✓ᚲᴳᴮ'
-*⎔ ${lenguajeGB.smsPerfil5()}*
+*⎔ ID DE REGISTRO*
 • \`\`\`${sn}\`\`\``.trim();
+
     await conn.sendFile(m.chat, pp, 'gata.jpg', caption, m, false, { mentions: [aa] });
-    await m.reply(lenguajeGB.smsVerify8(usedPrefix));
-    await m.reply(`${sn}`);
   }
 };
 
