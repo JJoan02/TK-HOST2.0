@@ -63,17 +63,20 @@ let handler = async function (m, { conn, text, usedPrefix, command }) {
     // Mensaje de verificación humorístico
     let caption = `✅ *V E R I F I C A C I Ó N* ✅
 *⎔ IDIOMA* 
-• Español
+• Español 🇪🇸
 *⎔ USUARIO* 
-• @${tag}
+• @${tag} 😎
 *⎔ NOMBRE* 
-• ${user.name}
+• ${user.name} 🎉
 *⎔ EDAD*
-• ${user.age}
+• ${user.age} años 🥳
 *⎔ INSIGNIA DE VERIFICACIÓN*
-• 'ͧͧͧͦꙶͣͤ✓ᚲᵀᴷ'
+• 'ͧͧͧͦꙶͣͤ✓ᚲᴳᴮ' ✅
 *⎔ ID DE REGISTRO*
-• \`\`\`${sn}\`\`\``.trim();
+• \`\`\`${sn}\`\`\`
+
+🎊 ¡Felicidades, ahora eres un usuario VIP! 🎊
+✨ Prueba el comando .menu para ver todas las opciones disponibles y disfruta de tu experiencia exclusiva. ✨`.trim();
 
     // Envía el mensaje de verificación al usuario
     await conn.sendFile(m.chat, pp, 'gata.jpg', caption, m, false, { mentions: [aa] });
