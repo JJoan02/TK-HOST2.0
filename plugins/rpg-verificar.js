@@ -71,7 +71,7 @@ let handler = async function (m, { conn, text, usedPrefix, command }) {
 *⎔ EDAD*
 • ${user.age}
 *⎔ INSIGNIA DE VERIFICACIÓN*
-• 'ͧͧͧͦꙶͣͤ✓ᚲᴳᴮ'
+• 'ͧͧͧͦꙶͣͤ✓ᚲᵀᴷ'
 *⎔ ID DE REGISTRO*
 • \`\`\`${sn}\`\`\``.trim();
 
