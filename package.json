@@ -27,7 +27,7 @@
  "url": "git+https://github.com/JJoan02/Admin-TK.git" },
  
 "bugs": {
-"url": "https://github.com/JJoan02/Admin-TK/issues" },
+"url": "https://github.com/GataNina-Li/GataBotLite-MD/issues" },
 "license": "GPL-3.0-or-later",
 "dependencies": {
 "@whiskeysockets/baileys": "^6.7.0",
