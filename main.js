@@ -538,3 +538,16 @@ unwatchFile(file)
 console.log(chalk.bold.greenBright(lenguajeGB['smsMainBot']().trim()))
 import(`${file}?update=${Date.now()}`)
 })
+
+for (let name in global.plugins) {
+  let plugin = global.plugins[name]
+  if (!plugin) continue
+  if (plugin.disabled) continue
+  if (plugin.command && plugin.command.test(m.text)) {
+    try {
+      await plugin.call(this, m, { conn: this })
+    } catch (e) {
+      console.error(e)
+    }
+  }
+}
