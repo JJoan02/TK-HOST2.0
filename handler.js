@@ -583,3 +583,48 @@ const users = [...new Set([...global.conns.filter((conn) => conn.user && conn.ws
 for (const userr of users) {
 userr.subreloadHandler(false)
 }}});
+
+import { promises as fs } from 'fs'
+import path from 'path'
+import url from 'url'
+
+// Cargar el plugin de saludo
+const saludoPath = path.join(path.dirname(fileURLToPath(import.meta.url)), './plugins/saludo.js')
+const saludoPlugin = await import(saludoPath).catch(console.error)
+if (saludoPlugin && saludoPlugin.default) {
+  global.plugins['saludo.js'] = saludoPlugin.default
+}
+
+for (let name in global.plugins) {
+  let plugin = global.plugins[name]
+  if (!plugin) continue
+  if (plugin.disabled) continue
+  const __filename = join(___dirname, name)
+  if (typeof plugin.all === 'function') {
+    try {
+      await plugin.all.call(this, m, { chatUpdate, __dirname: ___dirname, __filename })
+    } catch (e) {
+      console.error(e)
+      for (let [jid] of global.owner.filter(([number, _, isDeveloper]) => isDeveloper && number)) {
+        let data = (await conn.onWhatsApp(jid))[0] || {}
+        if (data.exists) m.reply(`Error:\n\nPlugin: ${name}\nSender: ${m.sender}\nText: ${m.text}\nError:\n\`\`\`${format(e)}\`\`\``, data.jid)
+      }
+    }
+  }
+
+  const match = (_prefix instanceof RegExp ? [[_prefix.exec(m.text), _prefix]] : Array.isArray(_prefix) ? _prefix.map(p => [new RegExp(p).exec(m.text), p]) : typeof _prefix === 'string' ? [[new RegExp(_prefix).exec(m.text), new RegExp(_prefix)]] : [[[], new RegExp]]).find(p => p[0])
+  
+  if (typeof plugin.before === 'function') {
+    if (await plugin.before.call(this, m, { match, conn: this, participants, groupMetadata, user, bot, isROwner, isOwner, isRAdmin, isAdmin, isBotAdmin, isPrems, chatUpdate, __dirname: ___dirname, __filename })) continue
+  }
+  
+  if (typeof plugin !== 'function') continue
+  if (plugin.command && plugin.command.test(m.text)) {
+    try {
+      await plugin.call(this, m, { match, conn: this, participants, groupMetadata, user, bot, isROwner, isOwner, isRAdmin, isAdmin, isBotAdmin, isPrems, chatUpdate, __dirname: ___dirname, __filename })
+    } catch (e) {
+      console.error(e)
+    }
+  }
+}
+
