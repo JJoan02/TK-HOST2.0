@@ -15,7 +15,7 @@ import { en, es, id, ar, pt, de, it } from './lib/idiomas/total-idiomas.js'
 global.owner = [
 ['51971834247', '𝑱𝒐𝒂𝒏-𝑻𝑲', true], //𝙅𝙤𝙖𝙣𝘼𝙙𝙢𝙞𝙣-𝙏𝙆
 ['51976673519', '𝑱𝒐𝒂𝒏𝑨𝒅𝒎𝒊𝒏-𝑻𝑲', true],
-['51948705559']]
+['51906662557']]
 
 global.mods = [] 
 global.prems = []
