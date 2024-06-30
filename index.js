@@ -45,16 +45,16 @@ return [getRandomHexColor(), getRandomHexColor()]
 } else {
 return [getRandomColor(), getRandomColor()];
 }}
-cfonts.say('gatabot\nlite\nmd'.trim(), options)
+cfonts.say('admin\ntk'.trim(), options)
 
 } catch (err) {
-say('GataBot\nLite\nMD', {
+say('Admin\nTK', {
  font: 'chrome',
  align: 'center',
  gradient: ['red', 'magenta']
 })}
 
-say(`Project Author:\nGataNina-Li (@gata_dios)\n\nDevelopers:\nelrebelde21 (Mario)\nKatashiFukushima (Katashi)`.trim(), {
+say(`Project Author:\nJJoan02 (Joan-TK)\n\nDevelopers:\nKatashiFukushima\n(@katashi_fukushima)`.trim(), {
  font: 'console',
  align: 'center',
  colors: ['candy']
