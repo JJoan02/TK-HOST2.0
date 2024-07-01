@@ -45,7 +45,7 @@ global.keysxteammm = ['29d4b59a4aa687ca', '5LTV57azwaid7dXfz5fzJu', 'cb15ed422c7
 global.keysxteam = keysxteammm[Math.floor(keysxteammm.length * Math.random())]
 global.keysneoxrrr = ['5VC9rvNx', 'cfALv5']
 global.keysneoxr = keysneoxrrr[Math.floor(keysneoxrrr.length * Math.random())]
-global.lolkeysapi = 'Gata_Dios'
+global.lolkeysapi = 'GataDiosV2'
 global.itsrose = ['4b146102c4d500809da9d1ff']
 global.baileys = '@whiskeysockets/baileys'
 
@@ -94,7 +94,7 @@ global.author = '𝑱𝒐𝒂𝒏-𝑻𝑲'
 global.official = [ 
 ['51971834247', '𝑱𝒐𝒂𝒏-𝑻𝑲', 1], //𝙅𝙤𝙖𝙣𝘼𝙙𝙢𝙞𝙣-𝙏𝙆
 ['51976673519', '𝑱𝒐𝒂𝒏𝑨𝒅𝒎𝒊𝒏-𝑻𝑲', 1],
-['51948705559', '𝗞𝗮𝘁𝗮𝘀𝗵𝗶 𝗙𝘂𝗸𝘂𝘀𝗵𝗶𝗺𝗮', 1],
+['51906662557', '𝗞𝗮𝘁𝗮𝘀𝗵𝗶 𝗙𝘂𝗸𝘂𝘀𝗵𝗶𝗺𝗮', 1],
 ['51948273587', '𝗞𝗮𝘁𝗮𝘀𝗵𝗶 𝗙𝘂𝗸𝘂𝘀𝗵𝗶𝗺𝗮 𝗧𝘄𝗼', 1]]
 
 global.mail = '' //agrega tú correo
@@ -127,6 +127,7 @@ global.nnnttt4 = 'https://chat.whatsapp.com/BngbJC3aBVhF5KjoaawiT1' //Grupo 9 CO
 global.nnnttt5 = 'https://chat.whatsapp.com/HOCsvLox0Ui7cwzTCeFhPP' //A.T.M.M
 global.paypal = 'https://paypal.me/OficialGD'
 global.asistencia = 'Wa.me/19393844141' //Dudas? escríbeme...
+
 
 global.wm = '𝑱𝒐𝒂𝒏𝑨𝒅𝒎𝒊𝒏-𝑻𝑲 : 𝑱𝒐𝒂𝒏-𝑻𝑲'
 global.igfg = '𝑱𝒐𝒂𝒏𝑨𝒅𝒎𝒊𝒏-𝑻𝑲'
