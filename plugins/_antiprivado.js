@@ -17,7 +17,32 @@ export async function before(m, {conn, isAdmin, isBotAdmin, isOwner, isROwner}) 
   if (m.isBaileys && m.fromMe) return !0;
   if (m.isGroup) return !1;
   if (!m.message) return !0;
-  if (m.text.includes('serbot') || m.text.includes('jadibot') || m.text.includes('deletesesion') || m.text.includes('estado') || m.text.includes('bots')) return !0;
+  if (
+    m.text.includes('serbot') || 
+    m.text.includes('jadibot') || 
+    m.text.includes('deletesesion') || 
+    m.text.includes('estado') || 
+    m.text.includes('bots') || 
+    m.text.includes('contacto') || 
+    m.text.includes('creador') || 
+    m.text.includes('cuentastk') || 
+    m.text.includes('verificar') || 
+    m.text.includes('idregistro') || 
+    m.text.includes('anulareg') || 
+    m.text.includes('terminos') || 
+    m.text.includes('términos') || 
+    m.text.includes('condiciones') || 
+    m.text.includes('grupostk') || 
+    m.text.includes('gruposTK') || 
+    m.text.includes('gruposTk') || 
+    m.text.includes('grupostK') || 
+    m.text.includes('estado') || 
+    m.text.includes('donar') || 
+    m.text.includes('cuentasTK') || 
+    m.text.includes('cuentastk') || 
+    m.text.includes('cuentasTk') || 
+    m.text.includes('cuentastK')
+  ) return !0;
 
   const chat = global.db.data.chats[m.chat];
   const bot = global.db.data.settings[this.user.jid] || {};
