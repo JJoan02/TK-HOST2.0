@@ -87,8 +87,7 @@ let handler = async (m, { conn, usedPrefix, command }) => {
     // Genera el contenido del menú
     let menu = `
 *¡Hola ◈ ${user.registered === true ? user.name : `👉 ${usedPrefix}verificar nombre.edad`} ◈*
-> ${saludo} 
-> ${taguser}!
+> ${saludo} ${taguser}!
 
 ╭━━━✦ *𝕀𝕟𝕗𝕠𝕣𝕞𝕒𝕔𝕚ó𝕟 𝔸𝕕𝕞𝕚𝕟-𝕋𝕂* ✦━━━╮
 ┃ ✦ *Fecha:* ${week}, ${date}
