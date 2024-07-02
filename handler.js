@@ -99,7 +99,7 @@ if (!('delete' in chat)) chat.delete = true
 if (!('antiver' in chat)) chat.viewonce = true         
 if (!('modoadmin' in chat)) chat.modoadmin = false     
 if (!('antiLink' in chat)) chat.antiLink = false
-if (!('antiLink2' in chat)) chat.antiLink2 = false    
+if (!('antiLink2' in chat)) chat.antiLink2 = true    
 if (!('antiTiktok' in chat)) chat.antiTiktok = false
 if (!('antiYoutube' in chat)) chat.antiYoutube = false
 if (!('antiTelegram' in chat)) chat.antiTelegram = false
@@ -124,7 +124,7 @@ delete: true,
 antiver: true,
 modoadmin: false,
 antiLink: false,
-antiLink2: false,	
+antiLink2: true,	
 antiTiktok: false,
 antiYoutube: false,
 antiTelegram: false,
@@ -141,20 +141,20 @@ expired: 0,
 let settings = global.db.data.settings[this.user.jid]
 if (typeof settings !== 'object') global.db.data.settings[this.user.jid] = {}
 if (settings) {
-if (!('self' in settings)) settings.self = false
-if (!('autoread' in settings)) settings.autoread = false
-if (!('restrict' in settings)) settings.restrict = false
+if (!('self' in settings)) settings.self = true
+if (!('autoread' in settings)) settings.autoread = true
+if (!('restrict' in settings)) settings.restrict = true
 if (!('antiCall' in settings)) settings.antiCall = true
-if (!('antiPrivate' in settings)) settings.antiPrivate = false
-if (!('autoread2' in settings)) settings.autoread2 = false
+if (!('antiPrivate' in settings)) settings.antiPrivate = true
+if (!('autoread2' in settings)) settings.autoread2 = true
 if (!('jadibotmd' in settings)) settings.jadibotmd = true  
 } else global.db.data.settings[this.user.jid] = {
-self: false,
-autoread: false,
-autoread2: false,
-restrict: false,
+self: true,
+autoread: true,
+autoread2: true,
+restrict: true,
 antiCall: true,
-antiPrivate: false,
+antiPrivate: true,
 jadibotmd: true,
 }
 } catch (e) {
