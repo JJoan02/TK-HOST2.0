@@ -1,6 +1,10 @@
 import fs, { promises } from 'fs';
 import fetch from 'node-fetch';
 import moment from 'moment-timezone';
+import 'moment/locale/es';  // Importa el idioma español
+
+// Establece el idioma español para moment
+moment.locale('es');
 
 // Función principal del handler que genera el menú interactivo
 let handler = async (m, { conn, usedPrefix, command }) => {
@@ -64,7 +68,7 @@ let handler = async (m, { conn, usedPrefix, command }) => {
     }
 
     let week = limaTime.format('dddd');
-    let date = limaTime.format('LL');
+    let date = limaTime.format('D [de] MMMM [del] YYYY');
     let time = limaTime.format('LTS');
     let _uptime = process.uptime() * 1000;
     let uptime = clockString(_uptime);
@@ -83,7 +87,8 @@ let handler = async (m, { conn, usedPrefix, command }) => {
     // Genera el contenido del menú
     let menu = `
 *¡Hola ◈ ${user.registered === true ? user.name : `👉 ${usedPrefix}verificar nombre.edad`} ◈*
-> ${saludo} ${taguser}!
+> ${saludo} 
+> ${taguser}!
 
 ╭━━━✦ *𝕀𝕟𝕗𝕠𝕣𝕞𝕒𝕔𝕚ó𝕟 𝔸𝕕𝕞𝕚𝕟-𝕋𝕂* ✦━━━╮
 ┃ ✦ *Fecha:* ${week}, ${date}
