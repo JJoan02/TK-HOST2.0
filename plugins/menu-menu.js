@@ -123,8 +123,6 @@ let handler = async (m, { conn, usedPrefix, command }) => {
 │ ➜ .cambiarpp *imagen*
 │ ➜ .daradmin *tag*
 │ ➜ .deladvertencia *@tag*
-│ ➜ .delwarn *@tag*
-│ ➜ .desprohibir *tag*
 │ ➜ .enlace | link
 │ ➜ .grupo abrir
 │ ➜ .grupo cerrar
