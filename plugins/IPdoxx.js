@@ -1,45 +1,71 @@
-// Código gracias a SoIz1 
-// Github: https://github.com/SoIz1
-//Adaptado por KatashiFukushima. Github: https://github.com/KatashiFukushima
+/**
+ * Este script permite buscar información detallada de una dirección IP.
+ * Utiliza la API de ip-api.com para obtener datos sobre la ubicación y el proveedor de la IP.
+ * 
+ * Código original por SoIz1 - https://github.com/SoIz1
+ * Adaptado por KatashiFukushima - https://github.com/KatashiFukushima
+ * Mejorado para claridad, eficacia y humor por ChatGPT
+ */
 
 import axios from 'axios'
 
 let handler = async (m, { conn, text }) => {
-await m.reply("Buscando...")
-  if (!text) return conn.reply(m.chat, "Ingrese una dirección IP válida", m)
+  // Mensaje inicial al usuario mientras se busca la información
+  await m.reply("Buscando... 📡🔍")
 
-  axios.get(`http://ip-api.com/json/${text}?fields=status,message,country,countryCode,region,regionName,city,district,zip,lat,lon,timezone,isp,org,as,mobile,hosting,query`).then ((res) => {
-    const data = res.data
+  // Verificar si el usuario ha ingresado una dirección IP
+  if (!text) {
+    // Responder con un mensaje sarcástico si no se ha ingresado una dirección IP
+    return conn.reply(m.chat, "¿Te has olvidado de ingresar una dirección IP válida? 🙄🧐", m)
+  }
 
+  // Realizar una solicitud a la API para obtener información de la IP
+  axios.get(`http://ip-api.com/json/${text}?fields=status,message,country,countryCode,region,regionName,city,district,zip,lat,lon,timezone,isp,org,as,mobile,hosting,query`)
+    .then((res) => {
+      const data = res.data
+
+      // Verificar si la solicitud a la API fue exitosa
       if (String(data.status) !== "success") {
-        throw new Error(data.message || "Falló")
+        throw new Error(data.message || "Falló") // Lanzar un error si la API devuelve un fallo
       }
-    let ipsearch = `
-𝐈𝐏 𝐈𝐍𝐅𝐎
 
-IP : ${data.query}
-País : ${data.country}
-Código de País : ${data.countryCode}
-Provincia : ${data.regionName}
-Código de Provincia : ${data.region}
-Ciudad : ${data.city}
-Distrito : ${data.district}
-Código Postal : ${res.data.zip}
-Coordenadas : ${data.lat}, ${data.lon}
-Zona Horaria : ${data.timezone}
-ISP : ${data.isp}
-Organización : ${data.org}
-AS : ${data.as}
-Mobile : ${data.mobile ? "Si" : "No"}
-Hosting : ${data.hosting ? "Si" : "No"}
+      // Crear el mensaje de respuesta con la información de la IP
+      let ipsearch = `
+📡 *Información de la IP* 📡
+
+🌐 IP: ${data.query}
+🌍 País: ${data.country}
+🇨🇴 Código de País: ${data.countryCode}
+🏞️ Provincia: ${data.regionName}
+📌 Código de Provincia: ${data.region}
+🏙️ Ciudad: ${data.city}
+🗺️ Distrito: ${data.district}
+📮 Código Postal: ${data.zip}
+📍 Coordenadas: ${data.lat}, ${data.lon}
+🕒 Zona Horaria: ${data.timezone}
+🔌 ISP: ${data.isp}
+🏢 Organización: ${data.org}
+🔧 AS: ${data.as}
+📱 Mobile: ${data.mobile ? "Sí" : "No"}
+🏠 Hosting: ${data.hosting ? "Sí" : "No"}
 `.trim()
 
-conn.reply(m.chat, ipsearch, m)
-})
+      // Enviar la información de la IP al chat del usuario
+      conn.reply(m.chat, ipsearch, m)
+    })
+    .catch((error) => {
+      // Manejar cualquier error que ocurra durante la solicitud a la API
+      conn.reply(m.chat, `¡Oh no! Algo salió mal: ${error.message} 😬❌`, m)
+    })
 }
-  
-handler.help = ['ip', 'ipcheck', 'ipcek'].map(v => v + ' <alamat ip>')
+
+// Ayuda para los comandos que el handler puede manejar
+handler.help = ['ip', 'ipcheck', 'ipcek'].map(v => v + ' <dirección ip>')
+// Etiquetas para categorizar el handler
 handler.tags = ['tools']
+// Comandos que activan este handler
 handler.command = /^(ip|ipcheck|ipcek)$/i
+// Indica que este comando solo puede ser usado por el propietario del bot
 handler.owner = true
+
 export default handler
