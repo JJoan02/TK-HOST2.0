@@ -1,5 +1,6 @@
 import fs, { promises } from 'fs';
 import fetch from 'node-fetch';
+import moment from 'moment-timezone';
 
 // Función principal del handler que genera el menú interactivo
 let handler = async (m, { conn, usedPrefix, command }) => {
@@ -7,8 +8,8 @@ let handler = async (m, { conn, usedPrefix, command }) => {
     let d = new Date();
     let locale = 'es';
     // Ajusta la hora al huso horario de Lima, Perú (GMT-5)
-    let hours = d.getUTCHours() - 5;
-    if (hours < 0) hours += 24;
+    let limaTime = moment.tz(d, 'America/Lima');
+    let hours = limaTime.hours();
     let saludo;
 
     // Determina el saludo según la hora del día
@@ -62,8 +63,9 @@ let handler = async (m, { conn, usedPrefix, command }) => {
       saludo = '🌙 Buenas Noches, ¿no deberías estar durmiendo ya?';
     }
 
-    let week = d.toLocaleDateString(locale, { weekday: 'long' });
-    let date = d.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
+    let week = limaTime.format('dddd');
+    let date = limaTime.format('LL');
+    let time = limaTime.format('LTS');
     let _uptime = process.uptime() * 1000;
     let uptime = clockString(_uptime);
     let rtotalreg = Object.values(global.db.data.users).filter(user => user.registered == true).length;
@@ -81,12 +83,11 @@ let handler = async (m, { conn, usedPrefix, command }) => {
     // Genera el contenido del menú
     let menu = `
 *¡Hola ◈ ${user.registered === true ? user.name : `👉 ${usedPrefix}verificar nombre.edad`} ◈*
-> ${saludo} 
-> ${taguser}!
+> ${saludo} ${taguser}!
 
 ╭━━━✦ *𝕀𝕟𝕗𝕠𝕣𝕞𝕒𝕔𝕚ó𝕟 𝔸𝕕𝕞𝕚𝕟-𝕋𝕂* ✦━━━╮
 ┃ ✦ *Fecha:* ${week}, ${date}
-┃ ✦ *Hora:* ${d.toLocaleTimeString(locale)}
+┃ ✦ *Hora:* ${time}
 ┃ ✦ *Tiempo de Actividad:* ${uptime}
 ┃ ✦ *Total de Usuarios:* ${totalUsers}
 ┃ ✦ *Usuarios Registrados:* ${rtotalreg}
