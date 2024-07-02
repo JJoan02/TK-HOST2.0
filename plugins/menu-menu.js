@@ -117,7 +117,6 @@ let handler = async (m, { conn, usedPrefix, command }) => {
 ╭─❑ 「 👥 Grupo 」 ❑──
 │ ➜ .admins
 │ ➜ .advertencia *@tag*
-│ ➜ .banchat
 │ ➜ .banuser *@tag*
 │ ➜ .cambiardesc *texto*
 │ ➜ .cambiarnombre *texto*
