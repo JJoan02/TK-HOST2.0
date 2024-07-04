@@ -99,7 +99,7 @@ if (!('delete' in chat)) chat.delete = false
 if (!('antiver' in chat)) chat.viewonce = true         
 if (!('modoadmin' in chat)) chat.modoadmin = false     
 if (!('antiLink' in chat)) chat.antiLink = false
-if (!('antiLink2' in chat)) chat.antiLink2 = true    
+if (!('antiLink2' in chat)) chat.antiLink2 = false    
 if (!('antiTiktok' in chat)) chat.antiTiktok = false
 if (!('antiYoutube' in chat)) chat.antiYoutube = false
 if (!('antiTelegram' in chat)) chat.antiTelegram = false
@@ -124,7 +124,7 @@ delete: false,
 antiver: true,
 modoadmin: false,
 antiLink: false,
-antiLink2: true,	
+antiLink2: false,	
 antiTiktok: false,
 antiYoutube: false,
 antiTelegram: false,
