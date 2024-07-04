@@ -1,13 +1,12 @@
 import { createHash } from 'crypto'; // Importa la librería para crear hashes
 import fetch from 'node-fetch'; // Importa la librería para hacer solicitudes HTTP
+import fs from 'fs/promises'; // Importa la librería para manejar el sistema de archivos
+import path from 'path'; // Importa la librería para manejar rutas de archivos
 
 // Expresión regular para validar la entrada de texto del usuario
 let Reg = /\|?(.*)([.|] *?)([0-9]*)$/i;
 
 // Función para asegurar que el directorio exista
-import fs from 'fs/promises';
-import path from 'path';
-
 async function ensureDirectoryExistence(filePath) {
     const dirname = path.dirname(filePath);
     try {
@@ -83,10 +82,10 @@ let handler = async function (m, { conn, text, usedPrefix, command }) {
 • \`\`\`${sn}\`\`\``.trim();
 
         // Asegura que el directorio exista antes de guardar la imagen
-        await ensureDirectoryExistence('/home/container/tmp/gata.jpg');
+        await ensureDirectoryExistence('/home/container/tmp/Admin-TK.jpg');
 
-        // Envía el mensaje de verificación al usuario
-        await conn.sendFile(m.chat, pp, 'gata.jpg', caption, m, false, { mentions: [aa] });
+        // Envía el mensaje de verificación con la foto de perfil del usuario
+        await conn.sendFile(m.chat, pp, 'Admin-TK.jpg', caption, m, false, { mentions: [aa] });
     }
 };
 
