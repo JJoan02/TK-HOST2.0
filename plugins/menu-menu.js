@@ -248,7 +248,6 @@ let handler = async (m, { conn, usedPrefix, command }) => {
 │ ➜ .bcbot / bcsubbot / bcsubot (Difusion General)
 │ ➜ .bcchat / bcchats / bcc / (Difusión Privada)
 │ ➜ .bcgroup / bcgrup / bcgc (Difusión Grupos)
-│ ➜ .bcsubbot *texto*
 │ ➜ .bloquear *@tag*
 │ ➜ .borrardatos *número*
 │ ➜ .borrartmp | cleartmp
