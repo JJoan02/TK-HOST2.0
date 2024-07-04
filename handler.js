@@ -97,7 +97,7 @@ if (!('sPromote' in chat)) chat.sPromote = ''
 if (!('sDemote' in chat)) chat.sDemote = '' 
 if (!('delete' in chat)) chat.delete = false                  
 if (!('antiver' in chat)) chat.viewonce = true         
-if (!('modoadmin' in chat)) chat.modoadmin = true     
+if (!('modoadmin' in chat)) chat.modoadmin = false     
 if (!('antiLink' in chat)) chat.antiLink = false
 if (!('antiLink2' in chat)) chat.antiLink2 = true    
 if (!('antiTiktok' in chat)) chat.antiTiktok = false
@@ -122,7 +122,7 @@ sPromote: '',
 sDemote: '', 
 delete: false,
 antiver: true,
-modoadmin: true,
+modoadmin: false,
 antiLink: false,
 antiLink2: true,	
 antiTiktok: false,
