@@ -179,6 +179,7 @@ let handler = async (m, { conn, usedPrefix, command }) => {
 │ ➜ .consejo
 │ ➜ .facebook | fb *link*
 │ ➜ .ighistoria | igstory *usuario(a)*
+│ ➜ .instagram | ig *link*
 │ ➜ .imagen | image *texto*
 │ ➜ .instagram *link video o imagen*
 │ ➜ .pdocvieo | ytvdoc *link*
