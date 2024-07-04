@@ -247,7 +247,7 @@ let handler = async (m, { conn, usedPrefix, command }) => {
 │ ➜ .banusuario *@tag*
 │ ➜ .bcbot / bcsubbot / bcsubot (Difusion General)
 │ ➜ .bcc *texto* (chat privado)
-│ ➜ .bcgc *texto*
+│ ➜ .cgroup / bcgrup / bcgc (Difusión Grupos)
 │ ➜ .bcsubbot *texto*
 │ ➜ .bloquear *@tag*
 │ ➜ .borrardatos *número*
