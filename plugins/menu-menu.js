@@ -131,7 +131,7 @@ let handler = async (m, { conn, usedPrefix, command }) => {
 │ ➜ .infogrupo | infogroup
 │ ➜ .inspeccionar *enlace*
 │ ➜ .invitar *número*
-│ ➜ .invocar *texto*
+│ ➜ .invocar | todos *texto*
 │ ➜ .mute | unmute *@tag*
 │ ➜ .newdesc | descripcion *texto*
 │ ➜ .newnombre | nuevonombre *texto*
@@ -139,12 +139,9 @@ let handler = async (m, { conn, usedPrefix, command }) => {
 │ ➜ .prohibir *tag*
 │ ➜ .quitaradmin *tag*
 │ ➜ .resetlink | nuevoenlace
-│ ➜ .sacar | ban | kick *@tag*
+│ ➜ .sacar | ban | *@tag*
 │ ➜ .setbye | despedida *texto*
 │ ➜ .setwelcome | bienvenida *texto*
-│ ➜ .tagall *texto*
-│ ➜ .unbanchat
-│ ➜ .unbanuser *@tag*
 ╰───────────────
 
 ╭─❑ 「 ⚙️ Configuración 」 ❑──
@@ -155,7 +152,7 @@ let handler = async (m, { conn, usedPrefix, command }) => {
 ╭─❑ 「 🎮 Juegos 」 ❑──
 │ ➜ .chiste
 │ ➜ .doxxear *@tag*
-│ ➜ .frases [cantidad 1 al 99]
+│ ➜ .frases
 │ ➜ .gay *@tag*
 │ ➜ .lesbiana *@tag* o [nombre]
 │ ➜ .manca *@tag* o [nombre]
@@ -180,18 +177,16 @@ let handler = async (m, { conn, usedPrefix, command }) => {
 │ ➜ .facebook | fb *link*
 │ ➜ .ighistoria | igstory *usuario(a)*
 │ ➜ .instagram | ig *link*
-│ ➜ .imagen | image *texto*
+│ ➜ .imagen *texto*
 │ ➜ .instagram *link video o imagen*
-│ ➜ .pdocvieo | ytvdoc *link*
+│ ➜ .ytvdoc *link*
 │ ➜ .pinterest | dlpinterest *texto*
 │ ➜ .play | play2 *texto o link*
-│ ➜ .play.1 *texto o link*
-│ ➜ .play.2 *texto o link*
 │ ➜ .tiktok *link*
 │ ➜ .tiktokfoto | tiktokphoto *usuario(a)*
 │ ➜ .tiktokimagen | ttimagen *link*
 │ ➜ .tw | twdl | twitter *link*
-│ ➜ .verig | igstalk *usuario(a)*
+│ ➜ .igstalk | verig *usuario(a)*
 │ ➜ .ytmp4 | ytv *link*
 ╰───────────────
 
