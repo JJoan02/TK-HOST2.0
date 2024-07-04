@@ -327,7 +327,7 @@ if (plugin.private && m.isGroup) { // CHAT PRIVADO
 fail('private', m, this)
 continue
 }
-if (plugin.register == true && _user.registered == true) { // REGISTRO
+if (plugin.register == true && _user.registered == false) { // REGISTRO
 fail('unreg', m, this)
 continue
 }
