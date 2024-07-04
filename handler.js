@@ -48,7 +48,7 @@ if (user) {
 if (!isNumber(user.exp)) user.exp = 0
 if (!isNumber(user.money)) user.money = 150
 if (!isNumber(user.limit)) user.limit = 15 
-if (!('registered' in user)) user.registered = false
+if (!('registered' in user)) user.registered = true
 if (!('premium' in user)) user.premium = false    
                     
 if (!user.registered) {		                    	 
@@ -79,7 +79,7 @@ premiumTime: 0,
 name: m.name,
 GBLanguage: 0,
 regTime: -1,
-registered: false,
+registered: true,
 role: '*NOVATO(A)* 🪤',
 }
 		
@@ -89,15 +89,15 @@ global.db.data.chats[m.chat] = {}
                 
 if (chat) {
 if (!('isBanned' in chat)) chat.isBanned = false    
-if (!('welcome' in chat)) chat.welcome = true            
+if (!('welcome' in chat)) chat.welcome = false            
 if (!('detect' in chat)) chat.detect = true                    
 if (!('sWelcome' in chat)) chat.sWelcome = ''            
 if (!('sBye' in chat)) chat.sBye = ''                    
 if (!('sPromote' in chat)) chat.sPromote = ''              
 if (!('sDemote' in chat)) chat.sDemote = '' 
-if (!('delete' in chat)) chat.delete = true                  
+if (!('delete' in chat)) chat.delete = false                  
 if (!('antiver' in chat)) chat.viewonce = true         
-if (!('modoadmin' in chat)) chat.modoadmin = false     
+if (!('modoadmin' in chat)) chat.modoadmin = true     
 if (!('antiLink' in chat)) chat.antiLink = false
 if (!('antiLink2' in chat)) chat.antiLink2 = true    
 if (!('antiTiktok' in chat)) chat.antiTiktok = false
@@ -114,15 +114,15 @@ if (!isNumber(chat.expired)) chat.expired = 0
 } else
 global.db.data.chats[m.chat] = {
 isBanned: false,
-welcome: true,
+welcome: false,
 detect: true,
 sWelcome: '',
 sBye: '',
 sPromote: '',
 sDemote: '', 
-delete: true,
+delete: false,
 antiver: true,
-modoadmin: false,
+modoadmin: true,
 antiLink: false,
 antiLink2: true,	
 antiTiktok: false,
