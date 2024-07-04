@@ -89,7 +89,7 @@ global.db.data.chats[m.chat] = {}
                 
 if (chat) {
 if (!('isBanned' in chat)) chat.isBanned = false    
-if (!('welcome' in chat)) chat.welcome = false            
+if (!('welcome' in chat)) chat.welcome = true            
 if (!('detect' in chat)) chat.detect = true                    
 if (!('sWelcome' in chat)) chat.sWelcome = ''            
 if (!('sBye' in chat)) chat.sBye = ''                    
@@ -108,13 +108,13 @@ if (!('antiInstagram' in chat)) chat.antiInstagram = false
 if (!('antiTwitter' in chat)) chat.antiInstagram = false
 if (!('antifake' in chat)) chat.antifake = false 
 if (!('antiTraba' in chat)) chat.antiTraba = true
-if (!('antitoxic' in chat)) chat.antitoxic = true 
+if (!('antitoxic' in chat)) chat.antitoxic = false 
 if (!('reaction' in chat)) chat.reaction = true
 if (!isNumber(chat.expired)) chat.expired = 0
 } else
 global.db.data.chats[m.chat] = {
 isBanned: false,
-welcome: false,
+welcome: true,
 detect: true,
 sWelcome: '',
 sBye: '',
@@ -133,7 +133,7 @@ antiInstagram: false,
 antiTwitter: false,
 antifake: false,
 antiTraba: true,
-antitoxic: true,
+antitoxic: false,
 reaction: true,
 expired: 0,
 }
@@ -327,7 +327,7 @@ if (plugin.private && m.isGroup) { // CHAT PRIVADO
 fail('private', m, this)
 continue
 }
-if (plugin.register == true && _user.registered == false) { // REGISTRO
+if (plugin.register == true && _user.registered == true) { // REGISTRO
 fail('unreg', m, this)
 continue
 }
