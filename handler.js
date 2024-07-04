@@ -48,7 +48,7 @@ if (user) {
 if (!isNumber(user.exp)) user.exp = 0
 if (!isNumber(user.money)) user.money = 150
 if (!isNumber(user.limit)) user.limit = 15 
-if (!('registered' in user)) user.registered = true
+if (!('registered' in user)) user.registered = false
 if (!('premium' in user)) user.premium = false    
                     
 if (!user.registered) {		                    	 
