@@ -79,7 +79,7 @@ premiumTime: 0,
 name: m.name,
 GBLanguage: 0,
 regTime: -1,
-registered: true,
+registered: false,
 role: '*NOVATO(A)* 🪤',
 }
 		
