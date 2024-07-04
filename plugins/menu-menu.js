@@ -256,6 +256,7 @@ let handler = async (m, { conn, usedPrefix, command }) => {
 │ ➜ .desbanearchat
 │ ➜ .desbanusuario *@tag*
 │ ➜ .desbloquear *@tag*
+│ ➜ .get *archivo*
 │ ➜ .nuevafotobot *imagen*
 │ ➜ .nuevabiobot *texto*
 │ ➜ .nuevonombrebot *texto*
