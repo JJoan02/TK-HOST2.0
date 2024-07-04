@@ -252,6 +252,7 @@ let handler = async (m, { conn, usedPrefix, command }) => {
 │ ➜ .bloquear *@tag*
 │ ➜ .borrardatos *número*
 │ ➜ .borrartmp | cleartmp
+│ ➜ .creargrupo
 │ ➜ .desbanearchat
 │ ➜ .desbanusuario *@tag*
 │ ➜ .desbloquear *@tag*
