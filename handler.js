@@ -142,16 +142,16 @@ let settings = global.db.data.settings[this.user.jid]
 if (typeof settings !== 'object') global.db.data.settings[this.user.jid] = {}
 if (settings) {
 if (!('self' in settings)) settings.self = true
-if (!('autoread' in settings)) settings.autoread = true
+if (!('autoread' in settings)) settings.autoread = false
 if (!('restrict' in settings)) settings.restrict = true
 if (!('antiCall' in settings)) settings.antiCall = true
 if (!('antiPrivate' in settings)) settings.antiPrivate = true
-if (!('autoread2' in settings)) settings.autoread2 = true
+if (!('autoread2' in settings)) settings.autoread2 = false
 if (!('jadibotmd' in settings)) settings.jadibotmd = true  
 } else global.db.data.settings[this.user.jid] = {
 self: true,
-autoread: true,
-autoread2: true,
+autoread: false,
+autoread2: false,
 restrict: true,
 antiCall: true,
 antiPrivate: true,
