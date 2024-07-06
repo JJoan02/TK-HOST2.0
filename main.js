@@ -357,8 +357,7 @@ conn.ev.off('creds.update', conn.credsUpdate);
 }
 
 //Información para Grupos
-conn.welcome = lenguajeGB['smsWelcome']() 
-conn.bye = lenguajeGB['smsBye']() 
+conn.welcome = lenguajeGB['smsWelcome']()  
 conn.spromote = lenguajeGB['smsSpromote']() 
 conn.sdemote = lenguajeGB['smsSdemote']() 
 conn.sDesc = lenguajeGB['smsSdesc']() 
