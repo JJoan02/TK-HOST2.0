@@ -106,7 +106,7 @@ global.vs = '1.4.0'
 global.vsJB = '4.5'
 
 global.gt = '𝑱𝒐𝒂𝒏𝑨𝒅𝒎𝒊𝒏-𝑻𝑲'
-global.yt = 'https://youtube.com/@gatadios'
+global.yt = 'https://www.youtube.com/@joan_tk02'
 global.yt2 = 'https://www.youtube.com/watch?v=Ko019wvu2Tc&t=71s'
 global.ig = 'https://www.instagram.com/joan_tk02'
 global.md = 'https://github.com/JJoan02/Admin-TK'
