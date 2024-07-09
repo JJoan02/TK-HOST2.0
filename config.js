@@ -110,7 +110,7 @@ global.yt = 'https://www.youtube.com/@joan_tk02'
 global.yt2 = 'https://youtube.com/shorts/ejX8XVUL39s?si=t2nUFPYY6XLqThT9'
 global.ig = 'https://www.instagram.com/joan_tk02'
 global.md = 'https://github.com/JJoan02/Admin-TK'
-global.fb = 'https://www.facebook.com/groups/872989990425789/'
+global.fb = 'https://www.facebook.com/groups/1957378781348824/?ref=share&mibextid=NSMWBT'
 
 global.nna = 'https://whatsapp.com/channel/0029Va6yY0iLY6d6XDmqA03g' //CANAL UPDATE
 global.nn2 = 'https://t.me/globalgb' //Canal GataBot
