@@ -112,9 +112,9 @@ global.ig = 'https://www.instagram.com/joan_tk02'
 global.md = 'https://github.com/JJoan02/Admin-TK'
 global.fb = 'https://www.facebook.com/groups/1957378781348824/?ref=share&mibextid=NSMWBT'
 
-global.nna = 'https://whatsapp.com/channel/0029Va6yY0iLY6d6XDmqA03g' //CANAL UPDATE
+global.nna = 'https://whatsapp.com/channel/0029VaS4zeE72WTyg5et571r' //CANAL UPDATE
 global.nn2 = 'https://t.me/globalgb' //Canal GataBot
-global.nna2 = 'https://chat.whatsapp.com/KaTeeaexrGSHBzPm4s945b' //Help
+global.nna2 = 'https://whatsapp.com/channel/0029VaS4zeE72WTyg5et571r' //Help
 global.nn = 'https://chat.whatsapp.com/HBIIrHorHbW2LIxlS9MjRI' //Grupo 1
 global.nnn = 'https://chat.whatsapp.com/CtA2nopOZor0bRwV3FCYH3' //Grupo 2
 global.nnnt = 'https://chat.whatsapp.com/HVLk7c3ZlNN0mJjodw4NkV' //Grupo 3
