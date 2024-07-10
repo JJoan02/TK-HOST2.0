@@ -116,13 +116,10 @@ let handler = async (m, { conn, usedPrefix, command }) => {
 
 ╭─❑ 「 👥 Grupo 」 ❑──
 │ ➜ .admins
-│ ➜ .advertencia *@tag*
-│ ➜ .banuser *@tag*
 │ ➜ .cambiardesc *texto*
 │ ➜ .cambiarnombre *texto*
 │ ➜ .cambiarpp *imagen*
 │ ➜ .daradmin *tag*
-│ ➜ .deladvertencia *@tag*
 │ ➜ .enlace | link
 │ ➜ .grupo abrir
 │ ➜ .grupo cerrar
@@ -132,7 +129,6 @@ let handler = async (m, { conn, usedPrefix, command }) => {
 │ ➜ .inspeccionar *enlace*
 │ ➜ .invitar *número*
 │ ➜ .invocar | todos *texto*
-│ ➜ .mute | unmute *@tag*
 │ ➜ .newdesc | descripcion *texto*
 │ ➜ .newnombre | nuevonombre *texto*
 │ ➜ .notificar *texto*
@@ -149,40 +145,15 @@ let handler = async (m, { conn, usedPrefix, command }) => {
 │ ➜ on
 ╰───────────────
 
-╭─❑ 「 🎮 Juegos 」 ❑──
-│ ➜ .chiste
-│ ➜ .doxxear *@tag*
-│ ➜ .frases
-│ ➜ .gay *@tag*
-│ ➜ .lesbiana *@tag* o [nombre]
-│ ➜ .manca *@tag* o [nombre]
-│ ➜ .manco *@tag* o [nombre]
-│ ➜ .piropo
-│ ➜ .reto
-│ ➜ .ruletadelban
-│ ➜ .toplind@s
-│ ➜ .topput@s
-╰───────────────
-
-╭─❑ 「 🤖 IA 」 ❑──
-│ ➜ .delchatgpt
-│ ➜ .hd (responde con una imagen)
-│ ➜ .ia [texto]
-│ ➜ .iavoz [texto]
-╰───────────────
-
 ╭─❑ 「 📥 Descargas 」 ❑──
-│ ➜ .clima *país ciudad*
-│ ➜ .consejo
 │ ➜ .facebook | fb *link*
-│ ➜ .ighistoria | igstory *usuario(a)*
 │ ➜ .instagram | ig *link*
 │ ➜ .imagen *texto*
 │ ➜ .instagram *link video o imagen*
 │ ➜ .ytvdoc *link*
 │ ➜ .pinterest | dlpinterest *texto*
 │ ➜ .play | play2 *texto o link*
-│ ➜ .tiktok *link*
+│ ➜ .tiktok *link* (presentando fallas)
 │ ➜ .tiktokfoto | tiktokphoto *usuario(a)*
 │ ➜ .tiktokimagen | ttimagen *link*
 │ ➜ .tw | twdl | twitter *link*
@@ -190,37 +161,9 @@ let handler = async (m, { conn, usedPrefix, command }) => {
 │ ➜ .ytmp4 | ytv *link*
 ╰───────────────
 
-╭─❑ 「 💞 Parejas 」 ❑──
-│ ➜ .aceptar | accept *@tag*
-│ ➜ .listaparejas | listship
-│ ➜ .mipareja | mylove
-│ ➜ .pareja | couple *@tag*
-│ ➜ .rechazar | decline *@tag*
-│ ➜ .terminar | finish *@tag*
-╰───────────────
-
-╭─❑ 「 🔄 Convertidores 」 ❑──
-│ ➜ .toenlace *video, imagen o audio*
-│ ➜ .toimg | img | jpg *sticker*
-│ ➜ .tourl *video, imagen*
-│ ➜ .tts es *texto*
-╰───────────────
-
-╭─❑ 「 🛠️ Herramientas 」 ❑──
-│ ➜ .afk *motivo*
-╰───────────────
-
 ╭─❑ 「 🎭 Filtros en Stickers 」 ❑──
 │ ➜ .sticker | s *imagen o video*
 │ ➜ .sticker | s *url de tipo jpg*
-╰───────────────
-
-╭─❑ 「 👻 Stickers Dinámicos 」 ❑──
-│ ➜ .alimentar | food *@tag*
-│ ➜ .bofetada | slap *@tag*
-│ ➜ .golpear *@tag*
-│ ➜ .palmaditas | pat *@tag*
-│ ➜ .besar | kiss *@tag*
 ╰───────────────
 
 ╭─❑ 「 🤖 Comandos - Sub Bot 」 ❑──
