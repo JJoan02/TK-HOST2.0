@@ -117,11 +117,11 @@ ${role}
 *SUPER PRO IV* 🎩
 *SUPER PRO V* 🎩
 ┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
-*PRO EN GATABOT I* 😼
-*PRO EN GATABOT II* 😼
-*PRO EN GATABOT III* 😼
-*PRO EN GATABOT IV* 😼
-*PRO EN GATABOT V* 😼
+*PRO EN ADMIN-TK I* 👻
+*PRO EN ADMIN-TK II* 👻
+*PRO EN ADMIN-TK III* 👻
+*PRO EN ADMIN-TK IV* 👻
+*PRO EN ADMIN-TK V* 👻
 ┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈
 *DIAMANTE I* 💎
 *DIAMANTE II* 💎

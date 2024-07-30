@@ -1,4 +1,3 @@
-// CÓDIGO CREADO POR GataNina-Li : https://github.com/GataNina-Li 
 import { createHash } from 'crypto'
 let nombre = 0, edad = 0, genero = 0, bio = 0, identidad = 0, pasatiempo = 0, registro, _registro, fecha, hora, tiempo, registrando
 let pas1 = 0, pas2 = 0, pas3 = 0, pas4 = 0, pas5 = 0  
@@ -101,7 +100,7 @@ externalAdReply: {
 title: wm,
 body: '🌟 Puede modificar su registro antes de finalizar',
 thumbnailUrl: pp, 
-sourceUrl: 'https://www.atom.bio/gatabot/',
+sourceUrl: 'https://atom.bio/joan_tk02',
 mediaType: 1,
 showAdAttribution: true,
 renderLargerThumbnail: true
@@ -530,7 +529,7 @@ user.premium = true
 fecha = `${week}, ${date} *||* `
 hora = `${time}`
 user.tiempo = fecha + hora
-user.name = user.name === 0 ? sinDefinir : user.name + 'ͧͧͧͦꙶͣͤ✓ᚲᴳᴮ'
+user.name = user.name === 0 ? sinDefinir : user.name + 'ͧͧͧͦꙶͣͤ✓ᚲᵀᴷ'
 user.descripcion = bio
 user.age = user.age === 0 ? sinDefinir : user.age >= 18 ? user.age += ' Años *||* ' + '(Persona Adulta)' : user.age += ' Años *||* ' + '(Persona Joven)'
 user.genero = user.genero === 0 ? sinDefinir : user.genero == 'Ocultado' ? `${user.genero} 🕶️` : user.genero == 'Mujer' ? `${user.genero} 🚺` : user.genero == 'Hombre' ? `${user.genero} 🚹` : sinDefinir
@@ -540,7 +539,7 @@ user.pasatiempo = user.pasatiempo === 0 ? sinDefinir : user.pasatiempo
 fecha = `${week}, ${date} || `
 hora = `${time}`
 user.tiempo = fecha + hora
-user.name = user.name === 0 ? sinDefinir : user.name + 'ͧͧͧͦꙶͣͤ✓ᚲᴳᴮ'
+user.name = user.name === 0 ? sinDefinir : user.name + 'ͧͧͧͦꙶͣͤ✓ᚲᵀᴷ'
 user.age = user.age === 0 ? sinDefinir : user.age >= 18 ? user.age += ' Años *||* ' + '(Persona Adulta)' : user.age += ' Años *||* ' + '(Persona Joven)'
 user.descripcion = bio	
 }
@@ -561,7 +560,7 @@ text: `🍃 \`\`\`VERIFICACIÓN EXITOSA\`\`\` 🍃
 🛅 *CÓDIGO DE REGISTRO*
 ❱❱ ${sn}\n
 ✅ *INSIGNIA DE VERIFICACIÓN*
-❱❱   *${user.registered === true ? 'ͧͧͧͦꙶͣͤ✓ᚲᴳᴮ' : ''}*\n
+❱❱   *${user.registered === true ? 'ͧͧͧͦꙶͣͤ✓ᚲᵀᴷ' : ''}*\n
 ✨ *NOMBRE* 
 ❱❱ ${user.name}\n
 👀 *DESCRIPCIÓN*
@@ -581,7 +580,7 @@ externalAdReply: {
 title: wm,
 body: user.name,
 thumbnailUrl: pp, 
-sourceUrl: 'https://www.atom.bio/gatabot/',
+sourceUrl: 'https://atom.bio/joan_tk02',
 mediaType: 1,
 showAdAttribution: true,
 renderLargerThumbnail: true
