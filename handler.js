@@ -1336,7 +1336,7 @@ if (m.limit)
 m.reply(+m.limit + lenguajeGB.smsCont8())
 }
 if (m.money)
-m.reply(+m.money + ' 𝙂𝘼𝙏𝘼𝘾𝙊𝙄𝙉𝙎 🐱 𝙐𝙎𝘼𝘿𝙊(𝙎)')  
+m.reply(+m.money + ' 𝙅𝙊𝘼𝙉𝘾𝙊𝙄𝙉𝙎 🪙 𝙐𝙎𝘼𝘿𝙊(𝙎)')  
 break
 }}} catch (e) {
 console.error(e)
