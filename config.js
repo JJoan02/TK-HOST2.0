@@ -13,7 +13,7 @@ import { en, es, id, ar, pt } from "./lib/idiomas/total-idiomas.js"
 // [ES] > Agrega el número que será Bot y los que serán propietarios.
 // [EN] > Add the number that will be Bot and those that will be owners.
 global.owner = [
-["51971834247", '𝙊𝙬𝙣𝙚𝙧 💖🐈', true], // 𝙅𝙤𝙖𝙣𝘽𝙤𝙩-𝙏𝙆
+["51927803866", '𝙊𝙬𝙣𝙚𝙧 💖🐈', true], // 𝙅𝙤𝙖𝙣-𝙏𝙆
 ["51906662557"]]
 
 global.mods = []
@@ -112,8 +112,8 @@ global.moment = moment
 // [ES] > Agregate a ti, colaboradores o ayudates, aparecerá en el comando de lista de contactos.
 // [EN] > Adding yourself, collaborators or helpers will appear in the contact list command.
 global.official = [ // Agregate si eres Owner
-["51971834247", 'Joan TK 💻', 1], 
-["51927803866", 'JoanBot-TK 💻', 1],  
+["51927803866", 'Joan TK 💻', 1], 
+["51976673519", 'Admin-TK 💻', 1],  
 ["51906662557", '𝗗𝗲𝘀𝗮𝗿𝗿𝗼𝗹𝗹𝗮𝗱𝗼𝗿 𝗢𝗳𝗶𝗰𝗶𝗮𝗹 💻', 1]]
 
 global.mail = '' // Add email
@@ -159,8 +159,8 @@ global.eg = '╰⊱💚⊱ *𝙀́𝙓𝙄𝙏𝙊 | 𝙎𝙐𝘾𝘾𝙀𝙎�
 global.exito = eg
 
 // • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • •
-global.wm = "𝑱𝒐𝒂𝒏𝑩𝒐𝒕-𝑻𝑲 : 𝑱𝒐𝒂𝒏-𝑻𝑲"
-global.igfg = "𝑱𝒐𝒂𝒏𝑩𝒐𝒕-𝑻𝑲"
+global.wm = "Admin-𝑻𝑲 : 𝑱𝒐𝒂𝒏-𝑻𝑲"
+global.igfg = "Admin-𝑻𝑲"
 global.nomorown = "593993684821"
 global.pdoc = ["application/vnd.openxmlformats-officedocument.presentationml.presentation", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.ms-excel", "application/msword", "application/pdf", "text/rtf"]
 // • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • •
