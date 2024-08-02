@@ -995,7 +995,7 @@ if (!('antiTwitter' in chat)) chat.antiTwitter = false
 if (!('antiDiscord' in chat)) chat.antiDiscord = false
 if (!('antiThreads' in chat)) chat.antiThreads = false
 if (!('antiTwitch' in chat)) chat.antiTwitch = false
-if (!('antifake' in chat)) chat.antifake = false
+if (!('antifake' in chat)) chat.antifake = true
 if (!('reaction' in chat)) chat.reaction = true    
 if (!('viewonce' in chat)) chat.viewonce = true       
 if (!('modoadmin' in chat)) chat.modoadmin = true    
@@ -1034,7 +1034,7 @@ antiTwitter: false,
 antiDiscord: false,
 antiThreads: false,
 antiTwitch: false,
-antifake: false,
+antifake: true,
 reaction: true,
 viewonce: true,
 modoadmin: true,
@@ -1336,7 +1336,7 @@ if (m.limit)
 m.reply(+m.limit + lenguajeGB.smsCont8())
 }
 if (m.money)
-m.reply(+m.money + ' 𝙂𝘼𝙏𝘼𝘾𝙊𝙄𝙉𝙎 🐱 𝙐𝙎𝘼𝘿𝙊(𝙎)')  
+m.reply(+m.money + ' 𝐉𝐎𝐀𝐍𝘾𝙊𝙄𝙉𝙎 🐱 𝙐𝙎𝘼𝘿𝙊(𝙎)')  
 break
 }}} catch (e) {
 console.error(e)
@@ -1435,7 +1435,7 @@ text = (action === 'add' ? (chat.sWelcome || this.welcome || conn.welcome || 'We
 (chat.sBye || this.bye || conn.bye || 'Bye, @user!')).replace('@user', '@' + user.split('@')[0])
 			    
 if (chat.antifake && isBotAdminNn && action === 'add') {
-const prefijosPredeterminados = [1, 2, 4, 6, 7, 8, 9] // Puedes editar que usuarios deseas que se eliminen si empieza por algunos de los números
+const prefijosPredeterminados = [62, 27, 216, 94, 222, 212, 225, 685, 355, 233, 91, 62, 84, 98, 964, +962, 961, 965, 971, 968, 974, 973, 967, 20, 27, 234, 254, 212, 213, +256, 233, 237, 225, 221, 255, 249, 218, 216, +61, 64, 679, 675, 676, 49, 33, 39, 44, 7, 380, 48, 40, 31, 32, 30, 351, 46, 47, 86, 91, 81, 82, 62, 90, 63, 66, 84, 972, 60, 65, 92, 880, 966] // Puedes editar que usuarios deseas que se eliminen si empieza por algunos de los números
 const rutaArchivo = './prefijos.json'
 let prefijos = []
 const existeArchivo = fs.existsSync(rutaArchivo)
