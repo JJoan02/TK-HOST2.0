@@ -25,8 +25,6 @@ const handler = async (m, { conn, command, args, text, usedPrefix }) => {
 
     *𓆩 𓃠 𓆪 ✧═══ ${vs} ═══✧ 𓆩 𓃠 𓆪*`.trim();
 
-    await conn.sendButton(m.chat, wm, texto1, yt_play[0].thumbnail, [['𝗠 𝗘 𝗡 𝗨 ☘️', `${usedPrefix}menu`]], null, null, m);
-
     // Descargar video en máxima calidad
     const videoStream = ytdl(yt_play[0].url, { quality: 'highest' });
     await conn.sendMessage(m.chat, { video: videoStream, caption: `Video en máxima calidad: ${yt_play[0].title}` });
