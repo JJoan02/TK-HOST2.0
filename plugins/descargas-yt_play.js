@@ -2,20 +2,18 @@ import fetch from 'node-fetch';
 import yts from 'yt-search';
 import ytdl from 'ytdl-core';
 import axios from 'axios';
-import { youtubedl, youtubedlv2 } from '@bochilteam/scraper';
 
 const handler = async (m, { conn, command, args, text, usedPrefix }) => {
     if (!text) throw `${lenguajeGB['smsAvisoMG']()}${mid.smsMalused4}\n*${usedPrefix + command} Billie Eilish - Bellyache*`;
-    try { 
+    try {
         const yt_play = await search(args.join(' '));
         const videoUrl = yt_play[0].url;
         const title = yt_play[0].title;
 
-        // Enviar información del video con un botón
         const texto1 = `*𓆩 𓃠 𓆪 ✧═══ ${vs} ═══✧ 𓆩 𓃠 𓆪*
 
         ও ${mid.smsYT1}
-        » ${title}
+        » ${yt_play[0].title}
         ﹘﹘﹘﹘﹘﹘﹘﹘﹘﹘﹘﹘
         ও ${mid.smsYT15}
         » ${yt_play[0].ago}
@@ -30,24 +28,26 @@ const handler = async (m, { conn, command, args, text, usedPrefix }) => {
         » ${yt_play[0].author.name}
         ﹘﹘﹘﹘﹘﹘﹘﹘﹘﹘﹘﹘
         ও ${mid.smsYT4}
-        » ${videoUrl}
+        » ${yt_play[0].url}
 
         *𓆩 𓃠 𓆪 ✧═══ ${vs} ═══✧ 𓆩 𓃠 𓆪*`.trim();
 
-        await conn.sendButton(m.chat, wm, texto1, yt_play[0].thumbnail, [['𝗠 𝗘 𝗡 𝗨 ☘️', `${usedPrefix}menu`]], null, null, m);
+        // Enviar la información
+        await conn.sendMessage(m.chat, { text: texto1, caption: title, thumbnail: yt_play[0].thumbnail });
 
-        let listSections = [];             
-        listSections.push({
-            title: `${comienzo} 📡 𝗧𝗜𝗣𝗢𝗦 𝗗𝗘 𝗗𝗘𝗦𝗖𝗔𝗥𝗚𝗔𝗦 ${fin}`,
-            rows: [
-                { header: "𓃠 𝗔 𝗨 𝗗 𝗜 𝗢 (Opcion 1)", title: "", id: `${usedPrefix}yta ${videoUrl}`, description: `${title}\n` },
-                { header: "𓃠 𝗔 𝗨 𝗗 𝗜 𝗢   𝗗 𝗢 𝗖", title: "", id: `${usedPrefix}ytmp3doc ${videoUrl}`, description: `${title}\n` },
-                { header: "𓃠 𝗩 𝗜 𝗗 𝗘 𝗢 (Opcion 1)", title: "", id: `${usedPrefix}ytv ${videoUrl}`, description: `${title}\n` },
-                { header: "𓃠 𝗩 𝗜 𝗗 𝗘 𝗢   𝗗 𝗢 𝗖", title: "", id: `${usedPrefix}ytmp4doc ${videoUrl}`, description: `${title}\n` }
-            ]
+        // Descargar y enviar el video
+        const videoStream = ytdl(videoUrl, { quality: 'highest' });
+        await conn.sendMessage(m.chat, {
+            video: { url: videoStream },
+            caption: `🎥 *Video MP4* - ${title}`
         });
 
-        await conn.sendList(m.chat, `*𝙀𝙇𝙄𝙅𝘼 𝙌𝙐𝙀 𝙑𝘼 𝙃𝘼𝘾𝙀𝙍 𝘾𝙊𝙉 ${text}*`, `\n${htki} *♻️ 𝘿𝙀𝙎𝘾𝘼𝙍𝙂𝘼𝙎* ${htka}`, `🍄 𝙀𝙇𝙀𝙂𝙄𝙍 🍁`, listSections, { quoted: fkontak });
+        // Descargar y enviar el audio
+        const audioStream = ytdl(videoUrl, { filter: 'audioonly', quality: 'highestaudio' });
+        await conn.sendMessage(m.chat, {
+            audio: { url: audioStream },
+            caption: `🎵 *Audio MP3* - ${title}`
+        });
 
     } catch (e) {
         await conn.reply(m.chat, `${lenguajeGB['smsMalError3']()}#report ${lenguajeGB['smsMensError2']()} ${usedPrefix + command}\n\n${wm}`, fkontak, m);
@@ -58,7 +58,6 @@ const handler = async (m, { conn, command, args, text, usedPrefix }) => {
 };
 
 handler.command = ['play', 'play2', 'play3', 'play4'];
-
 export default handler;
 
 async function search(query, options = {}) {
