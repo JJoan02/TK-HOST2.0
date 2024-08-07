@@ -18,14 +18,8 @@ let captionvid = `𓆩 𓃠 𓆪 ✧═══ ${vs} ═══✧ 𓆩 𓃠 𓆪*
 ও ${mid.smsYT1}
 »  ${yt_play[0].title}
 ﹘﹘﹘﹘﹘﹘﹘﹘﹘﹘﹘﹘
-ও ${mid.smsYT15}
-» ${yt_play[0].ago}
-﹘﹘﹘﹘﹘﹘﹘﹘﹘﹘﹘﹘
 ও ${mid.smsYT5}
 » ${secondString(yt_play[0].duration.seconds)}
-﹘﹘﹘﹘﹘﹘﹘﹘﹘﹘﹘﹘
-ও  ${mid.smsYT10}
-» ${MilesNumber(yt_play[0].views)}
 ﹘﹘﹘﹘﹘﹘﹘﹘﹘﹘﹘﹘
 ও  ${mid.smsYT4}
 » ${yt_play[0].url}
