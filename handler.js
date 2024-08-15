@@ -1435,7 +1435,7 @@ text = (action === 'add' ? (chat.sWelcome || this.welcome || conn.welcome || 'We
 (chat.sBye || this.bye || conn.bye || 'Bye, @user!')).replace('@user', '@' + user.split('@')[0])
 			    
 if (chat.antifake && isBotAdminNn && action === 'add') {
-const prefijosPredeterminados = [62, 27, 216, 94, 222, 212, 225, 685, 355, 233, 91, 62, 84, 98, 964, +962, 961, 965, 971, 968, 974, 973, 967, 20, 27, 234, 254, 212, 213, +256, 233, 237, 225, 221, 255, 249, 218, 216, +61, 64, 679, 675, 676, 49, 33, 39, 44, 7, 380, 48, 40, 31, 32, 30, 351, 46, 47, 86, 91, 81, 82, 62, 90, 63, 66, 84, 972, 60, 65, 92, 880, 966] // Puedes editar que usuarios deseas que se eliminen si empieza por algunos de los números
+const prefijosPredeterminados = [7, 20, 27, 27, 30, 31, 32, 33, 39, 40, 44, 46, 47, 48, 49, 61, 62, 62, 62, 62, 63, 64, 65, 66, 81, 82, 84, 84, 86, 91, 91, 92, 94, 98, 212, 212, 213, 216, 216, 218, 221, 222, 225, 225, 233, 233, 234, 237, 249, 254, 255, 256, 351, 380, 675, 676, 679, 685, 880, 961, 962, 964, 965, 966, 967, 968, 971, 972, 973, 974] // Puedes editar que usuarios deseas que se eliminen si empieza por algunos de los números
 const rutaArchivo = './prefijos.json'
 let prefijos = []
 const existeArchivo = fs.existsSync(rutaArchivo)
