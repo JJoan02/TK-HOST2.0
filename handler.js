@@ -1404,58 +1404,103 @@ function pickRandom(list) { return list[Math.floor(Math.random() * list.length)]
 }}
 
 /**
- * Handle groups participants update
- * @param {import('@adiwajshing/baileys').BaileysEventMap<unknown>['group-participants.update']} groupsUpdate 
+ * Maneja las actualizaciones de participantes en un grupo.
+ * @param {import('@adiwajshing/baileys').BaileysEventMap<unknown>['group-participants.update']} groupsUpdate - Actualización de participantes en el grupo.
  */
 export async function participantsUpdate({ id, participants, action }) {
-if (opts['self'])
-return
-// if (id in conn.chats) return // First login will spam
-if (this.isInit)
-return
-if (global.db.data == null)
-await loadDatabase()
-let chat = global.db.data.chats[id] || {}
-let text = ''
-switch (action) {
-case 'add':
-case 'remove':
-if (chat.welcome) {
-let groupMetadata = await this.groupMetadata(id) || (conn.chats[id] || {}).metadata
-for (let user of participants) {
-let pp = global.gataImg
-try {
-pp = await this.profilePictureUrl(user, 'image')
-} catch (e) {
-} finally {
-let apii = await this.getFile(pp)                                      
-const botTt2 = groupMetadata.participants.find(u => this.decodeJid(u.id) == this.user.jid) || {} 
-const isBotAdminNn = botTt2?.admin === "admin" || false
-text = (action === 'add' ? (chat.sWelcome || this.welcome || conn.welcome || 'Welcome, @user!').replace('@subject', await this.getName(id)).replace('@desc', groupMetadata.desc?.toString() || '😻 𝗦𝘂𝗽𝗲𝗿 𝗚𝗮𝘁𝗮𝗕𝗼𝘁-𝗠𝗗 😻') :
-(chat.sBye || this.bye || conn.bye || 'Bye, @user!')).replace('@user', '@' + user.split('@')[0])
-			    
-if (chat.antifake && isBotAdminNn && action === 'add') {
-const prefijosPredeterminados = [7, 20, 27, 27, 30, 31, 32, 33, 39, 40, 44, 46, 47, 48, 49, 61, 62, 62, 62, 62, 63, 64, 65, 66, 81, 82, 84, 84, 86, 91, 91, 92, 94, 98, 212, 212, 213, 216, 216, 218, 221, 222, 225, 225, 233, 233, 234, 237, 249, 254, 255, 256, 351, 380, 675, 676, 679, 685, 880, 961, 962, 964, 965, 966, 967, 968, 971, 972, 973, 974] // Puedes editar que usuarios deseas que se eliminen si empieza por algunos de los números
-const rutaArchivo = './prefijos.json'
-let prefijos = []
-const existeArchivo = fs.existsSync(rutaArchivo)
-if (existeArchivo) {
-try {
-const contenido = fs.readFileSync(rutaArchivo, 'utf-8')
-prefijos = JSON.parse(contenido)
-} catch (error) {
-console.log('Error "prefijos.json": ', error)
-return
-}} else {
-prefijos = prefijosPredeterminados
+    // Si la opción 'self' está activada, salir de la función para evitar procesamiento redundante.
+    if (opts['self']) return;
+
+    // Evitar la ejecución durante la inicialización para prevenir problemas.
+    if (this.isInit) return;
+
+    // Cargar la base de datos si no está cargada.
+    if (global.db.data == null) await loadDatabase();
+
+    // Obtener la configuración del chat desde la base de datos.
+    let chat = global.db.data.chats[id] || {};
+
+    // Solo manejar la acción de agregar participantes.
+    if (action === 'add') {
+        // Verificar si la bienvenida está activada en la configuración del chat.
+        if (chat.welcome) {
+            // Obtener los metadatos del grupo.
+            let groupMetadata = await this.groupMetadata(id) || (conn.chats[id] || {}).metadata;
+
+            // Iterar sobre los participantes que han sido añadidos.
+            for (let user of participants) {
+                let pp = global.gataImg;
+                try {
+                    // Intentar obtener la imagen de perfil del usuario.
+                    pp = await this.profilePictureUrl(user, 'image');
+                } catch (e) {
+                    // Manejar el error si no se puede obtener la imagen de perfil.
+                } finally {
+                    // Obtener el archivo de la imagen de perfil.
+                    let apii = await this.getFile(pp);
+
+                    // Verificar si el bot es administrador en el grupo.
+                    const botTt2 = groupMetadata.participants.find(u => this.decodeJid(u.id) == this.user.jid) || {};
+                    const isBotAdminNn = botTt2?.admin === "admin" || false;
+
+                    // Definir el texto de bienvenida.
+                    let text = (chat.sWelcome || this.welcome || conn.welcome || 'Welcome, @user!')
+                        .replace('@subject', await this.getName(id))
+                        .replace('@desc', groupMetadata.desc?.toString() || '😻 𝗦𝘂𝗽𝗲𝗿 𝗚𝗮𝘁𝗮𝗕𝗼𝘁-𝗠𝗗 😻')
+                        .replace('@user', '@' + user.split('@')[0]);
+
+                    // Enviar el mensaje de bienvenida al grupo.
+                    await this.sendMessage(id, { text, mentions: [user] }, { quoted: { ... } }); // Completar con los detalles necesarios para enviar el mensaje.
+                }
+            }
+        }
+    }
 }
-const comienzaConPrefijo = prefijos.some(prefijo => user.startsWith(prefijo.toString()))
-if (comienzaConPrefijo) {
-let texto = mid.mAdvertencia + mid.mFake2(user)
-await conn.sendMessage(id, { text: texto, mentions: [user] })
-let responseb = await conn.groupParticipantsUpdate(id, [user], 'remove')
-if (responseb[0].status === "404") return      
-}}
+			    
+// Verifica si la protección antifalsificación está activada y si el bot es administrador y la acción es 'add' (agregar).
+if (chat.antifake && isBotAdminNn && action === 'add') {
+    
+    // Lista de prefijos de números de teléfono que se consideran sospechosos o falsos.
+    const prefijosPredeterminados = [
+        7, 20, 27, 27, 30, 31, 32, 33, 39, 40, 44, 46, 47, 48, 49, 61, 62, 62, 62, 62, 
+        63, 64, 65, 66, 81, 82, 84, 84, 86, 91, 91, 92, 94, 98, 212, 212, 213, 216, 216, 
+        218, 221, 222, 225, 225, 233, 233, 234, 237, 249, 254, 255, 256, 351, 380, 675, 
+        676, 679, 685, 880, 961, 962, 964, 965, 966, 967, 968, 971, 972, 973, 974
+    ]; // Puedes editar esta lista para ajustar los prefijos que consideras falsos o sospechosos.
+
+    // Ruta del archivo JSON que contiene una lista de prefijos personalizados.
+    const rutaArchivo = './prefijos.json';
+    let prefijos = [];
+
+    // Verifica si el archivo JSON de prefijos existe.
+    const existeArchivo = fs.existsSync(rutaArchivo);
+    if (existeArchivo) {
+        try {
+            // Lee el contenido del archivo JSON y lo analiza.
+            const contenido = fs.readFileSync(rutaArchivo, 'utf-8');
+            prefijos = JSON.parse(contenido);
+        } catch (error) {
+            // Manejo de errores si hay problemas al leer o analizar el archivo.
+            console.log('Error "prefijos.json": ', error);
+            return;
+        }
+    } else {
+        // Si el archivo JSON no existe, utiliza la lista de prefijos predeterminados.
+        prefijos = prefijosPredeterminados;
+    }
+
+    // Verifica si el número de usuario comienza con alguno de los prefijos definidos.
+    const comienzaConPrefijo = prefijos.some(prefijo => user.startsWith(prefijo.toString()));
+    if (comienzaConPrefijo) {
+        // Si el número comienza con un prefijo sospechoso, envía un mensaje de advertencia al chat.
+        let texto = mid.mAdvertencia + mid.mFake2(user);
+        await conn.sendMessage(id, { text: texto, mentions: [user] });
+
+        // Intenta eliminar al usuario del grupo.
+        let responseb = await conn.groupParticipantsUpdate(id, [user], 'remove');
+        if (responseb[0].status === "404") return; // Si la respuesta es 404, significa que el usuario no se pudo eliminar.
+    }
+}
 	
 // 1. Crear el objeto de mensaje de contacto simulado
 let fkontak2 = {
