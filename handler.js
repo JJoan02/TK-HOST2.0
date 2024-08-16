@@ -1457,120 +1457,325 @@ let responseb = await conn.groupParticipantsUpdate(id, [user], 'remove')
 if (responseb[0].status === "404") return      
 }}
 	
-let fkontak2 = { "key": { "participants":"0@s.whatsapp.net", "remoteJid": "status@broadcast", "fromMe": false, "id": "Halo" }, "message": { "contactMessage": { "vcard": `BEGIN:VCARD\nVERSION:3.0\nN:Sy;Bot;;;\nFN:y\nitem1.TEL;waid=${user.split('@')[0]}:${user.split('@')[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD` }}, "participant": "0@s.whatsapp.net" }      
-this.sendMessage(id, { text: text, 
-contextInfo:{
-forwardingScore: 9999999,
-isForwarded: true, 
-mentionedJid:[user],
-"externalAdReply": {
-"showAdAttribution": true,
-"renderLargerThumbnail": true,
-"thumbnail": apii.data, 
-"title": [wm, '👻 𝗦𝘂𝗽𝗲𝗿 ' + gt + ' 👻', '🌟 katashifukushima23.gmail.com'].getRandom(),
-"containsAutoReply": true,
-"mediaType": 1, 
-sourceUrl: accountsgb ? accountsgb : 'https://github.com/JJoan02/Admin-TK' }}}, { quoted: fkontak2 })
-apii.data = ''
-//this.sendFile(id, apii.data, 'pp.jpg', text, null, false, { mentions: [user] }, { quoted: fkontak2 })
-}}}
+// 1. Crear el objeto de mensaje de contacto simulado
+let fkontak2 = {
+    "key": {
+        "participants": "0@s.whatsapp.net",
+        "remoteJid": "status@broadcast",
+        "fromMe": false,
+        "id": "Halo"
+    },
+    "message": {
+        "contactMessage": {
+            "vcard": `BEGIN:VCARD\nVERSION:3.0\nN:Sy;Bot;;;\nFN:y\nitem1.TEL;waid=${user.split('@')[0]}:${user.split('@')[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD`
+        }
+    },
+    "participant": "0@s.whatsapp.net"
+};
+
+// 2. Enviar el mensaje con contexto adicional
+this.sendMessage(id, {
+    text: text,
+    contextInfo: {
+        forwardingScore: 9999999,
+        isForwarded: true,
+        mentionedJid: [user],
+        externalAdReply: {
+            showAdAttribution: true,
+            renderLargerThumbnail: true,
+            thumbnail: apii.data,
+            title: [wm, '👻 𝗦𝘂𝗽𝗲𝗿 ' + gt + ' 👻', '🌟 https://atom.bio/joan_tk02'].getRandom(),
+            containsAutoReply: true,
+            mediaType: 1,
+            sourceUrl: accountsgb ? accountsgb : 'https://github.com/JJoan02/Admin-TK'
+        }
+    }
+}, {
+    quoted: fkontak2
+});
+
+// 3. Reiniciar el dato de la imagen
+apii.data = '';
+
+// 4. (Opcional) Enviar un archivo, línea comentada
+// this.sendFile(id, apii.data, 'pp.jpg', text, null, false, { mentions: [user] }, { quoted: fkontak2 });
 			    
-break
-case 'promote':
-case 'daradmin':
-case 'darpoder':
-text = (chat.sPromote || this.spromote || conn.spromote || '@user ```is now Admin```')
-case 'demote':
-case 'quitarpoder':
-case 'quitaradmin':
-if (!text)
-text = (chat.sDemote || this.sdemote || conn.sdemote || '@user ```is no longer Admin```')
-text = text.replace('@user', '@' + participants[0].split('@')[0])
-if (chat.detect)
-//this.sendMessage(id, { text, mentions: this.parseMention(text) })
-break
-}}
+switch(action) {
+    // 1. Casos para promover a un usuario a administrador
+    case 'promote':
+    case 'daradmin':
+    case 'darpoder':
+        // 2. Definir el texto que se enviará cuando se promueva a un usuario a administrador
+        text = (chat.sPromote || this.spromote || conn.spromote || '@user ```is now Admin```');
+        // Continúa con la ejecución en los próximos casos
+
+    // 3. Casos para degradar a un usuario, quitándole el rol de administrador
+    case 'demote':
+    case 'quitarpoder':
+    case 'quitaradmin':
+        // 4. Si el texto aún no está definido (caso anterior), definir el texto para la degradación
+        if (!text)
+            text = (chat.sDemote || this.sdemote || conn.sdemote || '@user ```is no longer Admin```');
+
+        // 5. Reemplazar '@user' con el ID real del usuario en cuestión
+        text = text.replace('@user', '@' + participants[0].split('@')[0]);
+
+        // 6. Si la detección de eventos está activada, enviar el mensaje con las menciones
+        if (chat.detect) {
+            // this.sendMessage(id, { text, mentions: this.parseMention(text) });
+        }
+
+        break; // 7. Terminar el bloque de casos
+}
 
 /**
- * Handle groups update
- * @param {import('@adiwajshing/baileys').BaileysEventMap<unknown>['groups.update']} groupsUpdate 
+ * Maneja las actualizaciones de grupos.
+ * @param {import('@adiwajshing/baileys').BaileysEventMap<unknown>['groups.update']} groupsUpdate - Lista de actualizaciones de grupos.
  */
 export async function groupsUpdate(groupsUpdate) {
-if (opts['self'] && !isOwner && !isROwner)
-return
-for (const groupUpdate of groupsUpdate) {
-const id = groupUpdate.id
-if (!id) continue
-let chats = global.db.data?.chats?.[id], text = ''
-if (!chats?.detect) continue
-// if (groupUpdate.desc) text = (chats.sDesc || this.sDesc || conn.sDesc || '```Description has been changed to```\n@desc').replace('@desc', groupUpdate.desc)
-//if (groupUpdate.subject) text = (chats.sSubject || this.sSubject || conn.sSubject || '```Subject has been changed to```\n@subject').replace('@subject', groupUpdate.subject)
-//if (groupUpdate.icon) text = (chats.sIcon || this.sIcon || conn.sIcon || '```Icon has been changed to```').replace('@icon', groupUpdate.icon)
-if (groupUpdate.revoke) text = (chats.sRevoke || this.sRevoke || conn.sRevoke || '```Group link has been changed to```\n@revoke').replace('@revoke', groupUpdate.revoke)
-if (!text) continue
-await this.sendMessage(id, { text, mentions: this.parseMention(text) })
-}}
+    // 1. Verificar si el bot está en modo "self" y si el usuario no es dueño o dueño raíz, salir de la función.
+    if (opts['self'] && !isOwner && !isROwner) 
+        return;
 
+    // 2. Iterar sobre cada actualización de grupo recibida.
+    for (const groupUpdate of groupsUpdate) {
+        const id = groupUpdate.id; // Obtener el ID del grupo.
+
+        // 3. Si no hay ID, continuar con la siguiente iteración.
+        if (!id) continue;
+
+        // 4. Obtener los datos del chat del grupo desde la base de datos.
+        let chats = global.db.data?.chats?.[id], text = '';
+
+        // 5. Si la detección de eventos está desactivada para este chat, continuar con la siguiente iteración.
+        if (!chats?.detect) continue;
+
+        // 6. Procesar diferentes tipos de actualizaciones del grupo.
+        // - Cambio de descripción (comentado)
+        // if (groupUpdate.desc) 
+        //     text = (chats.sDesc || this.sDesc || conn.sDesc || '```Description has been changed to```\n@desc').replace('@desc', groupUpdate.desc);
+
+        // - Cambio de asunto (comentado)
+        // if (groupUpdate.subject) 
+        //     text = (chats.sSubject || this.sSubject || conn.sSubject || '```Subject has been changed to```\n@subject').replace('@subject', groupUpdate.subject);
+
+        // - Cambio de ícono (comentado)
+        // if (groupUpdate.icon) 
+        //     text = (chats.sIcon || this.sIcon || conn.sIcon || '```Icon has been changed to```').replace('@icon', groupUpdate.icon);
+
+        // 7. Cambio del enlace del grupo
+        if (groupUpdate.revoke) 
+            text = (chats.sRevoke || this.sRevoke || conn.sRevoke || '```Group link has been changed to```\n@revoke').replace('@revoke', groupUpdate.revoke);
+
+        // 8. Si no se ha generado texto, continuar con la siguiente iteración.
+        if (!text) continue;
+
+        // 9. Enviar el mensaje con la actualización y menciones.
+        await this.sendMessage(id, { text, mentions: this.parseMention(text) });
+    }
+}
+
+/**
+ * Maneja las actualizaciones de llamadas y canales de voz.
+ * @param {import('@adiwajshing/baileys').BaileysEventMap<unknown>['call']} callUpdate - Lista de actualizaciones de llamadas.
+ */
 export async function callUpdate(callUpdate) {
-let isAnticall = global.db.data.settings[this.user.jid].antiCall  
-if (!isAnticall) return
-for (let nk of callUpdate) { 
-if (nk.isGroup == false) {
-if (nk.status == "offer") {
-let callmsg = await this.reply(nk.from, `${lenguajeGB['smsCont15']()} *@${nk.from.split('@')[0]}*, ${nk.isVideo ? lenguajeGB.smsCont16() : lenguajeGB.smsCont17()} ${lenguajeGB['smsCont18']()}`, false, { mentions: [nk.from] })
-//let data = global.owner.filter(([id, isCreator]) => id && isCreator)
-//await this.sendContact(nk.from, data.map(([id, name]) => [id, name]), false, { quoted: callmsg })
-await this.updateBlockStatus(nk.from, 'block')
-}}}}
+    try {
+        // 1. Verificar si la función anti-llamadas está activada en la configuración global.
+        let isAnticall = global.db.data.settings[this.user.jid].antiCall;
+        if (!isAnticall) return; // Si no está activada, salir de la función.
 
+        for (let nk of callUpdate) {
+            const isGroupCall = nk.isGroup; // Verificar si la llamada es de grupo.
+            const from = nk.from; // ID del usuario o grupo que inició la llamada.
+            const userId = from.split('@')[0]; // ID del usuario sin el sufijo de dominio.
+
+            // 2. Si la llamada es una oferta (entrante).
+            if (nk.status === "offer") {
+                if (isGroupCall) {
+                    // 3. Llamada de grupo detectada o canal de voz abierto.
+                    let groupId = from;
+                    let groupMetadata = await this.groupMetadata(groupId); // Obtener metadatos del grupo.
+                    let groupName = groupMetadata.subject; // Obtener el nombre del grupo.
+
+                    // 4. Verificar el historial de infracciones del usuario.
+                    let warningCount = global.db.data.users[userId]?.warningCount || 0;
+
+                    if (warningCount < 1) {
+                        // Primera infracción: enviar advertencia.
+                        await this.sendMessage(groupId, {
+                            text: `@${userId} ha iniciado una llamada o canal de voz en el grupo *${groupName}*. Esta acción está prohibida. Recibes una advertencia.`,
+                            mentions: [from]
+                        });
+
+                        // Incrementar el contador de advertencias.
+                        global.db.data.users[userId] = { warningCount: 1 };
+                    } else if (warningCount === 1) {
+                        // Segunda infracción: expulsar al usuario.
+                        await this.groupParticipantsUpdate(groupId, [from], 'remove'); // Expulsar al usuario del grupo.
+
+                        // Enviar mensaje privado humorístico.
+                        await this.sendMessage(from, {
+                            text: `Fuiste eliminado del grupo *${groupName}* a pesar de que se te mencionó que estaba prohibido. Comunícate con un admin para que se te añada nuevamente. 😂`
+                        });
+
+                        // Reiniciar el contador de advertencias.
+                        global.db.data.users[userId].warningCount = 0;
+                    }
+                } else {
+                    // 5. Manejo de llamadas individuales (como antes).
+                    let callmsg = await this.reply(from, `${lenguajeGB['smsCont15']()} *@${userId}*, ${nk.isVideo ? lenguajeGB.smsCont16() : lenguajeGB.smsCont17()} ${lenguajeGB['smsCont18']()}`, false, { mentions: [from] });
+
+                    // Bloquear al usuario después de la notificación.
+                    await this.updateBlockStatus(from, 'block');
+                }
+            }
+        }
+    } catch (error) {
+        // Manejo de errores.
+        console.error('Error en callUpdate:', error);
+        // Aquí podrías enviar un mensaje a los admins informando del error, si lo consideras necesario.
+    }
+}
+
+/**
+ * Maneja las actualizaciones de mensajes eliminados.
+ * @param {import('@adiwajshing/baileys').BaileysEventMap<unknown>['message.delete']} message - Mensaje que ha sido eliminado.
+ */
 export async function deleteUpdate(message) {
-try {
-const { fromMe, id, participant } = message
-if (fromMe) return 
-let msg = this.serializeM(this.loadMessage(id))
-let chat = global.db.data.chats[msg?.chat] || {}
-if (!chat?.delete) return 
-if (!msg) return 
-if (!msg?.isGroup) return 
-const antideleteMessage = `*╭━━⬣ ${lenguajeGB['smsCont19']()} ⬣━━ 𓃠*
+    try {
+        // Desestructuración del mensaje para obtener información relevante.
+        const { fromMe, id, participant } = message;
+
+        // Si el mensaje fue enviado por el bot mismo, salir de la función.
+        if (fromMe) return;
+
+        // Serializar el mensaje y cargar el mensaje original usando su ID.
+        let msg = this.serializeM(this.loadMessage(id));
+        
+        // Cargar los datos del chat desde la base de datos.
+        let chat = global.db.data.chats[msg?.chat] || {};
+        
+        // Si la opción "anti-delete" no está activada en el chat, salir de la función.
+        if (!chat?.delete) return;
+        
+        // Si no se pudo cargar el mensaje original, salir de la función.
+        if (!msg) return;
+
+        // Verificar si el mensaje pertenece a un grupo; si no, salir de la función.
+        if (!msg?.isGroup) return;
+
+        // Verificar si el participante es un admin, owner del bot o el bot mismo.
+        const isAdmin = chat.admins.includes(participant);
+        const isOwner = global.db.data.owners.includes(participant);
+        const isBot = participant === this.user.jid;
+
+        if (isAdmin || isOwner || isBot) return; // Si el participante es admin, owner del bot, o el bot mismo, no realizar ninguna acción.
+
+        // Mensaje de advertencia cuando se detecta una eliminación de mensaje.
+        const antideleteMessage = `*╭━━⬣ ${lenguajeGB['smsCont19']()} ⬣━━ 𓃠*
 ${lenguajeGB['smsCont20']()} @${participant.split`@`[0]}
 ${lenguajeGB['smsCont21']()}
 *╰━━━⬣ ${lenguajeGB['smsCont19']()} ⬣━━╯*`.trim();
-await this.sendMessage(msg.chat, {text: antideleteMessage, mentions: [participant]}, {quoted: msg})
-this.copyNForward(msg.chat, msg).catch(e => console.log(e, msg))
-} catch (e) {
-console.error(e)
-}}
+        
+        // Enviar el mensaje de advertencia al chat, mencionando al participante que eliminó el mensaje.
+        await this.sendMessage(msg.chat, { text: antideleteMessage, mentions: [participant] }, { quoted: msg });
 
-global.dfail = (type, m, conn) => {
-let msg = {
-rowner: lenguajeGB['smsRowner'](),
-owner: lenguajeGB['smsOwner'](),
-mods: lenguajeGB['smsMods'](),
-premium: lenguajeGB['smsPremium'](),
-group: lenguajeGB['smsGroup'](),
-private: lenguajeGB['smsPrivate'](),
-admin: lenguajeGB['smsAdmin'](),
-botAdmin: lenguajeGB['smsBotAdmin'](),
-unreg: lenguajeGB['smsUnreg'](),
-restrict: lenguajeGB['smsRestrict'](),
-}[type]
-	
-//if (msg) return m.reply(msg)
-	
-let tg = { quoted: m, userJid: conn.user.jid }
-let prep = generateWAMessageFromContent(m.chat, { extendedTextMessage: { text: msg, contextInfo: { externalAdReply: { title: lenguajeGB.smsAvisoAG().slice(0,-2), body: [wm, '😻 𝗦𝘂𝗽𝗲𝗿 ' + gt + ' 😻', '🌟 katashifukushima23.gmail.com'].getRandom(), thumbnail: gataImg, sourceUrl: accountsgb }}}}, tg)
-if (msg) return conn.relayMessage(m.chat, prep.message, { messageId: prep.key.id })
+        // Reenviar el mensaje eliminado al chat para que todos puedan verlo.
+        this.copyNForward(msg.chat, msg).catch(e => console.log(e, msg));
+
+    } catch (e) {
+        // Manejo de errores, registra cualquier error en la consola.
+        console.error(e);
+    }
 }
 
+/**
+ * Maneja los mensajes de error y envía una respuesta adecuada según el tipo de error.
+ * @param {string} type - Tipo de error.
+ * @param {object} m - Mensaje original que causa el error.
+ * @param {object} conn - Conexión actual del bot.
+ */
+global.dfail = (type, m, conn) => {
+    // Definir los mensajes de error para diferentes tipos de errores.
+    let msg = {
+        rowner: lenguajeGB['smsRowner'](),    // Mensaje para el propietario del bot.
+        owner: lenguajeGB['smsOwner'](),      // Mensaje para el propietario.
+        mods: lenguajeGB['smsMods'](),        // Mensaje para los moderadores.
+        premium: lenguajeGB['smsPremium'](),  // Mensaje para los usuarios premium.
+        group: lenguajeGB['smsGroup'](),      // Mensaje para los grupos.
+        private: lenguajeGB['smsPrivate'](),  // Mensaje para los mensajes privados.
+        admin: lenguajeGB['smsAdmin'](),      // Mensaje para los administradores.
+        botAdmin: lenguajeGB['smsBotAdmin'](),// Mensaje para los administradores del bot.
+        unreg: lenguajeGB['smsUnreg'](),      // Mensaje para los usuarios no registrados.
+        restrict: lenguajeGB['smsRestrict']() // Mensaje para los usuarios restringidos.
+    }[type]; // Seleccionar el mensaje correspondiente según el tipo de error.
+
+    // Enviar el mensaje de error al usuario.
+    conn.sendMessage(m.chat, { text: msg }, { quoted: m });
+};
+	
+// Verifica si existe un mensaje (`msg`) y, si es así, responde con ese mensaje.
+if (msg) return m.reply(msg);
+
+// Configurar el mensaje a enviar.
+let tg = { 
+    quoted: m,            // Incluye el mensaje original como mensaje citado.
+    userJid: conn.user.jid // Establece el JID del usuario del bot como el emisor.
+};
+
+// Generar un mensaje de WhatsApp a partir del contenido proporcionado.
+let prep = generateWAMessageFromContent(
+    m.chat,  // El chat donde se enviará el mensaje.
+    {
+        extendedTextMessage: { 
+            text: msg,  // El texto del mensaje a enviar.
+            contextInfo: { 
+                externalAdReply: { // Información adicional para el mensaje.
+                    title: lenguajeGB.smsAvisoAG().slice(0, -2), // Título del anuncio externo, ajustado con un recorte de caracteres.
+                    body: [wm, '😻 𝗦𝘂𝗽𝗲𝗿 ' + gt + ' 😻', '🌟 https://whatsapp.com/channel/0029VaS4zeE72WTyg5et571r'].getRandom(), // Texto del cuerpo del anuncio, seleccionado aleatoriamente de un array.
+                    thumbnail: gataImg, // Imagen en miniatura del anuncio.
+                    sourceUrl: accountsgb // URL de origen para el anuncio.
+                }
+            }
+        }
+    }, 
+    tg
+);
+
+// Si existe un mensaje (`msg`), enviar el mensaje generado al chat y referenciar el mensaje original.
+if (msg) return conn.relayMessage(m.chat, prep.message, { messageId: prep.key.id });
+
+// Obtener el nombre del archivo actual.
 const file = global.__filename(import.meta.url, true);
+
+// Monitorear cambios en el archivo actual y ejecutar una función cuando se detecten cambios.
 watchFile(file, async () => {
-unwatchFile(file)
-console.log(chalk.redBright('Update \'handler.js\''));
-//if (global.reloadHandler) console.log(await global.reloadHandler());
-  
-if (global.conns && global.conns.length > 0 ) {
-const users = [...new Set([...global.conns.filter((conn) => conn.user && conn.ws.socket && conn.ws.socket.readyState !== ws.CLOSED).map((conn) => conn)])];
-for (const userr of users) {
-userr.subreloadHandler(false)
-}}});
+    // Dejar de monitorear el archivo después de detectar un cambio.
+    unwatchFile(file);
+
+    // Imprimir un mensaje en la consola indicando que el archivo ha sido actualizado.
+    console.log(chalk.redBright('Update \'handler.js\''));
+
+    // Si existe la propiedad global `reloadHandler`, se puede utilizar para recargar el manejador.
+    // Descomentar la línea siguiente si se necesita recargar el manejador.
+    // if (global.reloadHandler) console.log(await global.reloadHandler());
+
+    // Verificar si hay conexiones activas y filtrarlas para obtener solo las conexiones válidas.
+    if (global.conns && global.conns.length > 0) {
+        const users = [
+            ...new Set(
+                [
+                    ...global.conns
+                        .filter((conn) => conn.user && conn.ws.socket && conn.ws.socket.readyState !== ws.CLOSED)  // Filtrar conexiones válidas.
+                        .map((conn) => conn)
+                ]
+            )
+        ];
+
+        // Recargar el manejador para cada usuario en las conexiones válidas.
+        for (const user of users) {
+            user.subreloadHandler(false);
+        }
+    }
+});
