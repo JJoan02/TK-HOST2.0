@@ -1,0 +1,35 @@
+{
+  "name": "Admin-TK",
+  "website": "https://github.com/JJoan02",
+  "description": "Super Admin de WhatsApp",
+  "repository": "https://github.com/JJoan02/Admin-TK.git",
+  "logo": "https://telegra.ph/file/b46f45b5b69f311db31c7.jpg",
+  "success_url": "https://github.com/JJoan02/Admin-TK.git",
+  "keywords": [
+    "nodejs",
+    "heroku",
+    "bot",
+    "spanish",
+    "english",
+    "indonesian",
+    "arab",
+    "portuguese",
+    "italian",
+    "french",
+    "whatsapp",
+    "termux",
+    "superbot",
+    "multi-device",
+    "md",
+    "official",
+    "javascript",
+    "gatabot"
+  ],
+  "image": "heroku/nodejs",
+  "buildpacks": [
+    { "url": "heroku/nodejs" },
+    { "url": "https://github.com/jonathanong/heroku-buildpack-ffmpeg-latest" },
+    { "url": "https://github.com/clhuang/heroku-buildpack-webp-binaries.git" },
+    { "url": "https://github.com/bogini/heroku-buildpack-graphicsmagick" }
+  ]
+}
