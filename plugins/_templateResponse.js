@@ -89,7 +89,7 @@ type: 'append',
 this.ev.emit('messages.upsert', msg)
 }
 
-/*const {
+const {
   proto,
   generateWAMessage,
   areJidsSameUser
