@@ -191,6 +191,48 @@ let handler = async function (m, { conn, text, command, usedPrefix }) {
     }
 }
 
+
+let sn = createHash('md5').update(m.sender).digest('hex').slice(0, 6)	
+registrando = false
+clearInterval(intervalId)	
+await conn.sendMessage(m.chat, {
+text: `🍃 \`\`\`VERIFICACIÓN EXITOSA\`\`\` 🍃
+*- - - - - - - - - - - - - - - - - - - - - - - - - - - -*\n
+😼 *REGISTRADO POR*
+❱❱ ${wm}\n
+📑 *TIPO DE REGISTRO* 
+❱❱ ${user.registroC === true ? 'REGISTRO RÁPIDO'}\n
+⌛ *FECHA/HORA*
+❱❱ ${user.tiempo}\n
+🛅 *CÓDIGO DE REGISTRO*
+❱❱ ${sn}\n
+✅ *INSIGNIA DE VERIFICACIÓN*
+❱❱   *${user.registered === true ? 'ͧͧͧͦꙶͣͤ✓ᚲᵀᴷ' : ''}*\n
+✨ *NOMBRE* 
+❱❱ ${user.name}\n
+🔢 *EDAD* 
+❱❱ ${user.age}\n
+*Gracias por registrarse ✨*` : ''}`.trim(),
+contextInfo: {
+externalAdReply: {
+title: wm,
+body: user.name,
+thumbnailUrl: pp, 
+sourceUrl: 'https://www.atom.bio/katashifukushima/',
+mediaType: 1,
+showAdAttribution: true,
+renderLargerThumbnail: true
+}}}, { quoted: fkontak })
+await m.reply(`${sn}`)	
+}}
+handler.command = ['verify', 'verificar', 'register', 'registrar', 'reg', 'reg1', 'nombre', 'name', 'nombre2', 'name2', 'edad', 'age', 'edad2', 'age2', 'genero', 'género', 'gender', 'identidad', 'pasatiempo', 'hobby', 'identity', 'finalizar', 'pas2', 'pas3', 'pas4', 'pas5']  ///^(verify|verificar|reg(ister)?)$/i
+export default handler
+
+function pickRandom(list) { 
+return list[Math.floor(Math.random() * list.length)]} 
+  
+const delay = (ms) => new Promise((resolve
+                                   
 // Exportar el manejador del comando para que pueda ser utilizado en el bot
 handler.command = /^(verificar|verify|registrar|reg|register|nombre|edad|genero|bio|finalizar)$/i
 export default handler
