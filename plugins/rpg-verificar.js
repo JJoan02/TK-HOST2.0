@@ -30,7 +30,7 @@ let handler = async function (m, { conn, text, command, usedPrefix }) {
     user.serial = sn;
 
     // Obtener la foto de perfil del usuario o usar una imagen predeterminada
-    let pp = 'https://www.example.com/default-thumbnail.jpg'; // URL de una imagen predeterminada
+    let pp = 'https://telegra.ph/file/74179f006d80f4bf6a50f.jpg'; // URL de una imagen predeterminada
     try {
         pp = await conn.profilePictureUrl(m.sender, 'image'); // Intenta obtener la foto de perfil del usuario
         // Verificar si la imagen obtenida es válida (puedes agregar más validaciones si es necesario)
