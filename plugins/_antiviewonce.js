@@ -1,4 +1,4 @@
-import { downloadContentFromMessage } from 'baileys';
+import { downloadContentFromMessage } from '@adiwajshing/baileys';
 
 let handler = m => m;
 
