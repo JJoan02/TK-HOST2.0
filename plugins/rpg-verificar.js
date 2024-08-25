@@ -2,7 +2,7 @@ import { createHash } from 'crypto';
 
 let handler = async function (m, { conn, text, command, usedPrefix }) {
     let user = global.db.data.users[m.sender];
-
+    
     if (user.registered) return conn.reply(m.chat, `Ya estás registrado!`, m);
 
     let [nombre, edad] = text.split(' ');
@@ -24,7 +24,7 @@ let handler = async function (m, { conn, text, command, usedPrefix }) {
     user.registered = true;
 
     // Generar número de serie único
-    let sn = createHash('md5').update(m.sender).digest('hex');
+    let sn = createHash('md5').update(m.sender).digest('hex').slice(0, 6);
 
     // Guardar el número de serie
     user.serial = sn;
@@ -33,6 +33,8 @@ let handler = async function (m, { conn, text, command, usedPrefix }) {
     let pp = 'https://www.example.com/default-thumbnail.jpg'; // URL de una imagen predeterminada
     try {
         pp = await conn.profilePictureUrl(m.sender, 'image'); // Intenta obtener la foto de perfil del usuario
+        // Verificar si la imagen obtenida es válida (puedes agregar más validaciones si es necesario)
+        if (!pp) throw new Error('Imagen de perfil no disponible');
     } catch (e) {
         // Si falla al obtener la foto de perfil, usa la imagen predeterminada
         console.error(e);
@@ -63,7 +65,7 @@ let handler = async function (m, { conn, text, command, usedPrefix }) {
             externalAdReply: {
                 title: wm,
                 body: '🌟 Registro completado con éxito',
-                thumbnailUrl: pp,
+                thumbnailUrl: pp, // Aquí usamos la variable `pp`
                 sourceUrl: 'https://www.atom.bio/joan_tk02/',
                 mediaType: 1,
                 showAdAttribution: true,
@@ -71,7 +73,7 @@ let handler = async function (m, { conn, text, command, usedPrefix }) {
             }
         }
     }, { quoted: null });
-}
+};
 
 handler.command = /^(reg|reg1|verificar)$/i;
 export default handler;
