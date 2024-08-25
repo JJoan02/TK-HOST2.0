@@ -81,7 +81,7 @@ let handler = async function (m, { conn, text, command, usedPrefix }) {
     }
 
     // Comando para registro rápido
-    if (command == 'reg1') {
+    if (command == 'reg1' 'reg' 'verificar') {
         registrando = true
         if (registrando === true) {
             intervalId = setInterval(mensajeRegistro, 2 * 60 * 1000) // 2 min
@@ -161,24 +161,6 @@ let handler = async function (m, { conn, text, command, usedPrefix }) {
         conn.reply(m.chat, `${lenguajeGB['smsAvisoIIG']()}✨ *SU EDAD HA SIDO REGISTRADA CORRECTAMENTE*\n\n*AHORA ESCRIBA SU GÉNERO, HOMBRE O MUJER*`, fkontak, m)
     }
 
-    // Si el comando es 'genero', se registra el género del usuario
-    if (command == 'genero') {
-        if (!text) return conn.reply(m.chat, `${lenguajeGB['smsAvisoIIG']()}*ESCRIBA SU GÉNERO, DE PREFERENCIA REAL*`, fkontak, m)
-        if (!['hombre', 'mujer'].includes(text.toLowerCase())) return conn.reply(m.chat, `${lenguajeGB['smsAvisoFG']()}*GÉNERO NO VÁLIDO, ESCRIBA HOMBRE O MUJER*`, fkontak, m)
-        
-        genero = text.toLowerCase() // Guardar el género proporcionado
-        conn.reply(m.chat, `${lenguajeGB['smsAvisoIIG']()}✨ *SU GÉNERO HA SIDO REGISTRADO CORRECTAMENTE*\n\n*AHORA ESCRIBA UNA BREVE DESCRIPCIÓN O BIOGRAFÍA*`, fkontak, m)
-    }
-
-    // Si el comando es 'bio', se registra la biografía del usuario
-    if (command == 'bio') {
-        if (!text) return conn.reply(m.chat, `${lenguajeGB['smsAvisoIIG']()}*ESCRIBA UNA BIOGRAFÍA CORTA*`, fkontak, m)
-        if (text.length > 500) return conn.reply(m.chat, `${lenguajeGB['smsAvisoFG']()}*LA BIOGRAFÍA ES MUY LARGA, MÁXIMO 500 CARACTERES*`, fkontak, m)
-
-        bio = text.trim() // Guardar la biografía proporcionada
-        conn.reply(m.chat, `${lenguajeGB['smsAvisoIIG']()}✨ *SU BIOGRAFÍA HA SIDO REGISTRADA CORRECTAMENTE*\n\n*PARA TERMINAR SU REGISTRO, ESCRIBA ${usedPrefix}finalizar*`, fkontak, m)
-    }
-}
 
     // Si el comando es 'finalizar', completa el registro del usuario
     if (command == 'finalizar') {
