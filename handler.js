@@ -1410,32 +1410,41 @@ function pickRandom(list) { return list[Math.floor(Math.random() * list.length)]
  * @param {import('@adiwajshing/baileys').BaileysEventMap<unknown>['group-participants.update']} groupsUpdate 
  */
 export async function participantsUpdate({ id, participants, action }) {
-if (opts['self'])
-return
-// if (id in conn.chats) return // First login will spam
-if (this.isInit)
-return
-if (global.db.data == null)
-await loadDatabase()
-let chat = global.db.data.chats[id] || {}
-let text = ''
-switch (action) {
-case 'add':
-case 'remove':
-if (chat.welcome) {
-let groupMetadata = await this.groupMetadata(id) || (conn.chats[id] || {}).metadata
-for (let user of participants) {
-let pp = global.gataImg
-try {
-pp = await this.profilePictureUrl(user, 'image')
-} catch (e) {
-} finally {
-let apii = await this.getFile(pp)                                      
-const botTt2 = groupMetadata.participants.find(u => this.decodeJid(u.id) == this.user.jid) || {} 
-const isBotAdminNn = botTt2?.admin === "admin" || false
-text = (action === 'add' ? (chat.sWelcome || this.welcome || conn.welcome || 'Welcome, @user!').replace('@subject', await this.getName(id)).replace('@desc', groupMetadata.desc?.toString() || '😻 𝗦𝘂𝗽𝗲𝗿 𝗚𝗮𝘁𝗮𝗕𝗼𝘁-𝗠𝗗 😻') :
-(chat.sBye || this.bye || conn.bye || 'Bye, @user!')).replace('@user', '@' + user.split('@')[0])
-			    
+    if (opts['self']) return
+    // if (id in conn.chats) return // First login will spam
+    if (this.isInit) return
+    if (global.db.data == null) await loadDatabase()
+    
+    let chat = global.db.data.chats[id] || {}
+    let text = ''
+    
+    switch (action) {
+        case 'add':
+        case 'remove':
+            if (chat.welcome) {
+                let groupMetadata = await this.groupMetadata(id) || (conn.chats[id] || {}).metadata
+                for (let user of participants) {
+                    let pp = global.gataImg
+                    try {
+                        pp = await this.profilePictureUrl(user, 'image')
+                    } catch (e) {
+                        // Handle error if needed
+                    } finally {
+                        let apii = await this.getFile(pp)                                      
+                        const botTt2 = groupMetadata.participants.find(u => this.decodeJid(u.id) == this.user.jid) || {} 
+                        const isBotAdminNn = botTt2?.admin === "admin" || false
+                        text = (action === 'add' ? (chat.sWelcome || this.welcome || conn.welcome || 'Welcome, @user!').replace('@subject', await this.getName(id)).replace('@desc', groupMetadata.desc?.toString() || '😻 𝗦𝘂𝗽𝗲𝗿 𝗚𝗮𝘁𝗮𝗕𝗼𝘁-𝗠𝗗 😻') :
+                            (chat.sBye || this.bye || conn.bye || 'Bye, @user!')).replace('@user', '@' + user.split('@')[0])
+                        
+                        // Send message
+                        await this.sendMessage(id, { text }, { quoted: m })
+                    }
+                }
+            }
+            break
+    }
+}
+
 if (chat.antifake && isBotAdminNn && action === 'add') {
 const prefijosPredeterminados = [7, 20, 27, 30, 31, 32, 33, 39, 40, 44, 46, 47, 48, 49, 61, 62, 63, 64, 65, 66, 81, 82, 84, 86, 91, 92, 94, 98, 212, 213, 216, 218, 221, 222, 225, 233, 234, 237, 249, 254, 255, 256, 351, 380, 675, 676, 679, 685, 880, 961, 962, 964, 965, 966, 967, 968, 971, 972, 973, 974] // Puedes editar que usuarios deseas que se eliminen si empieza por algunos de los números
 const rutaArchivo = './prefijos.json'
