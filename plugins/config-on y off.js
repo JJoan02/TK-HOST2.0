@@ -507,6 +507,8 @@ global.opts['swonly'] = isEnable
 break
 default:
 if (!/[01]/.test(command)) return await conn.sendList(m.chat, `${listMessage.text}\n`, listMessage.footer, `${listMessage.buttonText}`, sections, null, null, fkontak);
+throw 'Comando no válido';
+}
 
 
 /*conn.reply(m.chat, `\`${lenguajeGB.smsConfi10()}\`\n\n🌟 ${lenguajeGB.smsConfi2()} *@${toUser}*
