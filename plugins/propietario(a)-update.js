@@ -1,7 +1,7 @@
 import { execSync } from 'child_process';
 
 // Ruta donde has clonado tu repositorio
-const gitRepoPath = 'https://github.com/JJoan02/PruebasTK.git';
+const gitRepoPath = 'https://github.com/JJoan02/Admin-TK.git';
 
 const handler = async (m, { conn, text }) => {
   try {
