@@ -386,7 +386,6 @@ global.reloadHandler = async function(restatConn) {
     }
     // Información para Grupos
     conn.welcome = lenguajeGB['smsWelcome']();
-    conn.bye = lenguajeGB['smsBye']();
     conn.spromote = lenguajeGB['smsSpromote']();
     conn.sdemote = lenguajeGB['smsSdemote']();
     conn.sDesc = lenguajeGB['smsSdesc']();
