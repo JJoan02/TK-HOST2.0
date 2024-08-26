@@ -412,14 +412,18 @@ global.reloadHandler = async function(restatConn) {
 
 // Define la carpeta de plugins y el filtro (ajusta según tu implementación)
 const pluginFolder = path.join(__dirname, 'plugins');  // Usa path.join para asegurar la correcta resolución de la ruta
-const pluginFilter = (filename) => filename.endsWith('.js');
+
+// Filtro para asegurar que el archivo es un plugin (.js)
+const pluginFilter = (filename) => typeof filename === 'string' && filename.endsWith('.js');
 
 // Inicializa los plugins en un objeto global
 global.plugins = {};
 
 async function filesInit() {
   const plugins = {};
-  for (const filename of readdirSync(pluginFolder).filter(pluginFilter)) {
+  const files = readdirSync(pluginFolder).filter(pluginFilter);
+  
+  for (const filename of files) {
     try {
       const file = path.join(pluginFolder, filename);
       console.log(`Cargando archivo: ${file}`);
@@ -430,6 +434,7 @@ async function filesInit() {
       console.error(e.stack);
     }
   }
+  
   global.plugins = plugins;
 }
 
@@ -442,31 +447,32 @@ filesInit().then(() => {
 
 // Maneja la actualización y carga de nuevos plugins
 global.reload = async (_ev, filename) => {
-    if (pluginFilter(filename)) {
-        const dir = path.join(pluginFolder, filename);
-        if (filename in global.plugins) {
-            if (existsSync(dir)) {
-                console.info(` SE ACTUALIZÓ - '${filename}' CON ÉXITO`);
-            } else {
-                console.warn(` SE ELIMINÓ UN ARCHIVO : '${filename}'`);
-                delete global.plugins[filename];
-            }
-        } else if (existsSync(dir)) {
-            console.info(` SE DETECTÓ UN NUEVO PLUGIN : '${filename}'`);
-            try {
-                const module = await import(dir);
-                global.plugins[filename] = module.default || module;
-            } catch (e) {
-                console.error(e);
-                delete global.plugins[filename];
-            }
-        }
+  if (pluginFilter(filename)) {
+    const dir = path.join(pluginFolder, filename);
+    
+    if (filename in global.plugins) {
+      if (existsSync(dir)) {
+        console.info(` SE ACTUALIZÓ - '${filename}' CON ÉXITO`);
+      } else {
+        console.warn(` SE ELIMINÓ UN ARCHIVO : '${filename}'`);
+        delete global.plugins[filename];
+      }
+    } else if (existsSync(dir)) {
+      console.info(` SE DETECTÓ UN NUEVO PLUGIN : '${filename}'`);
+      try {
+        const module = await import(dir);
+        global.plugins[filename] = module.default || module;
+      } catch (e) {
+        console.error(`Error al cargar el nuevo plugin ${filename}:`, e.message);
+        delete global.plugins[filename];
+      }
     }
+  }
 };
 
 // Observa los cambios en los archivos de plugins
 readdirSync(pluginFolder).filter(pluginFilter).forEach((filename) => {
-    watchFile(path.join(pluginFolder, filename), global.reload);
+  watchFile(path.join(pluginFolder, filename), global.reload);
 });
 
 // Definición de directorios para sesiones y datos de sub-bots
