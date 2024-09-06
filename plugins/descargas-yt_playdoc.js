@@ -21,10 +21,10 @@ export default async function handler(m, { conn, command, args}) {
      let res = await axios.get(url, { responseType: 'arraybuffer' });
      switch (command) {
       case 'playdoc':
-       await conn.sendMessage(m.chat, { document: res, mimetype: 'audio/mp3', caption: '', mentions: [m.sender] }, { quoted: m });
+       await conn.sendMessage(m.chat, { document: res.data, mimetype: 'audio/mp3', caption: '', mentions: [m.sender] }, { quoted: m });
        break;
       case 'play2doc':
-       await conn.sendMessage(m.chat, { document: res, mimetype: 'video/mp4', caption: '', mentions: [m.sender] }, { quoted: m });
+       await conn.sendMessage(m.chat, { document: res.data, mimetype: 'video/mp4', caption: '', mentions: [m.sender] }, { quoted: m });
        break;
      }
     } else {
