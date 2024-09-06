@@ -9,8 +9,8 @@ export default async function handler(m, { conn, command, args }) {
     let response = await axios.get(api);
     let data = response.data;
     let isHdAvailable = data.isHdAvailable || false;
-    let url = isHdAvailable ? data.urls.find(link => link.hd)?.hd : data.urls.find(link => link.sd)?.sd || undefined;
-    if (data.urls && data.urls > 0 && url) {
+    let url = isHdAvailable ? data.urls?.find(link => link.hd)?.hd : data.urls?.find(link => link.sd)?.sd || undefined;
+    if (data && data.urls && data.urls.length > 0) {
      let res = await axios.get(url, { responseType: 'arraybuffer' });
      await conn.sendMessage(m.chat, { video: res.data, mimetype: 'video/mp4', caption: data.title }, { quoted: m });
     } else {
