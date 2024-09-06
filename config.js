@@ -14,7 +14,7 @@ import { en, es, id, ar, pt } from "./lib/idiomas/total-idiomas.js"
 // [EN] > Add the number that will be Bot and those that will be owners.
 global.owner = [
 ["51927803866", '𝙊𝙬𝙣𝙚𝙧', true], //𝑨𝒅𝒎𝒊𝒏-𝑻𝑲 💻
-["595983799436"]   //daniel
+["595983799436"],   //daniel
 ["51976673519"]] //𝑱𝒐𝒂𝒏-𝑻𝑲 💻
 
 global.mods = []
