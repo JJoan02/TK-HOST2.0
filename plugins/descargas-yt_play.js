@@ -10,7 +10,7 @@ export default async function handler(m, { conn, command, text, usedPrefix }) {
     let data = response.data;
     if (data.status) {
      let vid = data.data[Math.floor(Math.random() * data.data.length)];
-     if (vid.videoUrl) {
+     if (vid.url) {
      let txt = `
 - *Descargando :* ${vid.title}
 
@@ -20,7 +20,7 @@ export default async function handler(m, { conn, command, text, usedPrefix }) {
 > *Canal :* ${vid.author?.name || undefined}
 > *Enlace :* ${vid.url}`.trim();
      await conn.sendMessage(m.chat, { image: { url: vid.thumbnail }, caption: txt, mentions: [m.sender] }, { quoted: m });
-     let api2 = `https://deliriusapi-official.vercel.app/download/ytmp4?url=${vid.videoUrl}`;
+     let api2 = `https://deliriusapi-official.vercel.app/download/ytmp4?url=${vid.url}`;
      let resp = await axios.get(api2);
      let dat = resp.data;
      let url = dat.download.url || undefined;
