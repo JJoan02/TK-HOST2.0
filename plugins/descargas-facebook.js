@@ -5,7 +5,7 @@ export default async function handler(m, { conn, command, args }) {
   return;
  }
   if (!args[0].match(/www.facebook.com|facebook.com|fb.watch/g)) {
-   await sock.sendMessage(m.chat, { text: 'El enlace ingresado no es válido para Facebook.' }, { quoted: m });
+   await conn.sendMessage(m.chat, { text: 'El enlace ingresado no es válido para Facebook.' }, { quoted: m });
    return;
   }
  try {
