@@ -4,7 +4,6 @@ export default async function handler(m, { conn, command, text, usedPrefix }) {
     await conn.sendMessage(m.chat, { text: 'Ingresa un texto para poder descargarlo, ejemplo: ' + usedPrefix + command + ' Aventura Ozuna' }, { quoted: m });
     return;
    }
-   m.react('⏳');
    try {
     let api = `https://deliriusapi-official.vercel.app/search/ytsearch?q=${encodeURIComponent(text)}`;
     let response = await axios.get(api);
@@ -30,24 +29,19 @@ export default async function handler(m, { conn, command, text, usedPrefix }) {
      switch (command) {
       case 'play':
        await conn.sendMessage(m.chat, { audio: res, mimetype: 'audio/mpeg', ptt: false, mentions: [m.sender] }, { quoted: m });
-       m.react('✅');
        break;
       case 'play2':
        await conn.sendMessage(m.chat, { video: res, mimetype: 'video/mp4', caption: '', mentions: [m.sender] }, { quoted: m });
-       m.react('✅');
        break;
      }
     } else {
         await conn.sendMessage(m.chat, { text: 'No se pudo descargar el archivo, intentelo de nuevo.' }, { quoted: m });
-        m.react('❎');
     }
     } else {
         await conn.sendMessage(m.chat, { text: 'Ocurrió un error,  inténtalo de nuevo' }, { quoted: m });
-        m.react('❎');
     }
     } else {
         await conn.sendMessage(m.chat, { text: `No hubo resultados para ${text}` }, { quoted: m });
-        m.react('❎');
     }
    } catch (e) {
     console.error(e);
