@@ -4,6 +4,10 @@ export default async function handler(m, { conn, command, args }) {
   await conn.sendMessage(m.chat, { text: 'Ingresa un enlace de Facebook' }, { quoted: m });
   return;
  }
+  if (!args[0].match(/www.facebook.com|facebook.com|fb.watch/g)) {
+   await sock.sendMessage(m.chat, { text: 'El enlace ingresado no es válido para Facebook.' }, { quoted: m });
+   return;
+  }
  try {
   let api = `https://deliriusapi-official.vercel.app/download/facebook?url=${args[0]}`;
   let response = await axios.get(api);
