@@ -8,6 +8,7 @@ export default async function handler(m, { conn, command, args }) {
   let api = `https://deliriusapi-official.vercel.app/download/facebook?url=${args[0]}`;
   let response = await axios.get(api);
   let data = response.data;
+  m.reply(data);
   if (data && data.urls && data.urls.length > 0) {
    let isHdAvailable = data.isHdAvailable || false;
    let url = isHdAvailable ? data.urls.find(link => link.hd)?.hd : data.urls.find(link => link.sd)?.sd;
@@ -22,7 +23,7 @@ export default async function handler(m, { conn, command, args }) {
   }
  } catch (e) {
   console.error(e);
-  m.reply(e.toString());
+  m.reply(e);
  }
 }
 handler.command = ['facebook', 'fb'];
