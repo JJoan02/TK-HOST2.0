@@ -13,7 +13,7 @@ export default async function handler(m, { conn, command, args }) {
      let res = await axios.get(url, { responseType: 'arraybuffer' });
      await conn.sendMessage(m.chat, { video: res.data, mimetype: 'video/mp4', caption: data.title }, { quoted: m });
     } else {
-     await conn.sendMessage(m.chat, { text: 'No se pudo descargar el video, inténtalo de nuevo.' }, { quoted: m 
+     await conn.sendMessage(m.chat, { text: 'No se pudo descargar el video, inténtalo de nuevo.' }, { quoted: m });
     }
    } catch (e) {
     console.error(e);
