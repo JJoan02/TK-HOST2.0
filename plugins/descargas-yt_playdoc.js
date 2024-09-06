@@ -5,7 +5,7 @@ export default async function handler(m, { conn, command, args}) {
     return;
    }
   if (!/^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtube\.com\/.*\/.*|youtu\.be\/).+$/i.test(args[0])) {
-   await sock.sendMessage(m.chat, { text: 'El enlace ingresado no es válido para YouTube.' }, { quoted:  m });
+   await conn.sendMessage(m.chat, { text: 'El enlace ingresado no es válido para YouTube.' }, { quoted:  m });
    return;
   }
    try {
