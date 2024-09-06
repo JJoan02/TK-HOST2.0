@@ -5,7 +5,7 @@ let handler = async function (m, { conn, text, command, usedPrefix }) {
     
     if (user.registered) return conn.reply(m.chat, `Ya estás registrado!`, m);
 
-    let [nombre, edad] = text.split(' ');
+    let [nombre, ...edad] = text.split(' ');
 
     // Si no proporciona el nombre, toma el nombre de WhatsApp
     if (!nombre) nombre = await conn.getName(m.sender);
