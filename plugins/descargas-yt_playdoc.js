@@ -1,7 +1,5 @@
 import axios from 'axios';
-export default class handler {
- constructor(conn, { m, command, args}) {
-  (async () => {
+export default async function handler(conn, { m, command, args}) {
    if (!args || !args[0]) {
     await conn.sendMessage(m.chat, { text: 'Ingresa un enlace de YouTube para descargarlo.' }, { quoted: m });
     return;
@@ -39,8 +37,6 @@ export default class handler {
    } catch (e) {
     console.error(e);
     m.reply(e.toString());
-   }
-  });
- }
+  }
 }
 handler.command = ['playdoc', 'play2doc'];
