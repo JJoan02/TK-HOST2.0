@@ -1,5 +1,5 @@
 import axios from 'axios';
-export default async function handler(conn, { m, command, text, usedPrefix }) {
+export default async function handler(m, { conn, command, text, usedPrefix }) {
    if (!text) {
     await conn.sendMessage(m.chat, { text: 'Ingresa un texto para poder descargarlo, ejemplo: ' + usedPrefix + command + ' Aventura Ozuna' }, { quoted: m });
     return;
