@@ -28,10 +28,10 @@ export default async function handler(m, { conn, command, text, usedPrefix }) {
      let res = await axios.get(url, { responseType: 'arraybuffer' });
      switch (command) {
       case 'play':
-       await conn.sendMessage(m.chat, { audio: res, mimetype: 'audio/mpeg', ptt: false, mentions: [m.sender] }, { quoted: m });
+       await conn.sendMessage(m.chat, { audio: res.data, mimetype: 'audio/mpeg', ptt: false, mentions: [m.sender] }, { quoted: m });
        break;
       case 'play2':
-       await conn.sendMessage(m.chat, { video: res, mimetype: 'video/mp4', caption: '', mentions: [m.sender] }, { quoted: m });
+       await conn.sendMessage(m.chat, { video: res.data, mimetype: 'video/mp4', caption: '', mentions: [m.sender] }, { quoted: m });
        break;
      }
     } else {
