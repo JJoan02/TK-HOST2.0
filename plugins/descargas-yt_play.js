@@ -23,7 +23,7 @@ export default async function handler(m, { conn, command, text, usedPrefix }) {
      let api2 = `https://deliriusapi-official.vercel.app/download/ytmp4?url=${vid.url}`;
      let resp = await axios.get(api2);
      let dat = resp.data;
-     let url = dat.download.url || undefined;
+     let url = dat.data.download.url || undefined;
      if (dat && dat.status && url) {
      let res = await axios.get(url, { responseType: 'arraybuffer' });
      switch (command) {
