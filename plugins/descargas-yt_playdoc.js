@@ -4,7 +4,6 @@ export default async function handler(m, { conn, command, args}) {
     await conn.sendMessage(m.chat, { text: 'Ingresa un enlace de YouTube para descargarlo.' }, { quoted: m });
     return;
    }
-   m.react('⏳');
    try {
     let api = `https://deliriusapi-official.vercel.app/download/ytmp4?url=${encodeURIComponent(args[0])}`;
     let response = await axios.get(api);
@@ -23,16 +22,13 @@ export default async function handler(m, { conn, command, args}) {
      switch (command) {
       case 'playdoc':
        await conn.sendMessage(m.chat, { document: res, mimetype: 'audio/mp3', caption: '', mentions: [m.sender] }, { quoted: m });
-       m.react('✅');
        break;
       case 'play2doc':
        await conn.sendMessage(m.chat, { document: res, mimetype: 'video/mp4', caption: '', mentions: [m.sender] }, { quoted: m });
-       m.react('✅');
        break;
      }
     } else {
      await conn.sendMessage(m.chat, { text: `No se pudo descargar el archivo, intentelo de nuevo.` }, { quoted: m });
-     m.react('❎');
     }
    } catch (e) {
     console.error(e);
