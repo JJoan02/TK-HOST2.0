@@ -1,5 +1,5 @@
 import axios from 'axios';
-export default async handler(conn, { m, command, args }) {
+export default async function handler(conn, { m, command, args }) {
    if (!args || !args[0]) {
     await conn.sendMessage(m.chat, { text: 'Ingresa un enlace de Facebook' }, { quoted: m });
     return;
