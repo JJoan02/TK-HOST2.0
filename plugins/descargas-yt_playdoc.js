@@ -8,7 +8,7 @@ export default async function handler(m, { conn, command, args}) {
     let api = `https://deliriusapi-official.vercel.app/download/ytmp4?url=${encodeURIComponent(args[0])}`;
     let response = await axios.get(api);
     let data = response.data;
-    let url = data.download.url || undefined;
+    let url = data.data.download.url || undefined;
     if (data.status && url) {
      let txt = `
 - *Descargando :* ${data.title}
