@@ -4,6 +4,10 @@ export default async function handler(m, { conn, command, args}) {
     await conn.sendMessage(m.chat, { text: 'Ingresa un enlace de YouTube para descargarlo.' }, { quoted: m });
     return;
    }
+  if (!/^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtube\.com\/.*\/.*|youtu\.be\/).+$/i.test(args[0])) {
+   await sock.sendMessage(m.chat, { text: 'El enlace ingresado no es válido para YouTube.' }, { quoted:  m });
+   return;
+  }
    try {
     let api = `https://deliriusapi-official.vercel.app/download/ytmp4?url=${encodeURIComponent(args[0])}`;
     let response = await axios.get(api);
