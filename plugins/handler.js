@@ -1500,32 +1500,36 @@ export async function callUpdate(callUpdate) {
 }
 export async function deleteUpdate(message) {
   try {
-    const { fromMe, id, participant } = message
-    const botNumbers = ['51976873519@s.whatsapp.net', '51927803866@s.whatsapp.net'] // Números del bot y del Owner
+    const { fromMe, id, participant } = message;
+    const botNumbers = [
+      '51976673519@s.whatsapp.net', // Número del bot
+      '51927803866@s.whatsapp.net', // Número específico que también es una excepción
+      '51976873519@s.whatsapp.net'  // Número del Owner
+    ];
 
-    if (fromMe) return // No hace nada si el mensaje es del bot
-    if (botNumbers.includes(participant)) return // No hace nada si el mensaje es de los números del bot o del Owner
+    // Si el mensaje es del bot, de los números del bot, del Owner, o si el mensaje es de un grupo, no hacer nada
+    if (fromMe || botNumbers.includes(participant) || message.isGroup) return;
 
-    let msg = this.serializeM(this.loadMessage(id))
-    let chat = global.db.data.chats[msg?.chat] || {}
-    let isAdmin = msg.isGroup && (await this.groupMetadata(msg.chat)).participants
-      .find(user => user.id === participant)?.admin
+    // Obtener los detalles del mensaje
+    let msg = this.serializeM(this.loadMessage(id));
+    let chat = global.db.data.chats[msg?.chat] || {};
 
-    if (!chat?.delete) return
-    if (!msg) return
-    if (msg.isGroup && isAdmin) return // No actúa si el usuario es administrador
-    if (msg.isGroup) return // Solo funciona en chats personales
+    // Verificar si el chat tiene desactivada la opción de eliminar mensajes
+    if (!chat?.delete) return;
 
+    // Mensaje de notificación para la eliminación de mensajes
     const antideleteMessage = `🚫 *No puedes eliminar este mensaje* 🚫
     
-Ya lo leí, era: 
+Ya lo leí, era:`.trim();
 
-"${msg.text || 'Un archivo multimedia'}"`.trim();
+    // Enviar el mensaje de notificación
+    await this.sendMessage(msg.chat, { text: antideleteMessage, mentions: [participant] }, { quoted: msg });
 
-    await this.sendMessage(msg.chat, { text: antideleteMessage, mentions: [participant] }, { quoted: msg })
-    this.copyNForward(msg.chat, msg).catch(e => console.log(e, msg))
+    // Reenviar el mensaje original
+    await this.copyNForward(msg.chat, msg);
   } catch (e) {
-    console.error(e)
+    // Manejo de errores
+    console.error("Error en deleteUpdate:", e);
   }
 }
 global.dfail = (type, m, conn) => {
