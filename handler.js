@@ -986,7 +986,7 @@ export async function handler(chatUpdate) {
     if (!('antifake' in chat)) chat.antifake = false
     if (!('reaction' in chat)) chat.reaction = true
     if (!('viewonce' in chat)) chat.viewonce = true
-    if (!('modoadmin' in chat)) chat.modoadmin = true
+    if (!('modoadmin' in chat)) chat.modoadmin = false
     if (!('antitoxic' in chat)) chat.antitoxic = false
     if (!('game' in chat)) chat.game = true
     if (!('game2' in chat)) chat.game2 = true
@@ -1025,7 +1025,7 @@ export async function handler(chatUpdate) {
      antifake: false,
      reaction: true,
      viewonce: true,
-     modoadmin: true,
+     modoadmin: false,
      antitoxic: false,
      game: true,
      game2: true,
