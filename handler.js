@@ -1399,11 +1399,11 @@ export async function participantsUpdate({ id, participants, action }) {
       const isBotAdminNn = botTt2?.admin === "admin" || false
       text = (action === 'add' ? (chat.sWelcome || this.welcome || conn.welcome || 'Welcome, @user!').replace('@subject', await this.getName(id)).replace('@desc', groupMetadata.desc?.toString() || '😻 𝗦𝘂𝗽𝗲𝗿 𝗚𝗮𝘁𝗮𝗕𝗼𝘁-𝗠𝗗 😻') : (chat.sBye || this.bye || conn.bye || 'Bye, @user!')).replace('@user', '@' + user.split('@')[0])
       // Send message
-      await this.sendMessage(id, { text }, { quoted: m })
+      await this.sendMessage(id, { text: text, mentions: conn.parseMention(text) }, { quoted: m });
      }
     }
    }
-   if (chat.antifake && isBotAdminNn && action === 'add') {
+   if (chat.antifake && isBotAdmin && action === 'add') {
     const prefijosPredeterminados = [7, 20, 27, 30, 31, 32, 33, 39, 40, 44, 46, 47, 48, 49, 61, 62, 63, 64, 65, 66, 81, 82, 84, 86, 91, 92, 94, 98, 212, 213, 216, 218, 221, 222, 225, 233, 234, 237, 249, 254, 255, 256, 351, 380, 675, 676, 679, 685, 880, 961, 962, 964, 965, 966, 967, 968, 971, 972, 973, 974] // Puedes editar que usuarios deseas que se eliminen si empieza por algunos de los números
     const rutaArchivo = './prefijos.json'
     let prefijos = []
