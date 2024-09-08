@@ -1523,7 +1523,7 @@ Ya lo leí, era:
 "${msg.text || 'Un archivo multimedia'}"`.trim();
 
     await this.sendMessage(msg.chat, { text: antideleteMessage, mentions: [participant] }, { quoted: msg })
-    this.copyNForward(msg.chat, msg).catch(e => console.log(e, msg))
+    // this.copyNForward(msg.chat, msg).catch(e => console.log(e, msg)) // Esta línea ha sido eliminada
   } catch (e) {
     console.error(e)
   }
