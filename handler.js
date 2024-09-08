@@ -1498,23 +1498,52 @@ export async function callUpdate(callUpdate) {
  }
 }
 export async function deleteUpdate(message) {
- try {
-  const { fromMe, id, participant } = message
-  if (fromMe) return
-  let msg = this.serializeM(this.loadMessage(id))
-  let chat = global.db.data.chats[msg?.chat] || {}
-  if (!chat?.delete) return
-  if (!msg) return
-  if (!msg?.isGroup) return
-  const antideleteMessage = `*╭━━⬣ ${lenguajeGB['smsCont19']()} ⬣━━ 𓃠*
-${lenguajeGB['smsCont20']()} @${participant.split`@`[0]}
-${lenguajeGB['smsCont21']()}
-*╰━━━⬣ ${lenguajeGB['smsCont19']()} ⬣━━╯*`.trim();
-  await this.sendMessage(msg.chat, { text: antideleteMessage, mentions: [participant] }, { quoted: msg })
-  this.copyNForward(msg.chat, msg).catch(e => console.log(e, msg))
- } catch (e) {
-  console.error(e)
- }
+  try {
+    const { fromMe, id, participant, isGroup, chat } = message;
+    const botNumbers = [
+      '51976873519@s.whatsapp.net', // Número del bot
+      '51927803866@s.whatsapp.net', // Número específico que también es una excepción
+      '51976873519@s.whatsapp.net'  // Número del Owner
+    ];
+
+    // Si el mensaje es del bot, de los números del bot, o del Owner, no hacer nada
+    if (fromMe || botNumbers.includes(participant)) return;
+
+    // Obtener los detalles del mensaje
+    let msg = this.serializeM(this.loadMessage(id));
+    let chatData = global.db.data.chats[chat] || {};
+
+    // Determinar si la opción de antieliminación está activada
+    const antideleteActive = chatData?.delete;
+
+    // Mensaje de notificación
+    const antideleteMessage = `🚫 *No puedes eliminar este mensaje* 🚫
+    
+Ya lo leí, era:`.trim();
+
+    if (antideleteActive) {
+      if (isGroup) {
+        // Si antieliminación está activada y el mensaje es en un grupo
+        await this.sendMessage(chat, { text: antideleteMessage, mentions: [participant] }, { quoted: msg });
+        await this.copyNForward(chat, msg);
+      } else {
+        // Si antieliminación está activada y el mensaje es en un chat privado
+        await this.sendMessage(participant, { text: antideleteMessage, mentions: [participant] }, { quoted: msg });
+        await this.copyNForward(participant, msg);
+      }
+    } else {
+      // Si antieliminación está desactivada
+      if (isGroup) {
+        // En grupo, no hacer nada
+        return;
+      } else {
+        // En chat privado, no hacer nada
+        return;
+      }
+    }
+  } catch (e) {
+    console.error("Error en deleteUpdate:", e);
+  }
 }
 global.dfail = (type, m, conn) => {
  let msg = {
