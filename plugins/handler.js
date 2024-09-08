@@ -1500,15 +1500,18 @@ export async function callUpdate(callUpdate) {
 }
 export async function deleteUpdate(message) {
   try {
-    const { fromMe, id, participant, isGroup, chat } = message;
+    const { fromMe, id, participant, isGroup } = message;
+
     const botNumbers = [
       '51976873519@s.whatsapp.net', // Número del bot
       '51927803866@s.whatsapp.net', // Número específico que también es una excepción
       '51976873519@s.whatsapp.net'  // Número del Owner
     ];
 
-    // Verifica que el mensaje no proviene de un grupo
-    if (isGroup) return; // No hacer nada en grupos
+    // Verificar si el mensaje proviene de un grupo
+    if (isGroup) {
+      return; // No hacer nada si es un grupo
+    }
 
     // Verifica que el mensaje no sea del bot o de los números de excepción
     if (fromMe || botNumbers.includes(participant)) return;
@@ -1517,7 +1520,7 @@ export async function deleteUpdate(message) {
     let msg = this.serializeM(this.loadMessage(id));
     let chatData = global.db.data.chats[msg?.chat] || {};
 
-    // Verificar si el chat tiene desactivada la opción de eliminar mensajes
+    // Verificar si el chat tiene activada la opción de antieliminación
     if (!chatData?.delete) return;
 
     // Mensaje de notificación para la eliminación de mensajes
