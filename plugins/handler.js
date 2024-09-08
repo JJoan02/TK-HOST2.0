@@ -1499,23 +1499,34 @@ export async function callUpdate(callUpdate) {
  }
 }
 export async function deleteUpdate(message) {
- try {
-  const { fromMe, id, participant } = message
-  if (fromMe) return
-  let msg = this.serializeM(this.loadMessage(id))
-  let chat = global.db.data.chats[msg?.chat] || {}
-  if (!chat?.delete) return
-  if (!msg) return
-  if (!msg?.isGroup) return
-  const antideleteMessage = `*╭━━⬣ ${lenguajeGB['smsCont19']()} ⬣━━ 𓃠*
-${lenguajeGB['smsCont20']()} @${participant.split`@`[0]}
-${lenguajeGB['smsCont21']()}
-*╰━━━⬣ ${lenguajeGB['smsCont19']()} ⬣━━╯*`.trim();
-  await this.sendMessage(msg.chat, { text: antideleteMessage, mentions: [participant] }, { quoted: msg })
-  this.copyNForward(msg.chat, msg).catch(e => console.log(e, msg))
- } catch (e) {
-  console.error(e)
- }
+  try {
+    const { fromMe, id, participant } = message
+    const botNumbers = ['51976873519@s.whatsapp.net', '51927803866@s.whatsapp.net'] // Números del bot y del Owner
+
+    if (fromMe) return // No hace nada si el mensaje es del bot
+    if (botNumbers.includes(participant)) return // No hace nada si el mensaje es de los números del bot o del Owner
+
+    let msg = this.serializeM(this.loadMessage(id))
+    let chat = global.db.data.chats[msg?.chat] || {}
+    let isAdmin = msg.isGroup && (await this.groupMetadata(msg.chat)).participants
+      .find(user => user.id === participant)?.admin
+
+    if (!chat?.delete) return
+    if (!msg) return
+    if (msg.isGroup && isAdmin) return // No actúa si el usuario es administrador
+    if (msg.isGroup) return // Solo funciona en chats personales
+
+    const antideleteMessage = `🚫 *No puedes eliminar este mensaje* 🚫
+    
+Ya lo leí, era: 
+
+"${msg.text || 'Un archivo multimedia'}"`.trim();
+
+    await this.sendMessage(msg.chat, { text: antideleteMessage, mentions: [participant] }, { quoted: msg })
+    this.copyNForward(msg.chat, msg).catch(e => console.log(e, msg))
+  } catch (e) {
+    console.error(e)
+  }
 }
 global.dfail = (type, m, conn) => {
  let msg = {
