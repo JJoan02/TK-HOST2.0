@@ -1507,8 +1507,11 @@ export async function deleteUpdate(message) {
       '51976873519@s.whatsapp.net'  // Número del Owner
     ];
 
-    // Verifica que el mensaje no proviene de un grupo y no es del bot o de los números de excepción
-    if (isGroup || fromMe || botNumbers.includes(participant)) return;
+    // Verifica que el mensaje no proviene de un grupo
+    if (isGroup) return; // No hacer nada en grupos
+
+    // Verifica que el mensaje no sea del bot o de los números de excepción
+    if (fromMe || botNumbers.includes(participant)) return;
 
     // Obtener los detalles del mensaje
     let msg = this.serializeM(this.loadMessage(id));
