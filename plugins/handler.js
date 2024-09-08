@@ -1500,27 +1500,25 @@ export async function callUpdate(callUpdate) {
 }
 export async function deleteUpdate(message) {
   try {
-    const { fromMe, id, participant } = message;
+    const { fromMe, id, participant, isGroup, chat } = message;
     const botNumbers = [
-      '51976673519@s.whatsapp.net', // Número del bot
+      '51976873519@s.whatsapp.net', // Número del bot
       '51927803866@s.whatsapp.net', // Número específico que también es una excepción
       '51976873519@s.whatsapp.net'  // Número del Owner
     ];
 
-    // Si el mensaje es del bot, de los números del bot, del Owner, o si el mensaje es de un grupo, no hacer nada
-    if (fromMe || botNumbers.includes(participant) || message.isGroup) return;
+    // Verifica que el mensaje no proviene de un grupo y no es del bot o de los números de excepción
+    if (isGroup || fromMe || botNumbers.includes(participant)) return;
 
     // Obtener los detalles del mensaje
     let msg = this.serializeM(this.loadMessage(id));
-    let chat = global.db.data.chats[msg?.chat] || {};
+    let chatData = global.db.data.chats[msg?.chat] || {};
 
     // Verificar si el chat tiene desactivada la opción de eliminar mensajes
-    if (!chat?.delete) return;
+    if (!chatData?.delete) return;
 
     // Mensaje de notificación para la eliminación de mensajes
-    const antideleteMessage = `🚫 *No puedes eliminar este mensaje* 🚫
-    
-Ya lo leí, era:`.trim();
+    const antideleteMessage = `🚫 *No puedes eliminar este mensaje* 🚫\n\nYa lo leí, era:`.trim();
 
     // Enviar el mensaje de notificación
     await this.sendMessage(msg.chat, { text: antideleteMessage, mentions: [participant] }, { quoted: msg });
