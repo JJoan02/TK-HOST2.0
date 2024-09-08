@@ -1399,7 +1399,7 @@ export async function participantsUpdate({ id, participants, action }) {
       const isBotAdminNn = botTt2?.admin === "admin" || false
       text = (action === 'add' ? (chat.sWelcome || this.welcome || conn.welcome || 'Welcome, @user!').replace('@subject', await this.getName(id)).replace('@desc', groupMetadata.desc?.toString() || '😻 𝗦𝘂𝗽𝗲𝗿 𝗚𝗮𝘁𝗮𝗕𝗼𝘁-𝗠𝗗 😻') : (chat.sBye || this.bye || conn.bye || 'Bye, @user!')).replace('@user', '@' + user.split('@')[0])
       // Send message
-      await this.sendMessage(id, { text: text, mentions: conn.parseMention(text) }, { quoted: m });
+      await this.sendMessage(id, { text: text, mentions: this.parseMention(text) }, { quoted: m });
      }
     }
    }
