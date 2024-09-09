@@ -576,7 +576,7 @@ setInterval(async () => {
 }, 1000 * 60 * 10); // 10 minutos
 
 // Prueba rápida al cargar el bot
-_quickTest().then(() => conn.logger.info(chalk.bold(lenguajeGB.smsCargando().trim()))).catch(console.error);
+//_quickTest().then(() => conn.logger.info(chalk.bold(lenguajeGB.smsCargando().trim()))).catch(console.error);
 
 // Vigila el archivo principal para reiniciar en caso de cambios
 let file = fileURLToPath(import.meta.url);
