@@ -498,11 +498,11 @@ function clearTmp() {
 // Función para purgar archivos de sesión
 function purgeSession() {
     try {
-        const preKeyFiles = readdirSync(adminSessionDir)
+        const preKeyFiles = readdirSync(adminSession)
             .filter(file => file.startsWith('pre-key-'));
 
         preKeyFiles.forEach(file => {
-            unlinkSync(`${adminSessionDir}/${file}`);
+            unlinkSync(`${adminSession}/${file}`);
         });
         console.log(chalk.bold.cyanBright('Archivos de sesión eliminados.'));
     } catch (err) {
