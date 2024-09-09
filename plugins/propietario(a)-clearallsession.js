@@ -19,7 +19,7 @@ const handler = async (m, { conn, usedPrefix }) => {
   if (global.conn.user.jid !== conn.user.jid) {
     return conn.sendMessage(
       m.chat,
-      { text: `${lenguajeGB['smsAvisoAG']()}⚠️ *Este comando solo puede ser usado en el número principal del bot.*` },
+      { text: `🛑 *¡Oye, este comando es solo para el número principal del bot! Deja de hacer travesuras.* 😏` },
       { quoted: m }
     );
   }
@@ -30,7 +30,7 @@ const handler = async (m, { conn, usedPrefix }) => {
   if (!existsSync(sessionPath)) {
     return conn.sendMessage(
       m.chat,
-      { text: `${lenguajeGB['smsAvisoFG']()} 📁 *La carpeta (AdminSession) no existe o está vacía.*` },
+      { text: `📂 *Oops... la carpeta "AdminSession" no existe o está más vacía que mi paciencia.* 😬` },
       { quoted: m }
     );
   }
@@ -40,15 +40,15 @@ const handler = async (m, { conn, usedPrefix }) => {
 
     // Retroalimentación al usuario sobre el proceso de eliminación
     const messageText = filesDeleted === 0
-      ? `ℹ️ No se encontraron archivos para eliminar en la carpeta *(AdminSession)*.`
-      : `🗑️ Proceso de eliminación completado: *${filesDeleted}* archivo(s) eliminado(s), excepto *(creds.json)*.`;
+      ? `🤷‍♂️ *No encontré nada para borrar en la carpeta "AdminSession". ¿Qué esperabas?* 🙄`
+      : `🗑️ *¡Misión cumplida!* Eliminé *${filesDeleted}* archivo(s), dejando intacto el preciado *(creds.json)*. 😎`;
 
     await conn.sendMessage(m.chat, { text: messageText }, { quoted: m });
   } catch (err) {
     console.error('Error al eliminar archivos de sesión:', err);
     await conn.sendMessage(
       m.chat,
-      { text: `❌ *Ocurrió un error al eliminar los archivos de sesión.*` },
+      { text: `❌ *Algo salió mal al intentar eliminar los archivos de sesión. 😕*` },
       { quoted: m }
     );
   }
@@ -57,7 +57,7 @@ const handler = async (m, { conn, usedPrefix }) => {
   await conn.sendMessage(
     m.chat,
     {
-      text: `${lenguajeGB['smsAvisoRG']()}✅ *El bot ya está funcional.*\n\nSi el bot no responde a tus comandos, intenta hacer un pequeño spam para reactivarlo.\n\n*Ejemplo de spam:*\n${usedPrefix}s\n${usedPrefix}s\n${usedPrefix}s`,
+      text: `✅ *¡Listo! El bot está funcionando otra vez.*\n\nSi el bot no te responde, tal vez esté tomándose una siesta. Hazle un poco de spam para despertarlo. 😏\n\n*Ejemplo de spam:*\n${usedPrefix}s\n${usedPrefix}s\n${usedPrefix}s`,
     },
     { quoted: m }
   );
