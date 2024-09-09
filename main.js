@@ -476,145 +476,112 @@ readdirSync(pluginFolder).filter(pluginFilter).forEach((filename) => {
   watchFile(path.join(pluginFolder, filename), global.reload);
 });
 
-// Definición de directorios para sesiones y datos de sub-bots
-const adminSessionDir = './AdminSession';
-const subBotsDataDir = './SubBots-Data';
-
-// Función para limpiar archivos temporales
+// Limpia todos los archivos dentro del directorio 'tmp'
 function clearTmp() {
-    try {
-        const tmpDir = join(__dirname, 'tmp');
-        const filenames = readdirSync(tmpDir);
-        filenames.forEach(file => {
-            const filePath = join(tmpDir, file);
-            unlinkSync(filePath);
-        });
-        console.log(chalk.bold.cyanBright('Archivos temporales eliminados.'));
-    } catch (err) {
-        console.error(chalk.bold.red('Error al limpiar archivos temporales:', err));
-    }
+    const tmpDir = join(__dirname, 'tmp');
+    const filenames = readdirSync(tmpDir);
+
+    // Itera sobre todos los archivos en la carpeta tmp y los elimina
+    filenames.forEach(file => {
+        const filePath = join(tmpDir, file);
+        unlinkSync(filePath);
+    });
 }
 
-// Función para purgar archivos de sesión
+// Elimina las pre-claves (pre-keys) del directorio de sesión principal 'AdminSession'
 function purgeSession() {
-    try {
-        const preKeyFiles = readdirSync(adminSession)
-            .filter(file => file.startsWith('pre-key-'));
+    let prekey = [];
+    let directorio = readdirSync("./AdminSession"); // Cambiado a AdminSession
+    let filesFolderPreKeys = directorio.filter(file => file.startsWith('pre-key-'));
 
-        preKeyFiles.forEach(file => {
-            unlinkSync(`${adminSession}/${file}`);
-        });
-        console.log(chalk.bold.cyanBright('Archivos de sesión eliminados.'));
-    } catch (err) {
-        console.error(chalk.bold.red('Error al purgar archivos de sesión:', err));
-    }
+    prekey = [...prekey, ...filesFolderPreKeys];
+
+    // Elimina cada archivo pre-key en la carpeta de sesión principal
+    filesFolderPreKeys.forEach(files => {
+        unlinkSync(`./AdminSession/${files}`); // Cambiado a AdminSession
+    });
 }
 
-// Función para purgar archivos de sub-bots
+// Elimina las pre-claves (pre-keys) de los subbots en el directorio 'SubBots-Data'
 function purgeSessionSB() {
     try {
-        const directories = readdirSync(subBotsDataDir);
-        let SBpreKey = [];
-        directories.forEach(dir => {
-            const dirPath = `${subBotsDataDir}/${dir}`;
-            if (statSync(dirPath).isDirectory()) {
-                const DSBPreKeys = readdirSync(dirPath)
-                    .filter(file => file.startsWith('pre-key-'));
-                SBpreKey = [...SBpreKey, ...DSBPreKeys];
-                DSBPreKeys.forEach(file => {
-                    if (file !== 'creds.json') {
-                        unlinkSync(`${dirPath}/${file}`);
+        const listaDirectorios = readdirSync('./SubBots-Data/'); // Cambiado a SubBots-Data
+        let SBprekey = [];
+
+        listaDirectorios.forEach(directorio => {
+            if (statSync(`./SubBots-Data/${directorio}`).isDirectory()) {
+                const DSBPreKeys = readdirSync(`./SubBots-Data/${directorio}`).filter(fileInDir => fileInDir.startsWith('pre-key-'));
+                SBprekey = [...SBprekey, ...DSBPreKeys];
+
+                // Elimina cada archivo pre-key excepto 'creds.json'
+                DSBPreKeys.forEach(fileInDir => {
+                    if (fileInDir !== 'creds.json') {
+                        unlinkSync(`./SubBots-Data/${directorio}/${fileInDir}`);
                     }
                 });
             }
         });
-        console.log(SBpreKey.length === 0
-            ? chalk.bold.green('No se encontraron archivos de sesión para purgar.')
-            : chalk.bold.cyanBright('Archivos de sesión de sub-bots eliminados.'));
+
+        if (SBprekey.length === 0) {
+            console.log(chalk.bold.green(lenguajeGB.smspurgeSessionSB1())); // Mensaje de éxito si no hay pre-claves
+        } else {
+            console.log(chalk.bold.cyanBright(lenguajeGB.smspurgeSessionSB2())); // Mensaje de éxito si se eliminaron pre-claves
+        }
     } catch (err) {
-        console.error(chalk.bold.red('Error al purgar archivos de sesión de sub-bots:', err));
+        console.log(chalk.bold.red(lenguajeGB.smspurgeSessionSB3() + err)); // Mensaje de error
     }
 }
 
-// Función para purgar archivos antiguos
+// Elimina todos los archivos antiguos excepto 'creds.json' en los directorios de sesión y subbots
 function purgeOldFiles() {
-    try {
-        const directories = [adminSessionDir, subBotsDataDir];
-        directories.forEach(dir => {
-            readdirSync(dir).forEach(file => {
-                if (file !== 'creds.json') {
-                    const filePath = resolve(dir, file);
-                    unlinkSync(filePath);
-                    console.log(chalk.bold.green(`Archivo antiguo eliminado: ${file}`));
-                }
-            });
+    const directories = ['./AdminSession/', './SubBots-Data/']; // Actualizado con las nuevas rutas
+    directories.forEach(dir => {
+        const files = readdirSync(dir);
+
+        // Itera sobre los archivos y elimina los que no sean 'creds.json'
+        files.forEach(file => {
+            if (file !== 'creds.json') {
+                const filePath = join(dir, file);
+                unlinkSync(filePath);
+            }
         });
-    } catch (err) {
-        console.error(chalk.bold.red('Error al purgar archivos antiguos:', err));
-    }
+    });
 }
 
-// Función para redefinir métodos de consola
+// Redefine un método de consola para filtrar ciertos strings en los mensajes
 function redefineConsoleMethod(methodName, filterStrings) {
     const originalConsoleMethod = console[methodName];
-    console[methodName] = function(...args) {
-        const message = args[0];
+    console[methodName] = function () {
+        const message = arguments[0];
+        // Si el mensaje contiene un string filtrado, lo reemplaza por una cadena vacía
         if (typeof message === 'string' && filterStrings.some(filterString => message.includes(atob(filterString)))) {
-            args[0] = ""; // Oculta el mensaje filtrado
+            arguments[0] = "";
         }
-        originalConsoleMethod.apply(console, args);
+        originalConsoleMethod.apply(console, arguments);
     };
 }
 
-// Función para pruebas rápidas de herramientas externas
-async function _quickTest() {
-    try {
-        const test = await Promise.all([
-            spawn('ffmpeg'),
-            spawn('ffprobe'),
-            spawn('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-filter_complex', 'color', '-frames:v', '1', '-f', 'webp', '-']),
-            spawn('convert'),
-            spawn('magick'),
-            spawn('gm'),
-            spawn('find', ['--version']),
-        ].map(p => Promise.race([
-            new Promise(resolve => p.on('close', code => resolve(code !== 127))),
-            new Promise(resolve => p.on('error', () => resolve(false)))
-        ])));
-
-        const [ffmpeg, ffprobe, ffmpegWebp, convert, magick, gm, find] = test;
-        global.support = { ffmpeg, ffprobe, ffmpegWebp, convert, magick, gm, find };
-        Object.freeze(global.support);
-        console.log(chalk.bold.cyanBright('Pruebas rápidas completadas.'));
-    } catch (err) {
-        console.error(chalk.bold.red('Error en la prueba rápida:', err));
-    }
-}
-
-// Observa y maneja la recarga de plugins
-watch(pluginFolder, global.reload);
-await global.reloadHandler();
-
-// Intervalos para tareas programadas
+// Intervalo para limpiar el directorio 'tmp' cada 4 minutos
 setInterval(async () => {
     if (stopped === 'close' || !conn || !conn.user) return;
     await clearTmp();
-    console.log(chalk.bold.cyanBright('Archivos temporales limpiados.'));
+    console.log(chalk.bold.cyanBright(lenguajeGB.smsClearTmp())); // Mensaje en consola
 }, 1000 * 60 * 4); // 4 minutos
 
+// Intervalo para eliminar archivos antiguos cada 10 minutos
 setInterval(async () => {
     if (stopped === 'close' || !conn || !conn.user) return;
     await purgeOldFiles();
-    console.log(chalk.bold.cyanBright('Archivos antiguos purgados.'));
+    console.log(chalk.bold.cyanBright(lenguajeGB.smspurgeOldFiles())); // Mensaje en consola
 }, 1000 * 60 * 10); // 10 minutos
 
-// Ejecutar pruebas rápidas al iniciar
-_quickTest().then(() => conn.logger.info(chalk.bold('Bot cargado y funcionando.'))).catch(console.error);
+// Prueba rápida al cargar el bot
+_quickTest().then(() => conn.logger.info(chalk.bold(lenguajeGB.smsCargando().trim()))).catch(console.error);
 
-// Monitoreo del archivo actual para recarga dinámica
-const file = fileURLToPath(import.meta.url);
+// Vigila el archivo principal para reiniciar en caso de cambios
+let file = fileURLToPath(import.meta.url);
 watchFile(file, () => {
     unwatchFile(file);
-    console.log(chalk.bold.greenBright('Archivo principal recargado.'));
+    console.log(chalk.bold.greenBright(lenguajeGB.smsMainBot().trim())); // Mensaje en consola
     import(`${file}?update=${Date.now()}`);
 });
