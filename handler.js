@@ -116,7 +116,7 @@ chat.sPromote = ''
 if (!('sDemote' in chat))
 chat.sDemote = ''
 if (!('delete' in chat))
-chat.delete = true
+chat.delete = false
 if (!('antiLink' in chat))
 chat.antiLink = true
 if (!('viewonce' in chat))
