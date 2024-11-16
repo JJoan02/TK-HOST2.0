@@ -1,68 +1,84 @@
-import yts from "yt-search"
-import _ from "lodash"
+import yts from 'yt-search'
+import fs from 'fs'
+import os from 'os'
+import axios from 'axios'
 
-let handler = async (m, { conn, command, usedPrefix, args }) => {
-  const text = _.get(args, "length") ? args.join(" ") : _.get(m, "quoted.text") || _.get(m, "quoted.caption") || _.get(m, "quoted.description") || ""
-  if (typeof text !== 'string' || !text.trim()) return m.reply(`✦ Ingresa una consulta\n*Ejemplo:* .${command} Joji Ew`)
+const handler = async (m, { conn, command, text, usedPrefix }) => {
+  if (!text) throw `Use example ${usedPrefix}${command} Joji - Ew`;
 
-  await m.reply('✦ Espere un momento...')
+  const search = await yts(text);
+  const vid = search.videos[0];
+  if (!vid) throw m.reply('Data no encontrada, intenta con otro titulo');
 
-  const vid = await ytsearch(text)
-  if (!vid?.url) return m.reply("Audio no encontrado, intenta usando otra consulta.")
+  const { title, thumbnail, timestamp, views, ago, url } = vid;
 
-  const { title = "No encontrado", thumbnail, timestamp = "No encontrado", views = "No encontrado", ago = "No encontrado", url } = vid
+await conn.sendMessage(m.chat, { react: { text: '🕒', key: m.key }})
+//  await conn.sendMessage(m.chat, { image: { url: thumbnail }, caption: wait }, { quoted: m });
 
-  const captvid = ` *✦Título:* ${title}\n *✧Duración:* ${timestamp}\n *✧Publicado:* ${ago}\n *✦Link:* ${url}`
+  try {
+    const response = await axios.get(`https://api.ryzendesu.vip/api/downloader/ytmp3?url=${encodeURIComponent(url)}`);
+    const downloadUrl = response.data.url;
 
-  const ytthumb = (await conn.getFile(thumbnail))?.data
+    if (!downloadUrl) throw new Error('Audio URL not found');
 
-  const infoReply = {
-    contextInfo: {
-      externalAdReply: {
-        body: `✧ En unos momentos se entrega su audio`,
-        mediaType: 1,
-        mediaUrl: url,
-        previewType: 0,
-        renderLargerThumbnail: true,
-        sourceUrl: url,
-        thumbnail: ytthumb,
-        title: `Y O U T U B E - A U D I O`
-      }
-    }
+    const tmpDir = os.tmpdir();
+    const filePath = `${tmpDir}/${title}.mp3`;
+
+    const audioResponse = await axios({
+      method: 'get',
+      url: downloadUrl,
+      responseType: 'stream',
+    });
+
+    const writableStream = fs.createWriteStream(filePath);
+    audioResponse.data.pipe(writableStream);
+
+    writableStream.on('finish', async () => {
+      await conn.sendMessage(m.chat, {
+        audio: {
+          url: filePath
+        },
+        mimetype: 'audio/mpeg',
+        fileName: `${title}.mp3`,
+        caption: `Titilo: ${title}\nPublicado: ${ago}`,
+        contextInfo: {
+          externalAdReply: {
+            showAdAttribution: true,
+            mediaType: 2,
+            mediaUrl: url,
+            title: title,
+            body: 'Audio Download',
+            sourceUrl: url,
+            thumbnail: await (await conn.getFile(thumbnail)).data,
+          },
+        },
+      }, { quoted: m });
+await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key }})
+
+      fs.unlink(filePath, (err) => {
+        if (err) {
+          console.error(`Failed to delete audio file: ${err}`);
+        } else {
+          console.log(`Deleted audio file: ${filePath}`);
+        }
+      });
+    });
+
+    writableStream.on('error', (err) => {
+      console.error(`Failed to write audio file: ${err}`);
+      m.reply('Failed to download audio');
+    });
+  } catch (error) {
+    console.error('Error:', error.message);
+    throw `Error: ${error.message}. Please check the URL and try again.`;
   }
+};
 
-  await conn.reply(m.chat, captvid, m, infoReply)
-  infoReply.contextInfo.externalAdReply.body = `Audio descargado con éxito`
+handler.help = ['play'].map((v) => v + ' *<consulta>*');
+handler.tags = ['downloader'];
+handler.command = /^(play)$/i;
 
-  const res = await fetch(`https://api.zenkey.my.id/api/download/ytmp3?apikey=zenkey&url=${url}`)
-  const audioData = await res.json()
-  
-  if (audioData.status && audioData.result?.downloadUrl) {
-    await conn.sendMessage(m.chat, {
-      audio: { url: audioData.result.downloadUrl },
-      caption: captvid,
-      mimetype: "audio/mpeg",
-      contextInfo: infoReply.contextInfo
-    }, { quoted: m })
-  } else {
-    await m.reply("Error al descargar el audio.")
-  }
-}
-
-handler.help = ["play *<consulta>*"]
-handler.tags = ["downloader"]
-handler.command = /^(play|ytplay|playmp3|song)$/i
+handler.register = true
+handler.disable = false
 
 export default handler
-
-async function ytsearch(query, maxResults = 5, similarityThreshold = .5) {
-  const res = await yts(query)
-  const videos = _.filter(res.videos.slice(0, maxResults), video => {
-    const titleWords = _.words(_.toLower(video.title))
-    const queryWords = _.words(_.toLower(query))
-    const matchedWords = _.intersection(titleWords, queryWords)
-    const similarity = _.size(matchedWords) / _.size(titleWords)
-    return similarity >= similarityThreshold || _.size(matchedWords) >= _.size(queryWords) - 1
-  })
-  return _.isEmpty(videos) ? {} : _.first(videos)
-}
