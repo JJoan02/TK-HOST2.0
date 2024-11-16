@@ -98,11 +98,11 @@ if (chat) {
 if (!('isBanned' in chat))
 chat.isBanned = false
 if (!('welcome' in chat))
-chat.welcome = false
+chat.welcome = true
 if (!('autodl' in chat))
-chat.autodl = false
+chat.autodl = true
 if (!('detect' in chat))
-chat.detect = false
+chat.detect = true
 if (!('sWelcome' in chat))
 chat.sWelcome = ''
 if (!('sByeImageLink' in chat))
@@ -116,11 +116,11 @@ chat.sPromote = ''
 if (!('sDemote' in chat))
 chat.sDemote = ''
 if (!('delete' in chat))
-chat.delete = false
+chat.delete = true
 if (!('antiLink' in chat))
-chat.antiLink = false
+chat.antiLink = true
 if (!('viewonce' in chat))
-chat.viewonce = false
+chat.viewonce = true
 if (!('antiToxic' in chat))
 chat.antiToxic = false
 if (!('simi' in chat))
@@ -134,14 +134,14 @@ chat.premium = false
 if (!('premiumTime' in chat))
 chat.premiumTime = false
 if (!('nsfw' in chat))
-chat.nsfw = false
+chat.nsfw = true
 if (!('menu' in chat))
 chat.menu = false
 if (!isNumber(chat.expired))
 chat.expired = 0
 if (!('modoadmin' in chat)) chat.modoadmin = false
-if (!('antiLinkHttp' in chat)) chat.antiLinkHttp = false
-if (!('antiLinkWaChannel' in chat)) chat.antiLinkWaChannel = false
+if (!('antiLinkHttp' in chat)) chat.antiLinkHttp = true
+if (!('antiLinkWaChannel' in chat)) chat.antiLinkWaChannel = true
 } else
 global.db.data.chats[m.chat] = {
 isBanned: false,
