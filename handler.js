@@ -98,11 +98,11 @@ if (chat) {
 if (!('isBanned' in chat))
 chat.isBanned = false
 if (!('welcome' in chat))
-chat.welcome = true
+chat.welcome = false
 if (!('autodl' in chat))
-chat.autodl = true
+chat.autodl = false
 if (!('detect' in chat))
-chat.detect = true
+chat.detect = false
 if (!('sWelcome' in chat))
 chat.sWelcome = ''
 if (!('sByeImageLink' in chat))
@@ -118,9 +118,9 @@ chat.sDemote = ''
 if (!('delete' in chat))
 chat.delete = false
 if (!('antiLink' in chat))
-chat.antiLink = true
+chat.antiLink = false
 if (!('viewonce' in chat))
-chat.viewonce = true
+chat.viewonce = false
 if (!('antiToxic' in chat))
 chat.antiToxic = false
 if (!('simi' in chat))
@@ -134,23 +134,23 @@ chat.premium = false
 if (!('premiumTime' in chat))
 chat.premiumTime = false
 if (!('nsfw' in chat))
-chat.nsfw = true
+chat.nsfw = false
 if (!('menu' in chat))
 chat.menu = false
 if (!isNumber(chat.expired))
 chat.expired = 0
 if (!('modoadmin' in chat)) chat.modoadmin = false
-if (!('antiLinkHttp' in chat)) chat.antiLinkHttp = true
-if (!('antiLinkWaChannel' in chat)) chat.antiLinkWaChannel = true
+if (!('antiLinkHttp' in chat)) chat.antiLinkHttp = false
+if (!('antiLinkWaChannel' in chat)) chat.antiLinkWaChannel = false
 } else
 global.db.data.chats[m.chat] = {
 isBanned: false,
-welcome: true,
-antiLinkWaChannel: true,
-antiLinkHttp: true,
+welcome: false,
+antiLinkWaChannel: false,
+antiLinkHttp: false,
 modoadmin: false,
-autodl: true,
-detect: true,
+autodl: false,
+detect: false,
 sWelcome: '',
 sBye: '',
 sWelcomeImageLink: 'https://pomf2.lain.la/f/molwxb7d.jpg',
@@ -159,14 +159,14 @@ sPromote: '',
 sDemote: '',
 delete: false,
 antiLink: false,
-viewonce: true,
+viewonce: false,
 simi: false,
 autogpt: false,
 expired: 0,
 autoSticker: false,
 premium: false,
 premiumTime: false,
-nsfw: true,
+nsfw: false,
 menu: true,
 }
 let settings = global.db.data.settings[this.user.jid]
@@ -600,7 +600,7 @@ unreg: "> _*‼️USUARIO NO REGISTRADO‼️*_\n\n`Para registrarse:`\n\n> usa 
 restrict: "> _*✧ Comando desactivado por mi Owner`*_" 
 }[type]
 
-let deco_msg = "`१✿ᩧ┅═❏✧͚Wag፝uri Aiᩦ❏═┅✿ᩧ̼१`\n"+`${msg}\n`+"`︶ִֶָ⏝︶ִֶָ⏝˖ ࣪ ୨✧୧ ࣪ ˖⏝ִֶָ︶⏝ִֶָ︶`"
+let deco_msg = "`ׅㅤ ⵿͝ ፝֟͜口֟፝͜ ͝ ⵿࿙࿚ ⚠️  Admin TK ⚠️ ࿙࿚⵿۫ ͝ ፝֟͜口፝֟͜ ⵿͝*`\n"+`${msg}\n`+"`︶ִֶָ⏝︶ִֶָ⏝˖ ࣪ ୨✧୧ ࣪ ˖⏝ִֶָ︶⏝ִֶָ︶`"
 if (msg) return conn.reply(m.chat, estilo(deco_msg), m)
 }
 
