@@ -1,37 +1,20 @@
-import { generateWAMessageFromContent } from '@adiwajshing/baileys'
-
-let handler = async (m, { conn, text, participants, isAdmin, isOwner }) => {
-    let users = participants.map(u => u.id).filter(v => v !== conn.user.jid)
-
-    if (text || m.quoted?.text) {
-        m.reply(`✧ Mensaje : _*${text ? `${text}*_\n` : ''}\n\n\n┌─「 Invocación 」\n` + users.map(v => '│◦❒ @' + v.replace(/@.+/, '')).join`\n` + '\n└────', null, {
-            mentions: users
-        })
-
-        let usersDecode = participants.map(u => conn.decodeJid(u.id))
-        let q = m.quoted ? m.quoted : m
-        let c = m.quoted ? m.quoted : m.msg
-        const msg = conn.cMod(m.chat,
-            generateWAMessageFromContent(m.chat, {
-                [c.toJSON ? q.mtype : 'extendedTextMessage']: c.toJSON ? c.toJSON() : {
-                    text: c || ''
-                }
-            }, {
-                quoted: m,
-                userJid: conn.user.jid
-            }),
-            text || q.text, conn.user.jid, { mentions: usersDecode }
-        )
-        await conn.relayMessage(m.chat, msg.message, { messageId: msg.key.id })
-    } else {
-        m.reply("✧ Responda a un mensaje o escriba el mensaje con el que desea etiquetar.")
-    }
+let handler = async(m, { isOwner, isAdmin, conn, text, participants, args, command }) => {
+if (!(isAdmin || isOwner)) {
+global.dfail('admin', m, conn)
+throw false
 }
-  
-  handler.help = ['tagall']
-  handler.tags = ['group']
-  handler.command = ['tagall']
-  handler.admin = true
-  handler.group = true
-  
-  export default handler
+let pesan = args.join` `
+let oi = `ღ Mensaje: ${pesan}`
+let teks = `╭━〔 *TAGALL* 〕━⬣\n\n${oi}\n\n`
+for (let mem of participants) {
+teks += `┃⊹ @${mem.id.split('@')[0]}\n`}
+teks += `┃\n`
+teks += `┃\n`
+teks += `╰━━━━━[ *𓃠 ${wm}* ]━━━━━⬣`
+conn.sendMessage(m.chat, { text: teks, mentions: participants.map(a => a.id) }, )  
+}
+handler.command = /^(tagall|invocar|invocacion|todos|invocación)$/i
+handler.admin = true
+handler.group = true
+handler.botAdmin = true
+export default handler
