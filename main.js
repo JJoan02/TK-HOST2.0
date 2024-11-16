@@ -281,7 +281,7 @@ global.reloadHandler = async function (restatConn) {
     conn.ev.off('creds.update', conn.credsUpdate)
   }
 
-conn.welcome = '❖━━━━━━[ BIENVENIDO ]━━━━━━❖\n\n┏------━━━━━━━━•\n│☘︎ @subject\n┣━━━━━━━━┅┅┅\n│( 👋 Hola @user)\n├[ ¡Soy *Admin-TK* ]\n├ tu administrador en este grupo! —\n\n│\ favor, regístrate con el comando:\n│ `.reg nombre.edad`\n┗------━━┅┅┅\n\n------┅┅ Descripción ┅┅––––––\n\n${String.fromCharCode(8206).repeat(850)}\n@desc'
+conn.welcome = '❖━━━━━━[ BIENVENIDO ]━━━━━━❖\n\n┏------━━━━━━━━•\n│☘︎ @subject\n┣━━━━━━━━┅┅┅\n│( 👋 Hola @user)\n├[ ¡Soy *Admin-TK* ]\n├ tu administrador en este grupo! —\n\n│\ favor, regístrate con el comando:\n│ `.reg nombre.edad`\n┗------━━┅┅┅\n\n------┅┅ Descripción ┅┅––––––\n\n@desc'
   conn.bye = '❖━━━━━━[ BYEBYE ]━━━━━━❖\n\nSayonara @user 👋😃'
   conn.spromote = '*✧ @user ahora es admin!*'
   conn.sdemote = '*✧ @user ya no es admin!*'
