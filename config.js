@@ -28,8 +28,7 @@ const readMore = more.repeat(4001)
 /*============= INFO PRINCIPAL =============*/
 global.owner = [
 ['5493865860048', 'KenisawaDev', true],
-['51910234457', 'JoanTK', true],
-['51976673519', 'Admin-TK', true]
+['51910234457', 'Admin', true]
 ]
 global.mods = []
 global.prems = []
@@ -103,6 +102,8 @@ global.ddocx = 'application/vnd.openxmlformats-officedocument.wordprocessingml.d
 global.dxlsx = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 global.dpdf = 'application/pdf'
 global.drtf = 'text/rtf'
+
+global.hwaifu = ['https://telegra.ph/file/a7ac2b46f82ef7ea083f9.jpg']
 
 global.flaaa2 = [
  "https://flamingtext.com/net-fu/proxy_form.cgi?&imageoutput=true&script=water-logo&script=water-logo&fontsize=90&doScale=true&scaleWidth=800&scaleHeight=500&fontsize=100&fillTextColor=%23000&shadowGlowColor=%23000&backgroundColor=%23000&text=",
