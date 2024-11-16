@@ -37,7 +37,7 @@ let handler = async (m, { conn, args }) => {
     }
 }
 
-handler.help = ['ig'].map(v => v + ' <link>')
+handler.help = ['ig'].map(v => v + ' *<link>*')
 handler.tags = ['downloader']
 
 handler.command = /^(ig(dl)?)$/i

@@ -88,7 +88,7 @@ let { title, thumbnail, quality, downloadUrl } = dataos
     };
     await conn.sendMessage(m.chat, doc, { quoted: m });
 }
-handler.help = ['play2'];
+handler.help = ['play2 *<consulta>*'];
 handler.tags = ['downloader'];
 handler.command = /^(play2)$/i;
 

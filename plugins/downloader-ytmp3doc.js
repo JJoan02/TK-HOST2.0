@@ -84,7 +84,7 @@ let { title, thumbnail, quality, downloadUrl } = dataos
 	await conn.sendMessage(m.chat, { document: audiop, caption: `\`✦ Pedido terminado\``, mimetype: 'audio/mpeg', fileName: `${title}` + `.mp3`}, {quoted: m })
 	await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key }})
 }
-handler.help = ['ytmp3','ytadoc'];
+handler.help = ['ytmp3 *<link>*','ytadoc *<link>*'];
 handler.tags = ['downloader'];
 handler.command = /^(ytmp3|ytadoc)$/i;
 

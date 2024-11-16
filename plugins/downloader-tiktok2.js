@@ -26,7 +26,7 @@ conn.sendMessage(m.chat, { react: { text: "🕒", key: m.key } });
 	await conn.sendFile(m.chat, dp.results.nowm, `${dp.results.title}.mp4`, ``, m)
 	await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key }})
 }
-handler.help = ['tiktok2']
+handler.help = ['tiktok2 *<link>*']
 handler.tags = ['downloader']
 handler.command = /^(tt2|tiktok2)$/i
 handler.premium = false

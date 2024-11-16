@@ -25,7 +25,7 @@ let handler = async (m, { conn, args }) => {
 	}
 }
 
-handler.help = ['gdrive'].map(v => v + ' <link>')
+handler.help = ['gdrive'].map(v => v + ' *<link>*')
 handler.tags = ['downloader']
 handler.command = /^(gdrive)$/i
 

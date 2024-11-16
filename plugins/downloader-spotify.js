@@ -32,7 +32,7 @@ conn.sendMessage(m.chat, { react: { text: "🕒", key: m.key } });
 //	await conn.sendFile(m.chat, gyh.result.url, `${gyh.result.title}.mp3`, ``, m)
 	await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key }})
 }
-handler.help = ['spotify']
+handler.help = ['spotify *<link>*']
 handler.tags = ['downloader']
 handler.command = /^(spotify|sp)$/i
 handler.premium = false

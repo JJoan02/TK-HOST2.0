@@ -49,7 +49,7 @@ let handler = async (m, { conn, command, usedPrefix, args }) => {
   }
 }
 
-handler.help = ["play <consulta>"]
+handler.help = ["play *<consulta>*"]
 handler.tags = ["downloader"]
 handler.command = /^(play|ytplay|playmp3|song)$/i
 

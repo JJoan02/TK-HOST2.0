@@ -29,7 +29,7 @@ await conn.sendMessage(m.chat, { react: { text: '🕒', key: m.key }})
 	await conn.sendFile(m.chat, videop, `${title}.mp4`, `\`✦ Pedido terminado\``, m)
 	await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key }})
 }
-handler.help = ['playvideo'];
+handler.help = ['playvideo *<consulta>*'];
 handler.tags = ['downloader'];
 handler.command = /^(playvideo|playvid)$/i;
 

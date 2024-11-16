@@ -42,7 +42,7 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
     }
 };
 
-handler.help = ['tiktok'].map((v) => v + ' <link>')
+handler.help = ['tiktok'].map((v) => v + ' *<link>*')
 handler.tags = ['downloader']
 handler.command = /^t(t|iktok(d(own(load(er)?)?|l))?|td(own(load(er)?)?|l))$/i
 

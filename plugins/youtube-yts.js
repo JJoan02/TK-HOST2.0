@@ -96,7 +96,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     await conn.relayMessage(m.chat, bot.message, { messageId: bot.key.id });
 }
 
-handler.help = ["ytslide", "yts"];
+handler.help = ["ytslide *<consula>*", "yts *<consulta>*"];
 handler.tags = ["search"];
 handler.command = ["ytslide", "yts"];
 

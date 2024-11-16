@@ -17,7 +17,7 @@ let { title, mediaLink } = dp.result.content[0]
 	await conn.sendMessage(m.chat, { document: { url: mediaLink }, caption: `\`✦ Pedido terminado: ${title}\``, mimetype: 'video/mp4', fileName: `${title}` + `.mp4`}, {quoted: m })
 	await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key }})
 }
-handler.help = ['ytmp4','ytvdoc'];
+handler.help = ['ytmp4 *<link>*','ytvdoc *<link>*'];
 handler.tags = ['downloader'];
 handler.command = /^(ytmp4|ytvdoc)$/i;
 

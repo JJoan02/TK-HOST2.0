@@ -55,7 +55,7 @@ conn.relayMessage(m.chat, msg.message, {
 throw eror
 }
 }
-handler.help = ['tiktoksearch']
+handler.help = ['tiktoksearch *<consulta>*']
 handler.tags = ['search']
 handler.command = /^(ttsearch|tiktoksearch)$/i
 handler.register = true

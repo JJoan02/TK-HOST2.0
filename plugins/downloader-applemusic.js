@@ -127,7 +127,7 @@ m.reply(`_✧ Enviando ${name} (${artist}/${duration})_\n\n> ${url}`);
     await conn.sendMessage(m.chat, doc, { quoted: m });
     
 }
-handler.help = ['applemusic'];
+handler.help = ['applemusic *<link>*'];
 handler.tags = ['downloader'];
 handler.command = /^(applemusic)$/i;
 

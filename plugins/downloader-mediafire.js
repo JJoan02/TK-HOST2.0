@@ -8,7 +8,7 @@ conn.sendMessage(m.chat, { react: { text: "🕒", key: m.key } });
 	await conn.sendFile(m.chat, gyh.data[0].link, `${gyh.data[0].nama}`, `*✧ Nombre:* ${gyh.data[0].nama}\n*✧ Tamaño:* ${gyh.data[0].size}\n*✧ Extensión:* ${gyh.data[0].mime}`, m)
 	await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key }})
 }
-handler.help = ['mediafire']
+handler.help = ['mediafire *<link>*']
 handler.tags = ['downloader']
 handler.command = /^(mediafire|mf)$/i
 handler.premium = false

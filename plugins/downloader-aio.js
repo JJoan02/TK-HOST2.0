@@ -153,7 +153,7 @@ class RetaTube extends API {
     }
 }
 
-handler.help = ['aio'].map(v => v + ' <link>')
+handler.help = ['aio'].map(v => v + ' *<link>*')
 handler.tags = ['downloader']
 handler.command = /^(aio)$/i
 

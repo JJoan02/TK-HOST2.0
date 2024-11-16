@@ -62,7 +62,7 @@ let searchResults = dataos.map((v, i) => `${i + 1}. *${v.title}*\n   Link: ${v.l
 m.reply(searchResults)
 
 }
-handler.help = ['applemusicsearch'];
+handler.help = ['applemusicsearch *<consulta>*'];
 handler.tags = ['search'];
 handler.command = /^(applemusicsearch)$/i;
 
