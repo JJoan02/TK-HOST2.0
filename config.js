@@ -28,7 +28,8 @@ const readMore = more.repeat(4001)
 /*============= INFO PRINCIPAL =============*/
 global.owner = [
 ['5493865860048', 'KenisawaDev', true],
-['51910234457', 'Admin', true]
+['51910234457', 'JoanTK', true],
+['51976673519', 'Admin-TK', true]
 ]
 global.mods = []
 global.prems = []
