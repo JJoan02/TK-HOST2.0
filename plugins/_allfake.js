@@ -36,7 +36,7 @@ global.rcanal = {
    }, 
    externalAdReply: {
     showAdAttribution: true, 
-    title: "Waguri Ai ✧", 
+    title: "Admin-TK ✧", 
     body: wm, 
     mediaUrl: "https://pomf2.lain.la/f/ut2z21cs.jpg", 
     description: null, 
