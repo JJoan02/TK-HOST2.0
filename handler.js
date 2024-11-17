@@ -98,11 +98,11 @@ if (chat) {
 if (!('isBanned' in chat))
 chat.isBanned = false
 if (!('welcome' in chat))
-chat.welcome = false
+chat.welcome = true
 if (!('autodl' in chat))
 chat.autodl = false
 if (!('detect' in chat))
-chat.detect = false
+chat.detect = true
 if (!('sWelcome' in chat))
 chat.sWelcome = ''
 if (!('sByeImageLink' in chat))
@@ -120,7 +120,7 @@ chat.delete = false
 if (!('antiLink' in chat))
 chat.antiLink = false
 if (!('viewonce' in chat))
-chat.viewonce = false
+chat.viewonce = true
 if (!('antiToxic' in chat))
 chat.antiToxic = false
 if (!('simi' in chat))
@@ -134,23 +134,23 @@ chat.premium = false
 if (!('premiumTime' in chat))
 chat.premiumTime = false
 if (!('nsfw' in chat))
-chat.nsfw = false
+chat.nsfw = true
 if (!('menu' in chat))
-chat.menu = false
+chat.menu = true
 if (!isNumber(chat.expired))
 chat.expired = 0
 if (!('modoadmin' in chat)) chat.modoadmin = false
 if (!('antiLinkHttp' in chat)) chat.antiLinkHttp = false
-if (!('antiLinkWaChannel' in chat)) chat.antiLinkWaChannel = false
+if (!('antiLinkWaChannel' in chat)) chat.antiLinkWaChannel = true
 } else
 global.db.data.chats[m.chat] = {
 isBanned: false,
-welcome: false,
-antiLinkWaChannel: false,
+welcome: true,
+antiLinkWaChannel: true,
 antiLinkHttp: false,
 modoadmin: false,
 autodl: false,
-detect: false,
+detect: true,
 sWelcome: '',
 sBye: '',
 sWelcomeImageLink: 'https://pomf2.lain.la/f/molwxb7d.jpg',
@@ -159,14 +159,14 @@ sPromote: '',
 sDemote: '',
 delete: false,
 antiLink: false,
-viewonce: false,
+viewonce: true,
 simi: false,
 autogpt: false,
 expired: 0,
 autoSticker: false,
 premium: false,
 premiumTime: false,
-nsfw: false,
+nsfw: true,
 menu: true,
 }
 let settings = global.db.data.settings[this.user.jid]
@@ -174,7 +174,7 @@ if (typeof settings !== 'object') global.db.data.settings[this.user.jid] = {}
 if (settings) {
 if (!('self' in settings)) settings.self = false
 if (!('autoread' in settings)) settings.autoread = true
-if (!('restrict' in settings)) settings.restrict = false
+if (!('restrict' in settings)) settings.restrict = true
 if (!('anticall' in settings)) settings.anticall = true
 if (!('restartDB' in settings)) settings.restartDB = 0
 } else global.db.data.settings[this.user.jid] = {
@@ -182,7 +182,7 @@ self: false,
 autoread: true,
 anticall: true,
 restartDB: 0,
-restrict: false
+restrict: true
 }
 } catch (e) {
 console.error(e)
