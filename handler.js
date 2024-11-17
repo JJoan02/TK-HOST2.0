@@ -116,7 +116,7 @@ chat.sPromote = ''
 if (!('sDemote' in chat))
 chat.sDemote = ''
 if (!('delete' in chat))
-chat.delete = false
+chat.delete = true
 if (!('antiLink' in chat))
 chat.antiLink = false
 if (!('viewonce' in chat))
@@ -157,7 +157,7 @@ sWelcomeImageLink: 'https://d.uguu.se/mYSkSZPR.jpg',
 sByeImageLink: 'https://d.uguu.se/mYSkSZPR.jpg',
 sPromote: '',
 sDemote: '',
-delete: false,
+delete: true,
 antiLink: false,
 viewonce: true,
 simi: false,
