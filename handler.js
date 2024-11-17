@@ -517,8 +517,8 @@ let pp = 'https://telegra.ph/file/3067b920347facbb69bb1.jpg'
 } finally {
 let textp = (action === 'add' ? (chat.sWelcome || this.welcome || await Connection.conn.welcome || 'Bienvenido, @user!').replace('@subject', await this.getName(id)).replace('@desc', groupMetadata.desc?.toString() || 'unknow') : 
 (chat.sBye || this.bye || await Connection.conn.bye || 'Bye bye, @user!')).replace('@user', `${this.getName(user)}`)
-let linkimgk = (action === 'add' ? (chat.sWelcomeImageLink || this.welcome || await Connection.conn.welcome || 'https://pomf2.lain.la/f/molwxb7d.jpg') : 
-(chat.sByeImageLink || this.bye || await Connection.conn.bye || 'https://pomf2.lain.la/f/molwxb7d.jpg'))
+let linkimgk = (action === 'add' ? (chat.sWelcomeImageLink || this.welcome || await Connection.conn.welcome || 'https://d.uguu.se/mYSkSZPR.jpg') : 
+(chat.sByeImageLink || this.bye || await Connection.conn.bye || 'https://d.uguu.se/mYSkSZPR.jpg'))
 /*let skyin = {
 text: text,
 contextInfo: {
