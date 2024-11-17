@@ -3,6 +3,7 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isR
   let chat = global.db.data.chats[m.chat]
   let user = global.db.data.users[m.sender]
   let type = (args[0] || '').toLowerCase()
+  let bot = global.db.data.settings[conn.user.jid] || {}
   let isAll = false
   let isUser = false
   switch (type) {
