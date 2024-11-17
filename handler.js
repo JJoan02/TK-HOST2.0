@@ -106,9 +106,9 @@ chat.detect = true
 if (!('sWelcome' in chat))
 chat.sWelcome = ''
 if (!('sByeImageLink' in chat))
-chat.sByeImageLink = 'https://pomf2.lain.la/f/molwxb7d.jpg'
+chat.sByeImageLink = 'https://d.uguu.se/mYSkSZPR.jpg'
 if (!('sWelcomeImageLink' in chat))
-chat.sWelcomeImageLink = 'https://pomf2.lain.la/f/molwxb7d.jpg'
+chat.sWelcomeImageLink = 'https://d.uguu.se/mYSkSZPR.jpg'
 if (!('sBye' in chat))
 chat.sBye = ''
 if (!('sPromote' in chat))
