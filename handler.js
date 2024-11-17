@@ -176,8 +176,10 @@ if (!('self' in settings)) settings.self = false
 if (!('autoread' in settings)) settings.autoread = true
 if (!('restrict' in settings)) settings.restrict = true
 if (!('anticall' in settings)) settings.anticall = true
+if (!('antiPrivate' in settings)) settings.antiPrivate = true
 if (!('restartDB' in settings)) settings.restartDB = 0
 } else global.db.data.settings[this.user.jid] = {
+antiPrivate: true,
 self: false,
 autoread: true,
 anticall: true,
