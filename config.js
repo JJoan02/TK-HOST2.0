@@ -30,15 +30,41 @@ const readMore = more.repeat(4001)
 
 /*============= INFO PRINCIPAL =============*/  
 
-// Información principal de los propietarios y el bot
-global.owner = [  
-  ['5493865860048', 'KenisawaDev', true],  
-  ['51910234457', 'Admin', true]  
-]  
-global.mods = []  
-global.prems = []  
-global.nomorbot = '5493816785382'  
-global.nomorown = '51910234457'  
+// Propietarios del bot (ID, Nombre, Estado de Superusuario)
+const OWNERS = [
+    { id: '5493865860048', name: 'KenisawaDev', superuser: true },
+    { id: '51910234457', name: 'Joan TK', superuser: true },
+    // Espacios en blanco para agregar nuevos propietarios:
+    { id: '', name: '', superuser: false }, // EDITAR
+    { id: '', name: '', superuser: false }, // EDITAR
+    { id: '', name: '', superuser: false }, // EDITAR
+];
+
+// Moderadores (ID)
+const MODS = [
+    // Espacios en blanco para agregar nuevos moderadores:
+    '', // EDITAR
+    '', // EDITAR
+    '', // EDITAR
+    '', // EDITAR
+    '', // EDITAR
+];
+
+// Usuarios premium (ID)
+const PREMS = [
+    // Espacios en blanco para agregar nuevos usuarios premium:
+    '', // EDITAR
+    '', // EDITAR
+    '', // EDITAR
+    '', // EDITAR
+    '', // EDITAR
+];
+
+// Información del bot
+const BOT_INFO = {
+    number: '51976673519', // Número del bot
+    ownerNumber: '51910234457', // Número principal del propietario
+};
 
 /*============= MARCA DE AGUA =============*/  
 
