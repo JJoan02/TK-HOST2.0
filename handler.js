@@ -107,8 +107,16 @@ if (!('sWelcome' in chat))
 chat.sWelcome = ''
 if (!('sByeImageLink' in chat))
 chat.sByeImageLink = 'https://d.uguu.se/mYSkSZPR.jpg'
-if (!('sWelcomeImageLink' in chat))
-chat.sWelcomeImageLink = 'https://d.uguu.se/mYSkSZPR.jpg'
+if (!('sWelcomeImageLink' in chat)) {
+    const imagePaths = [
+        './gallery/welcome1.jpg',
+        './gallery/welcome2.jpg',
+        './gallery/welcome3.jpg',
+        './gallery/welcome4.jpg'
+    ];
+    const randomIndex = Math.floor(Math.random() * imagePaths.length);
+    chat.sWelcomeImageLink = imagePaths[randomIndex];
+}
 if (!('sBye' in chat))
 chat.sBye = ''
 if (!('sPromote' in chat))
