@@ -107,16 +107,8 @@ if (!('sWelcome' in chat))
 chat.sWelcome = ''
 if (!('sByeImageLink' in chat))
 chat.sByeImageLink = 'https://d.uguu.se/mYSkSZPR.jpg'
-if (!('sWelcomeImageLink' in chat)) {
-    const welcomeImages = [
-        './gallery/welcome1.jpg',
-        './gallery/welcome2.jpg',
-        './gallery/welcome3.jpg',
-        './gallery/welcome4.jpg'
-    ];
-    const randomIndex = Math.floor(Math.random() * welcomeImages.length);
-    chat.sWelcomeImageLink = welcomeImages[randomIndex];
-}
+if (!('sWelcomeImageLink' in chat))
+chat.sWelcomeImageLink = './gallery/welcome4.jpg'
 if (!('sBye' in chat))
 chat.sBye = ''
 if (!('sPromote' in chat))
@@ -161,19 +153,7 @@ autodl: false,
 detect: true,
 sWelcome: '',
 sBye: '',
-const welcomeImages = [
-    './gallery/welcome1.jpg',
-    './gallery/welcome2.jpg',
-    './gallery/welcome3.jpg',
-    './gallery/welcome4.jpg'
-];
-
-const randomIndex = Math.floor(Math.random() * welcomeImages.length);
-
-const chat = {
-    sWelcomeImageLink: welcomeImages[randomIndex] // Selección aleatoria
-};
-sByeImageLink: 'https://d.uguu.se/mYSkSZPR.jpg',
+sWelcomeImageLink: './gallery/welcome4.jpg',
 sPromote: '',
 sDemote: '',
 delete: true,
