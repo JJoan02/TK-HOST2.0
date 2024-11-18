@@ -1,123 +1,140 @@
-import { watchFile, unwatchFile } from 'fs'
-import chalk from 'chalk'
-import { fileURLToPath } from 'url'
-import moment from 'moment-timezone'
-import { group } from 'console'
-import PhoneNumber from 'awesome-phonenumber'
-import fs from 'fs'
+import { watchFile, unwatchFile } from 'fs'  
+import chalk from 'chalk'  
+import { fileURLToPath } from 'url'  
+import moment from 'moment-timezone'  
+import { group } from 'console'  
+import PhoneNumber from 'awesome-phonenumber'  
+import fs from 'fs'  
 
-/*============= FECHA Y HORA =============*/
-let hora = moment.tz('America/Buenos_Aires').format('HH')
-    let minuto = moment.tz('America/Buenos_Aires').format('mm')
-    let segundo = moment.tz('America/Buenos_Aires').format('ss')
-    let horario = `${hora} H ${minuto} M ${segundo} S`
-    let horario_general = `${hora}:${minuto}:${segundo}`
-    
-    let d = new Date(new Date + 3600000)
-    let locale = 'es'
-    let weton = ['Pahing', 'Pon', 'Wage', 'Kliwon', 'Legi'][Math.floor(d / 84600000) % 5]
-    let week = d.toLocaleDateString(locale, { weekday: 'long' })
-    let date = d.toLocaleDateString(locale, {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    })
-    const more = String.fromCharCode(8206)
-const readMore = more.repeat(4001)
+/*============= FECHA Y HORA =============*/  
 
-/*============= INFO PRINCIPAL =============*/
-global.owner = [
-['5493865860048', 'KenisawaDev', true],
-['51910234457', 'Admin', true]
-]
-global.mods = []
-global.prems = []
-global.nomorbot = '5493816785382'
-global.nomorown = '51910234457'
+// Obtener la hora actual en la zona horaria de Lima, Perú
+let hora = moment.tz('America/Lima').format('HH')  
+let minuto = moment.tz('America/Lima').format('mm')  
+let segundo = moment.tz('America/Lima').format('ss')  
+let horario = `${hora} H ${minuto} M ${segundo} S`  
+let horario_general = `${hora}:${minuto}:${segundo}`  
 
-/*============= MARCA DE AGUA =============*/
-global.readMore = readMore
-global.author = 'Joan TK'
-global.namebot = 'Admin-TK'
-global.wm = '© Admin-TK By Joan TK'
-global.watermark = wm
-global.botdate = `⫹⫺ FECHA: ${week} ${date}\n⫹⫺ HORA: ${horario}`
-global.bottime = `H O R A : ${horario}`
-global.stickpack = `Sticker creado por ${namebot}\nhttps://dash.tk-joanhost.com/\n\nTK-BOT\n+${nomorbot}`
-global.stickauth = `© Admin-TK By Joan TK`
-global.week = `${week} ${date}`
-global.wibb = `${horario}`
+// Obtener la fecha y día de la semana en español
+let d = new Date(new Date + 3600000)  
+let locale = 'es'  
+let weton = ['Pahing', 'Pon', 'Wage', 'Kliwon', 'Legi'][Math.floor(d / 84600000) % 5]  
+let week = d.toLocaleDateString(locale, { weekday: 'long' })  
+let date = d.toLocaleDateString(locale, {  
+  day: 'numeric',  
+  month: 'long',  
+  year: 'numeric'  
+})  
+const more = String.fromCharCode(8206)  
+const readMore = more.repeat(4001)  
 
-//*============= REDES =============*/
-global.sig = 'https://www.instagram.com/'
-global.sgh = 'https://github.com/MauroAzcurra'
-global.sgc = 'https://whatsapp.com/channel/0029VawpOoGHwXb6LgJkXN2R'
-global.sgw = 'https://wa.me/51910234457'
-global.sdc = '-'
-global.linkdash = 'https://dash.tk-joanhost.com/'
-global.sfb = 'https://www.facebook.com/'
-global.snh = 'https://www.instagram.com/'
-global.idcanal = '120363348355703366@newsletter'
+/*============= INFO PRINCIPAL =============*/  
 
+// Información principal de los propietarios y el bot
+global.owner = [  
+  ['5493865860048', 'KenisawaDev', true],  
+  ['51910234457', 'Admin', true]  
+]  
+global.mods = []  
+global.prems = []  
+global.nomorbot = '5493816785382'  
+global.nomorown = '51910234457'  
 
-/*============= DISEÑOS =============*/
-global.dmenut = 'ଓ═┅═━–〈' 
-global.dmenub = '┊↬' 
-global.dmenub2 = '┊' 
-global.dmenuf = '┗––––––––––✦' 
-global.dashmenu = '┅═┅═❏ *DASHBOARD* ❏═┅═┅'
-global.cmenut = '❏––––––『' 
-global.cmenuh = '』––––––' 
-global.cmenub = '┊✦ '
-global.cmenuf = '┗━═┅═━––––––๑\n'
-global.cmenua = '\n⌕ ❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘ ⌕\n     '
-global.pmenus = '✦'
-global.htki = '––––––『' 
-global.htka = '』––––––'
-global.lopr = 'Ⓟ'
-global.lolm = 'Ⓛ'
-global.htjava = '⫹⫺'
-global.hsquere = ['⛶','❏','⫹⫺']
+/*============= MARCA DE AGUA =============*/  
 
-/*============= MENSAJES FRECUENTES =============*/
-global.wait = '✧ Espere un momento...'
-global.eror = 'Error!'
+// Configuración de la marca de agua para el bot
+global.readMore = readMore  
+global.author = 'Joan TK'  
+global.namebot = 'Admin-TK'  
+global.wm = '© Admin-TK By Joan TK'  
+global.watermark = wm  
+global.botdate = `⫹⫺ FECHA: ${week} ${date}\n⫹⫺ HORA: ${horario}`  
+global.bottime = `H O R A : ${horario}`  
+global.stickpack = `Sticker creado por ${namebot}\nhttps://dash.tk-joanhost.com/\n\nTK-BOT\n+${nomorbot}`  
+global.stickauth = `© Admin-TK By Joan TK`  
+global.week = `${week} ${date}`  
+global.wibb = `${horario}`  
 
-/*============= WEB API KEY =============*/
+//*============= REDES =============*/  
 
-global.APIs = {
-  // name: 'https://website'
-  xzn : 'https://skizo.tech/',
-}
+// Enlaces a redes sociales y otras plataformas
+global.sig = 'https://www.instagram.com/'  
+global.sgh = 'https://github.com/MauroAzcurra'  
+global.sgc = 'https://whatsapp.com/channel/0029VawpOoGHwXb6LgJkXN2R'  
+global.sgw = 'https://wa.me/51910234457'  
+global.sdc = '-'  
+global.linkdash = 'https://dash.tk-joanhost.com/'  
+global.sfb = 'https://www.facebook.com/'  
+global.snh = 'https://www.instagram.com/'  
+global.idcanal = '120363348355703366@newsletter'  
 
-global.APIKeys = { // APIKey Here
-  // 'https://website': 'apikey'
+/*============= DISEÑOS =============*/  
 
-  'https://skizo.tech/' : 'GataDios',
-}
+// Estilos para los menús
+global.dmenut = 'ଓ═┅═━–〈'  
+global.dmenub = '┊↬'  
+global.dmenub2 = '┊'  
+global.dmenuf = '┗––––––––––✦'  
+global.dashmenu = '┅═┅═❏ *DASHBOARD* ❏═┅═┅'  
+global.cmenut = '❏––––––『'  
+global.cmenuh = '』––––––'  
+global.cmenub = '┊✦ '  
+global.cmenuf = '┗━═┅═━––––––๑\n'  
+global.cmenua = '\n⌕ ❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘ ⌕\n     '  
+global.pmenus = '✦'  
+global.htki = '––––––『'  
+global.htka = '』––––––'  
+global.lopr = 'Ⓟ'  
+global.lolm = 'Ⓛ'  
+global.htjava = '⫹⫺'  
+global.hsquere = ['⛶','❏','⫹⫺']  
 
-/*============= OTROS =============*/
-global.dpptx = 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
-global.ddocx = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-global.dxlsx = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-global.dpdf = 'application/pdf'
-global.drtf = 'text/rtf'
+/*============= MENSAJES FRECUENTES =============*/  
 
-global.hwaifu = ['https://telegra.ph/file/a7ac2b46f82ef7ea083f9.jpg']
+// Mensajes predeterminados para el bot
+global.wait = '✧ Espere un momento...'  
+global.eror = 'Error!'  
 
-global.flaaa2 = [
- "https://flamingtext.com/net-fu/proxy_form.cgi?&imageoutput=true&script=water-logo&script=water-logo&fontsize=90&doScale=true&scaleWidth=800&scaleHeight=500&fontsize=100&fillTextColor=%23000&shadowGlowColor=%23000&backgroundColor=%23000&text=",
- "https://flamingtext.com/net-fu/proxy_form.cgi?&imageoutput=true&script=crafts-logo&fontsize=90&doScale=true&scaleWidth=800&scaleHeight=500&text=",
- "https://flamingtext.com/net-fu/proxy_form.cgi?&imageoutput=true&script=amped-logo&doScale=true&scaleWidth=800&scaleHeight=500&text=",
- "https://www6.flamingtext.com/net-fu/proxy_form.cgi?&imageoutput=true&script=sketch-name&doScale=true&scaleWidth=800&scaleHeight=500&fontsize=100&fillTextType=1&fillTextPattern=Warning!&text=",
- "https://www6.flamingtext.com/net-fu/proxy_form.cgi?&imageoutput=true&script=sketch-name&doScale=true&scaleWidth=800&scaleHeight=500&fontsize=100&fillTextType=1&fillTextPattern=Warning!&fillColor1Color=%23f2aa4c&fillColor2Color=%23f2aa4c&fillColor3Color=%23f2aa4c&fillColor4Color=%23f2aa4c&fillColor5Color=%23f2aa4c&fillColor6Color=%23f2aa4c&fillColor7Color=%23f2aa4c&fillColor8Color=%23f2aa4c&fillColor9Color=%23f2aa4c&fillColor10Color=%23f2aa4c&fillOutlineColor=%23f2aa4c&fillOutline2Color=%23f2aa4c&backgroundColor=%23101820&text="
-]
-global.fla = [
- "https://flamingtext.com/net-fu/proxy_form.cgi?&imageoutput=true&script=water-logo&script=water-logo&fontsize=90&doScale=true&scaleWidth=800&scaleHeight=500&fontsize=100&fillTextColor=%23000&shadowGlowColor=%23000&backgroundColor=%23000&text=",
- "https://flamingtext.com/net-fu/proxy_form.cgi?&imageoutput=true&script=crafts-logo&fontsize=90&doScale=true&scaleWidth=800&scaleHeight=500&text=",
- "https://flamingtext.com/net-fu/proxy_form.cgi?&imageoutput=true&script=amped-logo&doScale=true&scaleWidth=800&scaleHeight=500&text=",
- "https://www6.flamingtext.com/net-fu/proxy_form.cgi?&imageoutput=true&script=sketch-name&doScale=true&scaleWidth=800&scaleHeight=500&fontsize=100&fillTextType=1&fillTextPattern=Warning!&text=",
- "https://www6.flamingtext.com/net-fu/proxy_form.cgi?&imageoutput=true&script=sketch-name&doScale=true&scaleWidth=800&scaleHeight=500&fontsize=100&fillTextType=1&fillTextPattern=Warning!&fillColor1Color=%23f2aa4c&fillColor2Color=%23f2aa4c&fillColor3Color=%23f2aa4c&fillColor4Color=%23f2aa4c&fillColor5Color=%23f2aa4c&fillColor6Color=%23f2aa4c&fillColor7Color=%23f2aa4c&fillColor8Color=%23f2aa4c&fillColor9Color=%23f2aa4c&fillColor10Color=%23f2aa4c&fillOutlineColor=%23f2aa4c&fillOutline2Color=%23f2aa4c&backgroundColor=%23101820&text="
+/*============= WEB API KEY =============*/  
+
+// Definición de API y sus claves
+global.APIs = {  
+  // name: 'https://website'  
+  xzn : 'https://skizo.tech/',  
+}  
+
+global.APIKeys = { // APIKey Here  
+  // 'https://website': 'apikey'  
+
+  'https://skizo.tech/' : 'GataDios',  
+}  
+
+/*============= OTROS =============*/  
+
+// Tipos de archivos soportados
+global.dpptx = 'application/vnd.openxmlformats-officedocument.presentationml.presentation'  
+global.ddocx = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'  
+global.dxlsx = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'  
+global.dpdf = 'application/pdf'  
+global.drtf = 'text/rtf'  
+
+// Enlaces para imágenes
+global.hwaifu = ['https://telegra.ph/file/a7ac2b46f82ef7ea083f9.jpg']  
+
+// Enlaces para generar texto con estilo
+global.flaaa2 = [  
+ "https://flamingtext.com/net-fu/proxy_form.cgi?&imageoutput=true&script=water-logo&script=water-logo&fontsize=90&doScale=true&scaleWidth=800&scaleHeight=500&fontsize=100&fillTextColor=%23000&shadowGlowColor=%23000&backgroundColor=%23000&text=",  
+ "https://flamingtext.com/net-fu/proxy_form.cgi?&imageoutput=true&script=crafts-logo&fontsize=90&doScale=true&scaleWidth=800&scaleHeight=500&text=",  
+ "https://flamingtext.com/net-fu/proxy_form.cgi?&imageoutput=true&script=amped-logo&doScale=true&scaleWidth=800&scaleHeight=500&text=",  
+ "https://www6.flamingtext.com/net-fu/proxy_form.cgi?&imageoutput=true&script=sketch-name&doScale=true&scaleWidth=800&scaleHeight=500&fontsize=100&fillTextType=1&fillTextPattern=Warning!&text=",  
+ "https://www6.flamingtext.com/net-fu/proxy_form.cgi?&imageoutput=true&script=sketch-name&doScale=true&scaleWidth=800&scaleHeight=500&fontsize=100&fillTextType=1&fillTextPattern=Warning!&fillColor1Color=%23f2aa4c&fillColor2Color=%23f2aa4c&fillColor3Color=%23f2aa4c&fillColor4Color=%23f2aa4c&fillColor5Color=%23f2aa4c&fillColor6Color=%23f2aa4c&fillColor7Color=%23f2aa4c&fillColor8Color=%23f2aa4c&fillColor9Color=%23f2aa4c&fillColor10Color=%23f2aa4c&fillOutlineColor=%23f2aa4c&fillOutline2Color=%23f2aa4c&backgroundColor=%23101820&text="  
+]  
+global.fla = [  
+ "https://flamingtext.com/net-fu/proxy_form.cgi?&imageoutput=true&script=water-logo&script=water-logo&fontsize=90&doScale=true&scaleWidth=800&scaleHeight=500&fontsize=100&fillTextColor=%23000&shadowGlowColor=%23000&backgroundColor=%23000&text=",  
+ "https://flamingtext.com/net-fu/proxy_form.cgi?&imageoutput=true&script=crafts-logo&fontsize=90&doScale=true&scaleWidth=800&scaleHeight=500&text=",  
+ "https://flamingtext.com/net-fu/proxy_form.cgi?&imageoutput=true&script=amped-logo&doScale=true&scaleWidth=800&scaleHeight=500&text=",  
+ "https://www6.flamingtext.com/net-fu/proxy_form.cgi?&imageoutput=true&script=sketch-name&doScale=true&scaleWidth=800&scaleHeight=500&fontsize=100&fillTextType=1&fillTextPattern=Warning!&text=",  
+ "https://www6.flamingtext.com/net-fu/proxy_form.cgi?&imageoutput=true&script=sketch-name&doScale=true&scaleWidth=800&scaleHeight=500&fontsize=100&fillTextType=1&fillTextPattern=Warning!&fillColor1Color=%23f2aa4c&fillColor2Color=%23f2aa4c&fillColor3Color=%23f2aa4c&fillColor4Color=%23f2aa4c&fillColor5Color=%23f2aa4c&fillColor6Color=%23f2aa4c&fillColor7Color=%23f2aa4c&fillColor8Color=%23f2aa4c&fillColor9Color=%23f2aa4c&fillColor10Color=%23f2aa4c&fillOutlineColor=%23f2aa4c&fillOutline2Color=%23f2aa4c&backgroundColor=%23101820&text="  
 ]
 
 let file = fileURLToPath(import.meta.url)
