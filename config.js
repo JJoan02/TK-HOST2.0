@@ -1,39 +1,133 @@
-import { watchFile, unwatchFile } from 'fs'
-import chalk from 'chalk'
-import { fileURLToPath } from 'url'
-import moment from 'moment-timezone'
-import { group } from 'console'
-import PhoneNumber from 'awesome-phonenumber'
-import fs from 'fs'
+import { watchFile, unwatchFile } from 'fs';
+import chalk from 'chalk';
+import { fileURLToPath } from 'url';
+import moment from 'moment-timezone';
+import PhoneNumber from 'awesome-phonenumber';
 
-/*============= FECHA Y HORA =============*/
-let hora = moment.tz('America/Buenos_Aires').format('HH')
-    let minuto = moment.tz('America/Buenos_Aires').format('mm')
-    let segundo = moment.tz('America/Buenos_Aires').format('ss')
-    let horario = `${hora} H ${minuto} M ${segundo} S`
-    let horario_general = `${hora}:${minuto}:${segundo}`
-    
-    let d = new Date(new Date + 3600000)
-    let locale = 'es'
-    let weton = ['Pahing', 'Pon', 'Wage', 'Kliwon', 'Legi'][Math.floor(d / 84600000) % 5]
-    let week = d.toLocaleDateString(locale, { weekday: 'long' })
-    let date = d.toLocaleDateString(locale, {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    })
-    const more = String.fromCharCode(8206)
-const readMore = more.repeat(4001)
+/*============= CONFIGURACIÓN =============*/
+const TIMEZONE = 'America/Lima'; // Zona horaria
+const LOCALE = 'es';            // Idioma de salida
 
-/*============= INFO PRINCIPAL =============*/
-global.owner = [
-['5493865860048', 'KenisawaDev', true],
-['51910234457', 'Admin', true]
-]
-global.mods = []
-global.prems = []
-global.nomorbot = '5493816785382'
-global.nomorown = '51910234457'
+/*============= FUNCIONES =============*/
+// Obtiene la hora formateada (HH:mm:ss)
+const getCurrentTime = () => {
+    const now = moment.tz(TIMEZONE);
+    return {
+        hour: now.format('HH'),
+        minute: now.format('mm'),
+        second: now.format('ss'),
+        full: now.format('HH:mm:ss'),
+    };
+};
+
+// Obtiene la fecha formateada (día, mes, año)
+const getCurrentDate = () => {
+    const now = new Date(new Date().toLocaleString("en-US", { timeZone: TIMEZONE }));
+    const weekday = now.toLocaleDateString(LOCALE, { weekday: 'long' });
+    const date = now.toLocaleDateString(LOCALE, {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+    });
+
+    return {
+        weekday,
+        full: date,
+    };
+};
+
+// Calcula el "weton" basado en días
+const getWeton = () => {
+    const now = new Date(new Date().toLocaleString("en-US", { timeZone: TIMEZONE }));
+    const wetonList = ['Pahing', 'Pon', 'Wage', 'Kliwon', 'Legi'];
+    return wetonList[Math.floor(now / 84600000) % 5];
+};
+
+// Genera un separador largo para mensajes
+const generateReadMore = (length = 4001) => String.fromCharCode(8206).repeat(length);
+
+/*============= EJECUCIÓN =============*/
+const time = getCurrentTime();
+const date = getCurrentDate();
+const weton = getWeton();
+const readMore = generateReadMore();
+
+// Impresión en consola
+console.log(chalk.green(`Horario: ${time.full} (${time.hour} H ${time.minute} M ${time.second} S)`));
+console.log(chalk.blue(`Fecha: ${date.full} (${date.weekday})`));
+console.log(chalk.magenta(`Weton: ${weton}`));
+console.log(chalk.yellow(`ReadMore generado: ${readMore.length} caracteres`));
+
+/*============= CONFIGURACIÓN GLOBAL =============*/
+
+// Propietarios del bot (ID, Nombre, Estado de Superusuario)
+const OWNERS = [
+    { id: '5493865860048', name: 'KenisawaDev', superuser: true },
+    { id: '51910234457', name: 'Joan TK', superuser: true },
+    // Espacios en blanco para agregar nuevos propietarios:
+    { id: '', name: '', superuser: false }, // EDITAR
+    { id: '', name: '', superuser: false }, // EDITAR
+    { id: '', name: '', superuser: false }, // EDITAR
+];
+
+// Moderadores (ID)
+const MODS = [
+    // Espacios en blanco para agregar nuevos moderadores:
+    '', // EDITAR
+    '', // EDITAR
+    '', // EDITAR
+    '', // EDITAR
+    '', // EDITAR
+];
+
+// Usuarios premium (ID)
+const PREMS = [
+    // Espacios en blanco para agregar nuevos usuarios premium:
+    '', // EDITAR
+    '', // EDITAR
+    '', // EDITAR
+    '', // EDITAR
+    '', // EDITAR
+];
+
+// Información del bot
+const BOT_INFO = {
+    number: '5493816785382', // Número del bot
+    ownerNumber: '51910234457', // Número principal del propietario
+};
+
+/*============= ASIGNACIÓN GLOBAL =============*/
+global.owner = OWNERS.map(owner => [owner.id, owner.name, owner.superuser]);
+global.mods = MODS.filter(mod => mod); // Ignorar espacios en blanco
+global.prems = PREMS.filter(prem => prem); // Ignorar espacios en blanco
+global.nomorbot = BOT_INFO.number;
+global.nomorown = BOT_INFO.ownerNumber;
+
+/*============= FUNCIONES ÚTILES =============*/
+
+// Imprimir información estructurada
+const printGlobalInfo = () => {
+    console.log('=== Información del Bot ===');
+    console.log('Propietarios:');
+    OWNERS.forEach(owner => {
+        if (owner.id) {
+            console.log(`- ${owner.name} (${owner.id}) [Superusuario: ${owner.superuser}]`);
+        }
+    });
+    console.log('Moderadores:');
+    MODS.forEach(mod => {
+        if (mod) console.log(`- ${mod}`);
+    });
+    console.log('Usuarios Premium:');
+    PREMS.forEach(prem => {
+        if (prem) console.log(`- ${prem}`);
+    });
+    console.log(`Número del Bot: ${BOT_INFO.number}`);
+    console.log(`Número del Propietario Principal: ${BOT_INFO.ownerNumber}`);
+};
+
+// Ejecutar la impresión para verificar
+printGlobalInfo();
 
 /*============= MARCA DE AGUA =============*/
 global.readMore = readMore
