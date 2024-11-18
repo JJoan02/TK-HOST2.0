@@ -131,7 +131,12 @@ printGlobalInfo();
 
 /*============= CONFIGURACIÓN GLOBAL =============*/
 
-// Marca de agua e información del bot
+// Definición de las variables necesarias
+const week = 'lunes'; // Cambia este valor dinámicamente según sea necesario
+const date = '18 de noviembre de 2024'; // Fecha actual
+const horario = '09:17:51'; // Hora actual
+
+// Configuración global
 global.BOT_INFO = {
     author: 'Joan TK', // Autor del bot
     name: 'Admin-TK', // Nombre del bot
@@ -147,7 +152,7 @@ global.BOT_INFO = {
     additionalInfo2: '', // EDITAR
 };
 
-// Referencias globales individuale:
+// Asignaciones globales individuales, si son necesarias
 global.author = global.BOT_INFO.author;
 global.namebot = global.BOT_INFO.name;
 global.watermark = global.BOT_INFO.watermark;
