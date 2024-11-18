@@ -130,8 +130,17 @@ const printGlobalInfo = () => {
 printGlobalInfo();
 
 /*============= CONFIGURACIÓN GLOBAL =============*/
-
-
+global.readMore = readMore
+global.author = 'Joan TK'
+global.namebot = 'Admin-TK'
+global.wm = '© Admin-TK By Joan TK'
+global.watermark = wm
+global.botdate = `⫹⫺ FECHA: ${week} ${date}\n⫹⫺ HORA: ${horario}`
+global.bottime = `H O R A : ${horario}`
+global.stickpack = `Sticker creado por ${namebot}\nhttps://dash.tk-joanhost.com/\n\nTK-BOT\n+${nomorbot}`
+global.stickauth = `© Admin-TK By Joan TK`
+global.week = `${week} ${date}`
+global.wibb = `${horario}`
 
 // Redes sociales y enlaces
 const SOCIALS = {
