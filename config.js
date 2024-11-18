@@ -129,29 +129,80 @@ const printGlobalInfo = () => {
 // Ejecutar la impresión para verificar
 printGlobalInfo();
 
-/*============= MARCA DE AGUA =============*/
-global.readMore = readMore
-global.author = 'Joan TK'
-global.namebot = 'Admin-TK'
-global.wm = '© Admin-TK By Joan TK'
-global.watermark = wm
-global.botdate = `⫹⫺ FECHA: ${week} ${date}\n⫹⫺ HORA: ${horario}`
-global.bottime = `H O R A : ${horario}`
-global.stickpack = `Sticker creado por ${namebot}\nhttps://dash.tk-joanhost.com/\n\nTK-BOT\n+${nomorbot}`
-global.stickauth = `© Admin-TK By Joan TK`
-global.week = `${week} ${date}`
-global.wibb = `${horario}`
+/*============= CONFIGURACIÓN GLOBAL =============*/
 
-//*============= REDES =============*/
-global.sig = 'https://www.instagram.com/'
-global.sgh = 'https://github.com/MauroAzcurra'
-global.sgc = 'https://whatsapp.com/channel/0029VawpOoGHwXb6LgJkXN2R'
-global.sgw = 'https://wa.me/51910234457'
-global.sdc = '-'
-global.linkdash = 'https://dash.tk-joanhost.com/'
-global.sfb = 'https://www.facebook.com/'
-global.snh = 'https://www.instagram.com/'
-global.idcanal = '120363348355703366@newsletter'
+// Marca de agua e información del bot
+const BOT_INFO = {
+    author: 'Joan TK', // Autor del bot
+    name: 'Admin-TK', // Nombre del bot
+    watermark: '© Admin-TK By Joan TK', // Marca de agua principal
+    date: `⫹⫺ FECHA: ${week} ${date}\n⫹⫺ HORA: ${horario}`, // Fecha y hora
+    time: `H O R A : ${horario}`, // Hora específica
+    stickerPack: `Sticker creado por Admin-TK\nhttps://dash.tk-joanhost.com/\n\nTK-BOT\n+${nomorbot}`, // Información del paquete de stickers
+    stickerAuthor: '© Admin-TK By Joan TK', // Autor del sticker
+    weekInfo: `${week} ${date}`, // Información de la semana
+    shortTime: `${horario}`, // Hora en formato reducido
+    // Espacios en blanco para agregar nuevos datos:
+    additionalInfo1: '', // EDITAR
+    additionalInfo2: '', // EDITAR
+};
+
+// Redes sociales y enlaces
+const SOCIALS = {
+    instagram: 'https://www.instagram.com/joan_tk02',
+    github: 'https://github.com/JJoan02/Admin-TK',
+    whatsappChannel: 'https://whatsapp.com/channel/0029VawpOoGHwXb6LgJkXN2R',
+    whatsappLink: 'https://wa.me/51910234457',
+    discord: '-', // Discord (editar si es necesario)
+    dashboard: 'https://dash.tk-joanhost.com/',
+    facebook: 'https://www.facebook.com/',
+    newsletter: '120363348355703366@newsletter',
+    // Espacios en blanco para agregar nuevos enlaces:
+    additionalSocial1: '', // EDITAR
+    additionalSocial2: '', // EDITAR
+};
+
+/*============= ASIGNACIÓN GLOBAL =============*/
+global.readMore = readMore;
+global.author = BOT_INFO.author;
+global.namebot = BOT_INFO.name;
+global.wm = BOT_INFO.watermark;
+global.watermark = BOT_INFO.watermark;
+global.botdate = BOT_INFO.date;
+global.bottime = BOT_INFO.time;
+global.stickpack = BOT_INFO.stickerPack;
+global.stickauth = BOT_INFO.stickerAuthor;
+global.week = BOT_INFO.weekInfo;
+global.wibb = BOT_INFO.shortTime;
+
+global.sig = SOCIALS.instagram;
+global.sgh = SOCIALS.github;
+global.sgc = SOCIALS.whatsappChannel;
+global.sgw = SOCIALS.whatsappLink;
+global.sdc = SOCIALS.discord;
+global.linkdash = SOCIALS.dashboard;
+global.sfb = SOCIALS.facebook;
+global.snh = SOCIALS.instagram; // Redundante con sig (editar si necesario)
+global.idcanal = SOCIALS.newsletter;
+
+/*============= FUNCIONES ÚTILES =============*/
+
+// Imprimir información estructurada
+const printBotInfo = () => {
+    console.log('=== Información del Bot ===');
+    console.log(`Autor: ${BOT_INFO.author}`);
+    console.log(`Nombre: ${BOT_INFO.name}`);
+    console.log(`Marca de Agua: ${BOT_INFO.watermark}`);
+    console.log(`Fecha: ${BOT_INFO.date}`);
+    console.log(`Hora: ${BOT_INFO.time}`);
+    console.log('Enlaces sociales:');
+    for (const [key, value] of Object.entries(SOCIALS)) {
+        if (value) console.log(`- ${key}: ${value}`);
+    }
+};
+
+// Ejecutar la impresión para verificar
+printBotInfo();
 
 
 /*============= DISEÑOS =============*/
