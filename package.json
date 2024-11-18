@@ -1,18 +1,24 @@
 {
-    "name": "Waguri-Ai",
+    "name": "Admin-TK",
     "version": "8.0.0",
-    "description": "Waguri Ai By KenisawaDev",
+    "description": "Super Admin de WhatsApp - Comunidad TK",
     "main": "index.js",
     "type": "module",
     "directories": {
         "lib": "lib",
         "src": "src",
-        "plugins": "plugins"
+        "plugins": "plugins",
+        // Espacios en blanco para agregar nuevos directorios:
+        "additional1": "", // EDITAR
+        "additional2": ""  // EDITAR
     },
     "scripts": {
         "start": "node index.js --autocleartmp --autoread",
         "test": "nodemon index.js --server --autocleartmp --autoread",
-        "mongodb": "node . --db 'url mongodbmu'"
+        "mongodb": "node . --db 'url mongodbmu'",
+        // Espacios en blanco para agregar nuevos scripts:
+        "script1": "", // EDITAR
+        "script2": ""  // EDITAR
     },
     "dependencies": {
         "@adiwajshing/baileys": "npm:@whiskeysockets/baileys@latest",
@@ -75,6 +81,9 @@
         "xmldom": "^0.6.0",
         "yargs": "^17.7.2",
         "yt-search": "^2.10.4",
-        "zs-extract": "^1.4.2"
+        "zs-extract": "^1.4.2",
+        // Espacios en blanco para agregar nuevas dependencias:
+        "dependency1": "", // EDITAR
+        "dependency2": ""  // EDITAR
     }
 }
