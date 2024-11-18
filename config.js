@@ -132,7 +132,7 @@ printGlobalInfo();
 /*============= CONFIGURACIÓN GLOBAL =============*/
 
 // Marca de agua e información del bot
-const BOT_INFO = {
+global.BOT_INFO = {
     author: 'Joan TK', // Autor del bot
     name: 'Admin-TK', // Nombre del bot
     watermark: '© Admin-TK By Joan TK', // Marca de agua principal
@@ -146,6 +146,17 @@ const BOT_INFO = {
     additionalInfo1: '', // EDITAR
     additionalInfo2: '', // EDITAR
 };
+
+// Referencias globales individuale:
+global.author = global.BOT_INFO.author;
+global.namebot = global.BOT_INFO.name;
+global.watermark = global.BOT_INFO.watermark;
+global.botdate = global.BOT_INFO.date;
+global.bottime = global.BOT_INFO.time;
+global.stickpack = global.BOT_INFO.stickerPack;
+global.stickauth = global.BOT_INFO.stickerAuthor;
+global.week = global.BOT_INFO.weekInfo;
+global.wibb = global.BOT_INFO.shortTime;
 
 // Redes sociales y enlaces
 const SOCIALS = {
