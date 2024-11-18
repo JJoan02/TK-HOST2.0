@@ -161,7 +161,16 @@ autodl: false,
 detect: true,
 sWelcome: '',
 sBye: '',
-sWelcomeImageLink: 'https://d.uguu.se/mYSkSZPR.jpg',
+sWelcomeImageLink: (() => {
+    const imagePaths = [
+        './gallery/welcome1.jpg',
+        './gallery/welcome2.jpg',
+        './gallery/welcome3.jpg',
+        './gallery/welcome4.jpg'
+    ];
+    const randomIndex = Math.floor(Math.random() * imagePaths.length);
+    return imagePaths[randomIndex];
+})(),
 sByeImageLink: 'https://d.uguu.se/mYSkSZPR.jpg',
 sPromote: '',
 sDemote: '',
