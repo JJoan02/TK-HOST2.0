@@ -202,7 +202,7 @@ let handler = async (m, { conn, usedPrefix: _p, text }) => {
   await conn.reply(m.chat, await estilo(text), m, infoReply)*/
 
 		//await conn.sendFile(m.chat, "https://i.pximg.net/c/600x1200_90_webp/img-master/img/2023/12/31/09/20/33/114715550_p0_master1200.jpg", `menu.jpg`, await estilo(text), m, null, rcanal)
-		conn.sendFile(m.chat, "https://d.uguu.se/mYSkSZPR.jpg", 'menu.jpg', await estilo(text), global.fliveLoc2, null)
+		conn.sendFile(m.chat, "./gallery/menu1.jpg", 'menu.jpg', await estilo(text), global.fliveLoc2, null)
 	} catch (error) {
 		console.error(error)
 		throw 'Error: ' + error.message
