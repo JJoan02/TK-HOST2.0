@@ -108,13 +108,18 @@ chat.sWelcome = ''
 if (!('sByeImageLink' in chat))
 chat.sByeImageLink = 'https://d.uguu.se/mYSkSZPR.jpg'
 if (!('sWelcomeImageLink' in chat)) {
+    // Lista de rutas de imágenes
     const imagePaths = [
         './gallery/welcome1.jpg',
         './gallery/welcome2.jpg',
         './gallery/welcome3.jpg',
         './gallery/welcome4.jpg'
     ];
+    
+    // Generar un índice aleatorio entre 0 y la longitud de las rutas menos 1
     const randomIndex = Math.floor(Math.random() * imagePaths.length);
+    
+    // Asignar una imagen aleatoria a chat.sWelcomeImageLink
     chat.sWelcomeImageLink = imagePaths[randomIndex];
 }
 if (!('sBye' in chat))
@@ -162,13 +167,18 @@ detect: true,
 sWelcome: '',
 sBye: '',
 sWelcomeImageLink: (() => {
+    // Lista de rutas de las imágenes
     const imagePaths = [
         './gallery/welcome1.jpg',
         './gallery/welcome2.jpg',
         './gallery/welcome3.jpg',
         './gallery/welcome4.jpg'
     ];
+    
+    // Generar un índice aleatorio entre 0 y la longitud de las rutas menos 1
     const randomIndex = Math.floor(Math.random() * imagePaths.length);
+    
+    // Devolver la ruta de la imagen seleccionada aleatoriamente
     return imagePaths[randomIndex];
 })(),
 sByeImageLink: 'https://d.uguu.se/mYSkSZPR.jpg',
