@@ -131,70 +131,7 @@ printGlobalInfo();
 
 /*============= CONFIGURACIÓN GLOBAL =============*/
 
-import moment from 'moment-timezone';
 
-/*============= CONFIGURACIÓN =============*/
-const TIMEZONE = 'America/Lima'; // Cambia a tu zona horaria
-const LOCALE = 'es';            // Idioma de salida
-
-/*============= FUNCIONES =============*/
-
-// Obtiene la hora formateada (HH:mm:ss)
-const getCurrentTime = () => {
-    const now = moment.tz(TIMEZONE);
-    return now.format('HH:mm:ss');
-};
-
-// Obtiene la fecha formateada (día, mes, año)
-const getCurrentDate = () => {
-    const now = moment.tz(TIMEZONE);
-    return {
-        fullDate: now.format('D [de] MMMM [de] YYYY'),
-        dayOfWeek: now.format('dddd')
-    };
-};
-
-// Obtiene la hora en formato corto (ejemplo: "9:17 am")
-const getShortTime = () => {
-    const now = moment.tz(TIMEZONE);
-    return now.format('h:mm a');
-};
-
-/*============= EJECUCIÓN DINÁMICA =============*/
-const currentTime = getCurrentTime();
-const currentDate = getCurrentDate();
-const shortTime = getShortTime();
-
-// Configuración global del bot
-global.BOT_INFO = {
-    author: 'Joan TK', // Autor del bot
-    name: 'Admin-TK', // Nombre del bot
-    watermark: '© Admin-TK By Joan TK', // Marca de agua principal
-    date: `⫹⫺ FECHA: ${currentDate.dayOfWeek} ${currentDate.fullDate}\n⫹⫺ HORA: ${currentTime}`, // Fecha y hora dinámicas
-    time: `H O R A : ${currentTime}`, // Hora específica
-    weekInfo: `${currentDate.dayOfWeek} ${currentDate.fullDate}`, // Información de la semana
-    shortTime: shortTime, // Hora en formato corto
-    stickerPack: 'Pack de Stickers', // Nombre del paquete de stickers (si aplica)
-    stickerAuthor: 'Admin-TK', // Autor de stickers (si aplica)
-};
-
-// Asignaciones globales individuales, si son necesarias
-global.author = global.BOT_INFO.author;
-global.namebot = global.BOT_INFO.name;
-global.watermark = global.BOT_INFO.watermark;
-global.botdate = global.BOT_INFO.date;
-global.bottime = global.BOT_INFO.time;
-global.stickpack = global.BOT_INFO.stickerPack;
-global.stickauth = global.BOT_INFO.stickerAuthor;
-global.week = global.BOT_INFO.weekInfo;
-global.wibb = global.BOT_INFO.shortTime;
-
-// Impresión de información
-console.log('=== Información Dinámica ===');
-console.log(`Fecha: ${currentDate.fullDate}`);
-console.log(`Día de la Semana: ${currentDate.dayOfWeek}`);
-console.log(`Hora: ${currentTime}`);
-console.log(`Hora (formato corto): ${shortTime}`);
 
 // Redes sociales y enlaces
 const SOCIALS = {
