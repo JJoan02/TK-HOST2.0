@@ -82,14 +82,14 @@ global.wibb = `${horario}`
 //*============= REDES =============*/  
 
 // Enlaces a redes sociales y otras plataformas
-global.sig = 'https://www.instagram.com/'  
-global.sgh = 'https://github.com/MauroAzcurra'  
+global.sig = 'https://www.instagram.com/joan_tk02'  
+global.sgh = 'https://github.com/JJoan02/Admin-TK'  
 global.sgc = 'https://whatsapp.com/channel/0029VawpOoGHwXb6LgJkXN2R'  
 global.sgw = 'https://wa.me/51910234457'  
 global.sdc = '-'  
 global.linkdash = 'https://dash.tk-joanhost.com/'  
-global.sfb = 'https://www.facebook.com/'  
-global.snh = 'https://www.instagram.com/'  
+global.sfb = 'https://www.facebook.com/joan_tk02'  
+global.snh = 'https://www.instagram.com/joan_tk02'  
 global.idcanal = '120363348355703366@newsletter'  
 
 /*============= DISEÑOS =============*/  
