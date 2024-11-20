@@ -16,7 +16,7 @@ let handler = async (m, { conn, text }) => {
 
 handler.help = ["brat"]
 handler.tags = ["sticker"]
-handler.command = /^(brat)$/i
+handler.command = /^(bratt)$/i
 
 export default handler
 
