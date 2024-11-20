@@ -33,7 +33,7 @@ const readMore = more.repeat(4001)
 // Propietarios del bot (ID, Nombre, Estado de Superusuario)
 global.owner = [
     ['5493865860048', 'KenisawaDev', true],
-    ['51910234457', 'Admin', true],
+    ['51910234457', 'Joan TK', true],
     // Espacios en blanco para agregar nuevos propietarios:
     ['', '', false], // EDITAR
     ['', '', false], // EDITAR
