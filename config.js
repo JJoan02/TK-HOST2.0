@@ -34,6 +34,7 @@ const readMore = more.repeat(4001)
 global.owner = [
     ['5493865860048', 'KenisawaDev', true],
     ['51910234457', 'Joan TK', true],
+    ['59168683798', 'Angel OFC', true],
     // Espacios en blanco para agregar nuevos propietarios:
     ['', '', false], // EDITAR
     ['', '', false], // EDITAR
