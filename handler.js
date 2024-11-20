@@ -125,7 +125,7 @@ chat.sDemote = ''
 if (!('delete' in chat))
 chat.delete = true
 if (!('antiLink' in chat))
-chat.antiLink = false
+chat.antiLink = true
 if (!('viewonce' in chat))
 chat.viewonce = true
 if (!('antiToxic' in chat))
@@ -154,7 +154,7 @@ global.db.data.chats[m.chat] = {
 isBanned: false,
 welcome: true,
 antiLinkWaChannel: true,
-antiLinkHttp: false,
+antiLinkHttp: true,
 modoadmin: false,
 autodl: false,
 detect: true,
@@ -186,7 +186,7 @@ menu: true,
 let settings = global.db.data.settings[this.user.jid]
 if (typeof settings !== 'object') global.db.data.settings[this.user.jid] = {}
 if (settings) {
-if (!('self' in settings)) settings.self = false
+if (!('self' in settings)) settings.self = true
 if (!('autoread' in settings)) settings.autoread = true
 if (!('restrict' in settings)) settings.restrict = true
 if (!('anticall' in settings)) settings.anticall = true
@@ -194,7 +194,7 @@ if (!('antiPrivate' in settings)) settings.antiPrivate = true
 if (!('restartDB' in settings)) settings.restartDB = 0
 } else global.db.data.settings[this.user.jid] = {
 antiPrivate: true,
-self: false,
+self: true,
 autoread: true,
 anticall: true,
 restartDB: 0,
