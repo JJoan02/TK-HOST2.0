@@ -1,8 +1,6 @@
 import Jadibot from "../lib/jadibot.js";
 import Jadibots from "../lib/jadibots.js";
 let handler = async (m, { conn, text, usedPrefix, command }) => {
-let setting = global.db.data.settings[this.user.jid]
-	if(!setting.jadibotmd) return 
 /*    if (conn.user.jid !== await Jadibots.conn?.user?.jid)
         throw m.reply(`!\nhttps://wa.me/${await conn.user?.jid.split("@")[0]}`);*/
     let who = text ? text.replace(/[^0-9]/g, "") + "@s.whatsapp.net" : m.sender;

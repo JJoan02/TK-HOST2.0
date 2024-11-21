@@ -1,8 +1,6 @@
 import { jidNormalizedUser } from "@adiwajshing/baileys";
 import Jadibots from "../lib/jadibots.js";
 let handler = async (m, { usedPrefix }) => {
-let setting = global.db.data.settings[this.user.jid]
-	if(!setting.jadibotmd) return 
     const users = [...Jadibots.conns.entries()].map(([k, v]) => v.user);
     if (!users.length) throw m.reply("✦ No hay subbots por ahora.")
     const text = `
