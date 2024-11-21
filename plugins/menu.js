@@ -1,3 +1,5 @@
+
+
 import moment from 'moment-timezone'
 import { xpRange } from '../lib/levelling.js'
 import { platform } from 'node:process'
@@ -39,8 +41,7 @@ let tags = {
     'tools': '`Herramientas`',
     'group': '`Grupos`',
     'owner': '`Owner`',
-};
-
+}
 const defaultMenu = {
 	before: `
 👋 %ucapan %names
@@ -52,7 +53,6 @@ _*\`</${global.namebot}>\`*_
 	footer: '',
 	after: wm,
 }
-
 let handler = async (m, { conn, usedPrefix: _p, text }) => {
 	try {
 		let { exp, limit, level, role } = global.db.data.users[m.sender]
@@ -123,24 +123,10 @@ let handler = async (m, { conn, usedPrefix: _p, text }) => {
 				enabled: !plugins.disabled,
 			}
 		})
-
-		// Extraemos los comandos por categorías
-		let categoryInfo = {};
-
-		// Recorremos las categorías en `tags`
-		Object.keys(tags).forEach(tag => {
-			// Filtramos los comandos que pertenecen a la categoría actual
-			let categoryCommands = help.filter(menu => menu.tags && menu.tags.includes(tag))
-				.map(menu => menu.help)
-				.flat();  // .flat() para obtener un solo array plano
-
-			// Guardamos la categoría y sus comandos
-			categoryInfo[tags[tag]] = categoryCommands;
-		});
-
-		// categoryInfo ahora tiene todas las categorías con sus comandos.
-		console.log(categoryInfo);
-
+		for (let plugins of help)
+			if (plugins && 'tags' in plugins)
+				for (let tag of plugins.tags)
+					if (!(tag in tags) && tag) tags[tag] = tag
 		conn.menu = conn.menu ? conn.menu : {}
 		let before = conn.menu.before || defaultMenu.before
 		let header = conn.menu.header || defaultMenu.header
@@ -198,6 +184,24 @@ let handler = async (m, { conn, usedPrefix: _p, text }) => {
 		}
 		text = text.replace(new RegExp(`%(${Object.keys(replace).sort((a, b) => b.length - a.length).join`|`})`, 'g'), (_, name) => '' + replace[name])
 
+/*  const infoReply = {
+    contextInfo: {
+      externalAdReply: {
+        body: wm,
+        mediaType: 1,
+        mediaUrl: linkdash,
+        previewType: 0,
+        renderLargerThumbnail: true,
+        sourceUrl: linkdash,
+        thumbnail: 'https://i.pximg.net/c/600x1200_90_webp/img-master/img/2023/12/31/09/20/33/114715550_p0_master1200.jpg',
+        title: global.namebot
+      }
+    }
+  }
+
+  await conn.reply(m.chat, await estilo(text), m, infoReply)*/
+
+		//await conn.sendFile(m.chat, "https://i.pximg.net/c/600x1200_90_webp/img-master/img/2023/12/31/09/20/33/114715550_p0_master1200.jpg", `menu.jpg`, await estilo(text), m, null, rcanal)
 		conn.sendFile(m.chat, "./gallery/menu1.jpg", 'menu.jpg', await estilo(text), global.fliveLoc2, null)
 	} catch (error) {
 		console.error(error)
@@ -219,21 +223,33 @@ function pickRandom(list) {
 }
 
 function clockString(ms) {
-	let h = Math.floor(ms / 3600000)
-	let m = Math.floor(ms % 3600000 / 60000)
-	let s = Math.floor(ms % 60000 / 1000)
+	let h = isNaN(ms) ? '--' : Math.floor(ms / 3600000)
+	let m = isNaN(ms) ? '--' : Math.floor(ms / 60000) % 60
+	let s = isNaN(ms) ? '--' : Math.floor(ms / 1000) % 60
 	return [h, m, s].map(v => v.toString().padStart(2, 0)).join(':')
 }
 
 function ucapan() {
-	let time = new Date().getHours()
-	if (time >= 4 && time < 10) {
-		return 'Selamat Pagi'
-	} else if (time >= 10 && time < 15) {
-		return 'Selamat Siang'
-	} else if (time >= 15 && time < 18) {
-		return 'Selamat Sore'
-	} else {
-		return 'Selamat Malam'
-	}
+    const time = moment.tz('America/Buenos_Aires').format('HH')
+    let res = "¿Aún despiertx?, Duerme mejor. 🌙"
+    if (time >= 5) {
+        res = "Buena Madrugada 🌄"
+    }
+    if (time > 10) {
+        res = "Buenos días ☀️"
+    }
+    if (time >= 12) {
+        res = "Buenas Tardes 🌅"
+    }
+    if (time >= 19) {
+        res = "Buenas Noches 🌙"
+    }
+    return res
+}
+
+async function getRAM() {
+	const {
+		totalmem
+	} = await import('os')
+	return Math.round(totalmem / 1024 / 1024)
 }
