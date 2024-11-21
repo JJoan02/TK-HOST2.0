@@ -1,35 +1,53 @@
-export async function before(m, {conn, isAdmin, isBotAdmin, isOwner, isROwner}) {
-  if (m.isBaileys && m.fromMe) return !0;
-  if (m.isGroup) return !1;
-  if (!m.message) return !0;
-  if (m.text.includes('PIEDRA') || m.text.includes('PAPEL') || m.text.includes('TIJERA') || m.text.includes('serbot') || m.text.includes('jadibot')) return !0;
-  const chat = global.db.data.chats[m.chat];
-  const bot = global.db.data.settings[this.user.jid] || {};
-  if (bot.antiPrivate && !isOwner && !isROwner) {
-    //await m.reply('> _*`🤍 ʜᴏʟᴀ '+`@${m.sender.split`@`[0]}`+', ᴘᴇʀᴅᴏɴ ᴅᴇʙɪᴅᴏ ᴀ ǫᴜᴇ ᴍɪ ᴘʀᴏᴘɪᴇᴛᴀʀɪᴏ ᴀᴄᴛɪᴠᴏ ᴇʟ ᴀɴᴛɪᴘᴠ ɴᴏ ᴘᴜᴇᴅᴏ ʀᴇᴄɪʙɪʀ ᴍᴇɴsᴀᴊᴇs ᴀʟ ᴘʀɪᴠᴀᴅᴏ ʏ sᴇʀᴀs ʙʟᴏǫᴇᴜᴀᴅᴏ\n\n> _*`ᴘᴜᴇᴅᴇs ᴜɴɪʀᴛᴇ ᴀʟ ɢʀᴜᴘᴏ ᴅᴇʟ ʙᴏᴛ ʏ ᴜsᴀʀʟᴏ ʟɪʙʀᴇᴍᴇɴᴛᴇ ᴀʜɪ`*_ 👇\n\n\n'+gp1, false, {mentions: [m.sender]});
-    await this.updateBlockStatus(m.chat, 'block');
-  }
-  return !1;
-const comandos = /piedra|papel|tijera|estado|verificar|code|jadibot --code|--code|creadora|bottemporal|grupos|instalarbot|términos|bots|deletebot|eliminarsesion|serbot|verify|register|registrar|reg|reg1|nombre|name|nombre2|name2|edad|age|edad2|age2|genero|género|gender|identidad|pasatiempo|hobby|identify|finalizar|pas2|pas3|pas4|pas5|registroc|deletesesion|registror|jadibot/i;
+// ===========================================================
+// 📌 Actualizado por JoanTK
+// ✧ Función: Anti-privado que ignora mensajes no permitidos excepto de propietarios y lista blanca.
+// ✧ Características principales:
+//    - Ignora mensajes privados no relacionados con comandos permitidos cuando está activado.
+//    - Los propietarios, superadministradores y usuarios en la lista blanca pueden usar el bot sin restricciones.
+// ===========================================================
 
-let handler = m => m;
-handler.before = async function (m, { conn, isOwner, isROwner }) {
-    if (m.fromMe) return true;
-    if (m.isGroup) return false;
-    if (!m.message) return true;
+export async function before(m, { conn, isAdmin, isBotAdmin, isOwner, isROwner }) {
+    // Ignorar mensajes del bot o en grupos
+    if (m.isBaileys && m.fromMe) return true; // Mensajes internos del bot
+    if (m.isGroup) return false; // Ignorar grupos
+    if (!m.message) return true; // Ignorar mensajes vacíos
 
-    const regexWithPrefix = new RegExp(`^${prefix.source}\\s?${comandos.source}`, 'i');
-    if (regexWithPrefix.test(m.text.toLowerCase().trim())) return true;
+    // Comandos permitidos
+    const allowedCommands = /piedra|papel|tijera|estado|verificar|code|jadibot|creadora|bottemporal|grupos|instalarbot|términos|deletebot|eliminarsesion|serbot|verify|register|nombre|edad|genero|pasatiempo|finalizar|registroc|deletesesion/i;
 
-    let chat, user, bot, mensaje;
-    chat = global.db.data.chats[m.chat];
-    user = global.db.data.users[m.sender];
-    bot = global.db.data.settings[this.user.jid] || {};
+    // Excepciones: Lista blanca de usuarios permitidos a pesar de anti-privado
+    // números de teléfono o IDs de usuario (en formato number@s.whatsapp.net)
+    const whitelist = [
+        '1234567890@s.whatsapp.net',  // Espacio 1
+        '0987654321@s.whatsapp.net',  // Espacio 2
+        '',  // Espacio 3 (vacío, no afecta)
+        '',  // Espacio 4 (vacío, no afecta)
+        ''   // Espacio 5 (vacío, no afecta)
+    ];
 
-    if (bot.antiPrivate && !isOwner && !isROwner) {
-        return false;
+    // Acceso a la configuración del bot
+    const botSettings = global.db?.data?.settings?.[conn.user.jid] || {};
+
+    // Verificar si el anti-privado está activado
+    if (botSettings.antiPrivate) {
+        // Excepción: Si es Owner o Super Owner, permitir todo
+        if (isOwner || isROwner) return false;
+
+        // Excepción: Si el usuario está en la lista blanca, permitir mensaje
+        if (whitelist.includes(m.sender)) {
+            console.log(`Excepción: Mensaje permitido de @${m.sender.split('@')[0]} (Lista blanca)`);
+            return false; // Permitir el mensaje
+        }
+
+        // Verificar si el mensaje coincide con los comandos permitidos
+        if (!allowedCommands.test(m.text.toLowerCase().trim())) {
+            console.log(`Mensaje ignorado de @${m.sender.split('@')[0]} debido al anti-privado.`);
+            await m.reply(`✧ Hola @${m.sender.split('@')[0]}, debido a que el *Anti-Privado* está activado, no puedo procesar tu mensaje. Usa los comandos permitidos o contáctame en el grupo.`);
+            return true; // Ignorar mensaje
+        }
     }
-    
-    return false;
-};
+
+    return false; // Permitir procesar el mensaje si no se aplica ninguna regla de bloqueo
+}
+
 export default handler;
