@@ -189,17 +189,19 @@ function clockString(ms) {
 }
 
 function ucapan() {
-  const time = moment.tz('America/Lima').format('HH');
-  let res = "¿Aún despiertx?, Duerme mejor. 🌙";
-  if (time >= 5 && time < 10) {
-    res = "Buena Madrugada 🌄";
-  } else if (time >= 10 && time < 12) {
+  const time = moment.tz('America/Lima').format('hh');
+  let res = "¿Aún despierto?, duerme mejor. 🌙";
+  
+  if (time >= 4 && time < 9) {
+    res = "Buena madrugada 🌄";
+  } else if (time >= 9 && time < 11) {
     res = "Buenos días ☀️";
-  } else if (time >= 12 && time < 19) {
-    res = "Buenas Tardes 🌅";
+  } else if (time >= 11 && time < 18) {
+    res = "Buenas tardes 🌅";
   } else {
-    res = "Buenas Noches 🌙";
+    res = "Buenas noches 🌙";
   }
+  
   return res;
 }
 
