@@ -21,8 +21,10 @@ if (!videoID) throw m.reply('✧ Ingresa un link válido de YouTube.');
 await conn.sendMessage(m.chat, { react: { text: '🕒', key: m.key }})
 try {
 let ytdata = await ytdl(text);
+console.log(ytdata);
 //await conn.sendFile(m.chat, ytdata.video[0].downloadLink, `${ytdata.title}.mp4`, `*✧ Info:* ${ytdata.duration}`, m)
-await conn.sendMessage(m.chat, { document: { url: ytdata.audio[0].downloadLink }, caption: `\`✦ Pedido terminado: ${ytdata.duration}\``, mimetype: 'audio/mpeg', fileName: `${ytdata.title}` + `.mp3`}, {quoted: m })
+await conn.sendMessage(m.chat, { document: { url: ytdata.audio[0].downloadLink }, caption: `\`✦ Pedido terminado: ${ytdata.duration}\``, mimetype: 'video/mp4', fileName: `${ytdata.title}` + `.mp4`}, {quoted: m })
+await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key }})
 //await conn.sendFile(m.chat, ytdata.audio[0].downloadLink, `${ytdata.title}.mp3`, `*✧ Info:* ${ytdata.duration}`, m)
 } catch (error) {
 console.error(`Error: ${error.message}`);
@@ -32,10 +34,9 @@ await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key }})
 };
 handler.help = ['ytmp3 *<link>*','ytadoc *<link>*'];
 handler.tags = ['downloader'];
-handler.command = /^(ytmp3|ytadoc|ytmp3doc)$/i;
+handler.command = /^(ytmp4|ytadoc|ytmp3doc)$/i;
 
 export default handler
-
 function ytdl(query) {
  const form = new FormData();
  form.append('query', query);
