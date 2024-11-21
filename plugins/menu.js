@@ -44,7 +44,7 @@ let tags = {
 }
 const defaultMenu = {
 	before: `
-👋 %ucapan %names
+> 👋 %ucapan %names
 %readmore
 _*\`</${global.namebot}>\`*_
 `.trimStart(),
