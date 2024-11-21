@@ -187,7 +187,7 @@ let handler = async (m, { conn, usedPrefix: _p, text }) => {
   const infoReply = {
   contextInfo: {
     externalAdReply: {
-      body: TK-HOST, // Aquí puedes agregar un texto que se mostrará en el mensaje
+      body: 'TK-HOST', // Aquí puedes agregar un texto que se mostrará en el mensaje
       mediaType: 1,
       mediaUrl: 'https://dash.tk-joanhost.com/home', // Reemplaza con tu enlace
       previewType: 0,
