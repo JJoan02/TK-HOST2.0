@@ -1,24 +1,96 @@
+/*
+
+- Youtube Downloader By KenisawaDev 
+
+*/
+
+import FormData from 'form-data';
 import axios from 'axios';
-import yts from 'yt-search';
-import fetch from 'node-fetch';
+import cheerio from 'cheerio';
 
-let handler = async (m, { conn, text, usedPrefix, command }) => {
+const extractVideoID = (url) => {
+  const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+  const match = url.match(regex);
+  return match ? match[1] : null;
+};
 
-  if (!text) throw m.reply(`Ejemplo de uso: ${usedPrefix + command} https://youtube.com/watch?v=kGobHQ7z8X4`);
-  
-    let results = await yts(text);
-    let tes = results.videos[0]
-    
+const handler = async (m, { conn, text, usedPrefix, command }) => {
+if (!text) return m.reply(`✧ Ejemplo: ${usedPrefix + command} Gata only`);
+const videoID = extractVideoID(text);
+if (!videoID) throw m.reply('✧ Ingresa un link válido de YouTube.');
 await conn.sendMessage(m.chat, { react: { text: '🕒', key: m.key }})
-let dataos = await fetch(`https://api.zenkey.my.id/api/download/ytmp4?url=${tes.url}&apikey=zenkey`)
-let dp = await dataos.json()
-let { title, mediaLink } = dp.result.content[0]
-//	await conn.sendFile(m.chat, mediaLink, `${title}.mp4`, `\`✦ Pedido terminado\``, m)
-	await conn.sendMessage(m.chat, { document: { url: mediaLink }, caption: `\`✦ Pedido terminado: ${title}\``, mimetype: 'video/mp4', fileName: `${title}` + `.mp4`}, {quoted: m })
-	await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key }})
+try {
+let ytdata = await ytdl(text);
+//await conn.sendFile(m.chat, ytdata.video[0].downloadLink, `${ytdata.title}.mp4`, `*✧ Info:* ${ytdata.duration}`, m)
+await conn.sendMessage(m.chat, { document: { url: ytdata.video[0].downloadLink }, caption: `\`✦ Pedido terminado: ${ytdata.duration}\``, mimetype: 'video/mp4', fileName: `${ytdata.title}` + `.mp4`}, {quoted: m })
+//await conn.sendFile(m.chat, ytdata.audio[0].downloadLink, `${ytdata.title}.mp3`, `*✧ Info:* ${ytdata.duration}`, m)
+} catch (error) {
+console.error(`Error: ${error.message}`);
+await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key }})
+//throw m.reply(`Failed to process request: ${error.message || error}`);
 }
+};
 handler.help = ['ytmp4 *<link>*','ytvdoc *<link>*'];
 handler.tags = ['downloader'];
-handler.command = /^(ytmp4|ytvdoc)$/i;
+handler.command = /^(ytmp4|ytvdoc|ytmp4doc)$/i;
 
-export default handler;
+export default handler
+
+function ytdl(query) {
+ const form = new FormData();
+ form.append('query', query);
+
+ try {
+ const response = await axios.post('https://yttomp4.pro/', form, {
+ headers: {
+ ...form.getHeaders()
+ }
+ });
+
+ const $ = cheerio.load(response.data);
+
+ const results = {
+ success: true,
+ title: $('.vtitle').text().trim(),
+ duration: $('.res_left p').text().replace('Duracion: ', '').trim(),
+ image: $('.ac img').attr('src'),
+ video: [],
+ audio: [],
+ other: []
+ };
+ 
+ $('.tab-item-data').each((index, tab) => {
+ const tabTitle = $(tab).attr('id');
+ $(tab).find('tbody tr').each((i, element) => {
+ const fileType = $(element).find('td').eq(0).text().trim();
+ const fileSize = $(element).find('td').eq(1).text().trim();
+ const downloadLink = $(element).find('a.dbtn').attr('href');
+
+ if (tabTitle === 'tab-item-1') {
+ results.video.push({
+ fileType,
+ fileSize,
+ downloadLink
+ });
+ } else if (tabTitle === 'tab-item-2') {
+ results.audio.push({
+ fileType,
+ fileSize,
+ downloadLink
+ });
+ } else if (tabTitle === 'tab-item-3') {
+ results.other.push({
+ fileType,
+ fileSize,
+ downloadLink
+ });
+ }
+ });
+ });
+ 
+ return results;
+ } catch (error) {
+ return { success: false, message: error.message };
+ console.log('Error:' + error);
+ }
+}
