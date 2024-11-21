@@ -15,7 +15,7 @@ const extractVideoID = (url) => {
 };
 
 const handler = async (m, { conn, text, usedPrefix, command }) => {
-if (!text) return m.reply(`✧ Ejemplo: ${usedPrefix + command} Gata only`);
+if (!text) return m.reply(`✧ Ejemplo: ${usedPrefix + command} https://youtube.com/watch?v=_r7impapnQY`);
 const videoID = extractVideoID(text);
 if (!videoID) throw m.reply('✧ Ingresa un link válido de YouTube.');
 await conn.sendMessage(m.chat, { react: { text: '🕒', key: m.key }})
@@ -36,8 +36,9 @@ handler.help = ['ytmp4 *<link>*','ytvdoc *<link>*'];
 handler.tags = ['downloader'];
 handler.command = /^(ytmp4|ytvdoc|ytmp4doc)$/i;
 
-export default handler
-function ytdl(query) {
+ export default handler
+
+async function ytdl(query) {
  const form = new FormData();
  form.append('query', query);
 

@@ -37,7 +37,8 @@ handler.tags = ['downloader'];
 handler.command = /^(ytmp4|ytadoc|ytmp3doc)$/i;
 
 export default handler
-function ytdl(query) {
+
+async function ytdl(query) {
  const form = new FormData();
  form.append('query', query);
 
