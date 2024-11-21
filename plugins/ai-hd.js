@@ -19,7 +19,7 @@ import Jimp from "jimp";
  *   - Manejo de errores para asegurar la estabilidad del código.
  * 
  * ✧ Créditos:
- *   - **Autor**: JoanTK
+ *   - **Autor**: mauro
  *   - **Fecha**: [Fecha de Creación]
  * ============================================================
  */
