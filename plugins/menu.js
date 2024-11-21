@@ -189,14 +189,14 @@ function clockString(ms) {
 }
 
 function ucapan() {
-  const time = moment.tz('America/Lima').format('hh');
+  const time = moment.tz('America/Lima').format('HH');
   let res = "¿Aún despierto?, duerme mejor. 🌙";
   
-  if (time >= 4 && time < 9) {
-    res = "Buena madrugada 🌄";
-  } else if (time >= 9 && time < 11) {
+  if (time >= 3 && time < 8) {
+    res = "Buena madrugrada 🌄";
+  } else if (time >= 8 && time < 17) {
     res = "Buenos días ☀️";
-  } else if (time >= 11 && time < 18) {
+  } else if (time >= 17 && time < 21) {
     res = "Buenas tardes 🌅";
   } else {
     res = "Buenas noches 🌙";
