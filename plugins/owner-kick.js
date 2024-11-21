@@ -12,12 +12,21 @@
 //      - Permite eliminar a varios usuarios mencionados o respondidos en un mensaje.
 //   4. **Manejo de errores**:
 //      - Notifica al ejecutor si la eliminación falla (por ejemplo, falta de permisos).
-//   5. **Registro opcional**:
-//      - Puedes implementar un sistema de log para auditar las acciones realizadas.
+//   5. **Restricciones**:
+//      - Solo administradores del grupo o el propietario pueden usar este comando.
 // ===========================================================
 
 let handler = async (m, { conn, participants, usedPrefix, command, isROwner }) => {
-    
+    // Obtener la lista de administradores y el propietario del grupo
+    let admins = participants.filter(p => p.admin === "admin" || p.admin === "superadmin").map(p => p.id);
+    let owner = m.chat.split`-`[0];
+
+    // Verificar si el usuario que ejecuta el comando es admin o el propietario
+    if (!admins.includes(m.sender) && !isROwner) {
+        // Ignorar el comando si no es admin ni Owner
+        return;
+    }
+
     // Mensaje de error si no se menciona a nadie
     let kickte = `✦ Por favor menciona al usuario(s) que deseas eliminar o responde a su mensaje.`;
 
@@ -30,10 +39,6 @@ let handler = async (m, { conn, participants, usedPrefix, command, isROwner }) =
     let users = m.mentionedJid.length > 0 
                 ? m.mentionedJid 
                 : [m.quoted.sender];
-
-    // Obtener la lista de administradores y el propietario del grupo
-    let admins = participants.filter(p => p.admin === "admin" || p.admin === "superadmin").map(p => p.id);
-    let owner = m.chat.split`-`[0];
 
     // Filtrar usuarios que no sean administradores ni propietario
     let toKick = users.filter(user => !admins.includes(user) && user !== owner);
