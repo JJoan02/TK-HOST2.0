@@ -185,35 +185,34 @@ let handler = async (m, { conn, usedPrefix: _p, text }) => {
 		text = text.replace(new RegExp(`%(${Object.keys(replace).sort((a, b) => b.length - a.length).join`|`})`, 'g'), (_, name) => '' + replace[name])
 
   const infoReply = {
-  contextInfo: {
-    externalAdReply: {
-      body: 'TK-HOST', // Aquí puedes agregar un texto que se mostrará en el mensaje
-      mediaType: 1,
-      mediaUrl: 'https://dash.tk-joanhost.com/home', // Reemplaza con tu enlace
-      previewType: 0,
-      renderLargerThumbnail: true,
-      sourceUrl: 'https://dash.tk-joanhost.com/home', // Puedes usar el mismo enlace aquí si lo deseas
-      thumbnail: 'https://pomf2.lain.la/f/80qkdym1.jpg', // La miniatura
-      title: global.namebot // El título del mensaje
-    }
+      contextInfo: {
+        externalAdReply: {
+          body: 'TK-HOST',
+          mediaType: 1,
+          mediaUrl: 'https://dash.tk-joanhost.com/home',
+          previewType: 0,
+          renderLargerThumbnail: true,
+          sourceUrl: 'https://dash.tk-joanhost.com/home',
+          thumbnail: 'https://pomf2.lain.la/f/80qkdym1.jpg',
+          title: global.namebot,
+        },
+      },
+    };
+
+    // Enviar el mensaje con la respuesta modificada
+    await conn.reply(m.chat, await estilo(text), m, infoReply);
+    conn.sendFile(m.chat, './gallery/menu1.jpg', 'menu.jpg', await estilo(text), global.fliveLoc2, null);
+  } catch (error) {
+    console.error(error);
+    throw 'Error: ' + error.message;
   }
 };
 
-// Envía el mensaje con la respuesta modificada
-await conn.reply(m.chat, await estilo(text), m, infoReply);
-		//await conn.sendFile(m.chat, "https://i.pximg.net/c/600x1200_90_webp/img-master/img/2023/12/31/09/20/33/114715550_p0_master1200.jpg", `menu.jpg`, await estilo(text), m, null, rcanal)
-		conn.sendFile(m.chat, "./gallery/menu1.jpg", 'menu.jpg', await estilo(text), global.fliveLoc2, null)
-	} catch (error) {
-		console.error(error)
-		throw 'Error: ' + error.message
-	}
-}
+handler.help = ['menu'];
+handler.tags = ['main'];
+handler.command = ['menu', 'allmenu'];
 
-handler.help = ['menu']
-handler.tags = ['main']
-handler.command = ['menu', 'allmenu']
-
-export default handler
+export default handler;
 
 const more = String.fromCharCode(8206)
 const readMore = more.repeat(4001)
