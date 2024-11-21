@@ -1,6 +1,8 @@
 import { jidNormalizedUser } from "@adiwajshing/baileys";
 import Jadibots from "../lib/jadibots.js";
 let handler = async (m, { conn, text, isOwner }) => {
+let setting = global.db.data.settings[this.user.jid]
+	if(!setting.jadibotmd) return 
     const parent = await Jadibots.conn;
     let jid = text ? text.replace(/[^0-9]/g, '') + '@s.whatsapp.net' : conn.user?.jid || jidNormalizedUser(conn.user?.id);
     if (!jid || jid === "@s.whatsapp.net") throw m.reply('Numero no valido');

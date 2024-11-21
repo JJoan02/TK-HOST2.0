@@ -7,6 +7,14 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isR
   let isAll = false
   let isUser = false
   switch (type) {
+case 'jadibot': case 'modojadibot': case 'serbot': case 'modoserbot': 
+isAll = true
+if (!isROwner) {
+global.dfail('rowner', m, conn)
+throw false
+}
+bot.jadibotmd = isEnable
+break 
 case 'modoadmin': case 'soloadmin': case 'modeadmin':
 if (m.isGroup) {
 if (!(isAdmin || isOwner)) {
@@ -328,6 +336,7 @@ break
 | pconly
 | swonly
 | public
+| jadibot
 
 *✧ Ejemplo:*
 ${usedPrefix}on welcome
