@@ -201,39 +201,32 @@ restartDB: 0,
 restrict: true
 }
 } catch (e) {
-console.error(e)
-}
-if (opts['nyimak'])
-return
-if (!m.fromMe && opts['self'])
-return
-if (opts['pconly'] && m.chat.endsWith('g.us'))
-return
-if (opts['gconly'] && !m.chat.endsWith('g.us'))
-return
-if (opts['owneronly'] && !m.chat.startsWith(`${global.nomorown}`))
-return
-if (opts['swonly'] && m.chat !== 'status@broadcast')
-return
-if (typeof m.text !== 'string')
-m.text = ''
-const isROwner = [conn.decodeJid(global.conn.user.id), ...global.owner.map(([number]) => number)].map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net').includes(m.sender)
-const isOwner = isROwner
-const isMods = isOwner || global.mods.map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net').includes(m.sender)
-const isPrems = isROwner || db.data.users[m.sender].premiumTime > 0
-if (!isOwner && opts['self']) return;
-if (opts['queque'] && m.text && !(isMods || isPrems)) {
-let queque = this.msgqueque, time = 1000 * 5
-const previousID = queque[queque.length - 1]
-queque.push(m.id || m.key.id)
-setInterval(async function () {
-if (queque.indexOf(previousID) === -1) clearInterval(this)
-await delay(time)
-}, time)
+  console.error(e)
 }
 
-if (m.isBaileys)
-return
+// Filtra mensajes: solo grupos, excepto dueño, moderador y premium
+if (!m.chat.endsWith('g.us') && !(isOwner || isMods || isPrems)) {
+  return // Ignora mensajes fuera de grupos
+}
+
+// Opciones de configuración (si aplica)
+if (opts['nyimak']) return
+if (!m.fromMe && opts['self']) return
+if (opts['owneronly'] && !isOwner) return
+
+// Cola de mensajes para no saturar (opcional)
+if (opts['queque'] && m.text && !(isMods || isPrems)) {
+  let queque = this.msgqueque, time = 1000 * 5
+  const previousID = queque[queque.length - 1]
+  queque.push(m.id || m.key.id)
+  setInterval(async function () {
+    if (queque.indexOf(previousID) === -1) clearInterval(this)
+    await delay(time)
+  }, time)
+}
+
+// Incremento de experiencia
+if (m.isBaileys) return
 m.exp += Math.ceil(Math.random() * 10)
 
 let usedPrefix
