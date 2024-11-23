@@ -201,51 +201,39 @@ restartDB: 0,
 restrict: true
 }
 } catch (e) {
-  console.error(e)
+console.error(e)
 }
-
-// Filtrar por opciones
-if (opts['nyimak']) return // Opción para solo escuchar mensajes, sin responder
-if (!m.fromMe && opts['self']) return // Responde solo si el mensaje proviene del bot
-if (opts['pconly'] && m.chat.endsWith('g.us')) return // Solo funciona en privado
-if (opts['gconly'] && !m.chat.endsWith('g.us')) return // Solo funciona en grupos
-if (opts['owneronly'] && !m.chat.startsWith(`${global.nomorown}`)) return // Solo dueño
-if (opts['swonly'] && m.chat !== 'status@broadcast') return // Solo en estado
-
-// Si no es texto, asignar una cadena vacía
-if (typeof m.text !== 'string') m.text = ''
-
-// Definir roles
-const isROwner = [conn.decodeJid(global.conn.user.id), ...global.owner.map(([number]) => number)]
-  .map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net')
-  .includes(m.sender) // Dueño real
-const isOwner = isROwner // Alias para dueño
-const isMods = isOwner || global.mods.map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net').includes(m.sender) // Moderador
-const isPrems = isROwner || db.data.users[m.sender]?.premiumTime > 0 // Premium
-
-// Forzar que solo funcione en grupos, excepto para dueño, moderadores y premium
-if (!m.chat.endsWith('g.us') && !(isOwner || isMods || isPrems)) {
-  return // Ignorar mensajes fuera de grupos
-}
-
-// Filtrar si es en modo "self" y no es el dueño
-if (!isOwner && opts['self']) return
-
-// Cola de mensajes (para evitar spam en usuarios normales)
+if (opts['nyimak'])
+return
+if (!m.fromMe && opts['self'])
+return
+if (opts['pconly'] && m.chat.endsWith('g.us'))
+return
+if (opts['gconly'] && !m.chat.endsWith('g.us'))
+return
+if (opts['owneronly'] && !m.chat.startsWith(`${global.nomorown}`))
+return
+if (opts['swonly'] && m.chat !== 'status@broadcast')
+return
+if (typeof m.text !== 'string')
+m.text = ''
+const isROwner = [conn.decodeJid(global.conn.user.id), ...global.owner.map(([number]) => number)].map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net').includes(m.sender)
+const isOwner = isROwner
+const isMods = isOwner || global.mods.map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net').includes(m.sender)
+const isPrems = isROwner || db.data.users[m.sender].premiumTime > 0
+if (!isOwner && opts['self']) return;
 if (opts['queque'] && m.text && !(isMods || isPrems)) {
-  let queque = this.msgqueque, time = 1000 * 5
-  const previousID = queque[queque.length - 1]
-  queque.push(m.id || m.key.id)
-  setInterval(async function () {
-    if (queque.indexOf(previousID) === -1) clearInterval(this)
-    await delay(time)
-  }, time)
+let queque = this.msgqueque, time = 1000 * 5
+const previousID = queque[queque.length - 1]
+queque.push(m.id || m.key.id)
+setInterval(async function () {
+if (queque.indexOf(previousID) === -1) clearInterval(this)
+await delay(time)
+}, time)
 }
 
-// Ignorar mensajes del sistema de Baileys
-if (m.isBaileys) return
-
-// Incremento de experiencia
+if (m.isBaileys)
+return
 m.exp += Math.ceil(Math.random() * 10)
 
 let usedPrefix
