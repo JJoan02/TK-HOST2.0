@@ -102,7 +102,7 @@ chat.welcome = true
 if (!('autodl' in chat))
 chat.autodl = false
 if (!('detect' in chat))
-chat.detect = true
+chat.detect = false
 if (!('sWelcome' in chat))
 chat.sWelcome = ''
 if (!('sByeImageLink' in chat))
@@ -147,7 +147,7 @@ chat.menu = true
 if (!isNumber(chat.expired))
 chat.expired = 0
 if (!('modoadmin' in chat)) chat.modoadmin = false
-if (!('antiLinkHttp' in chat)) chat.antiLinkHttp = false
+if (!('antiLinkHttp' in chat)) chat.antiLinkHttp = true
 if (!('antiLinkWaChannel' in chat)) chat.antiLinkWaChannel = true
 } else
 global.db.data.chats[m.chat] = {
@@ -157,7 +157,7 @@ antiLinkWaChannel: true,
 antiLinkHttp: true,
 modoadmin: false,
 autodl: false,
-detect: true,
+detect: false,
 sWelcome: '',
 sBye: '',
 sWelcomeImageLink: (function() {
@@ -172,8 +172,8 @@ sWelcomeImageLink: (function() {
 sPromote: '',
 sDemote: '',
 delete: true,
-antiLink: false,
-viewonce: true,
+antiLink: true,
+viewonce: false,
 simi: false,
 autogpt: false,
 expired: 0,
