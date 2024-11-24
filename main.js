@@ -621,4 +621,4 @@ function clearTmp() {
           const stats = statSync(filePath);
           if (stats.isFile() && Date.now() - stats.mtimeMs > 60000) { // 1 minuto
             unlinkSync(filePath);
-            console.log(chalk.blue(`🧹 Archivo temporal eliminado: ${filePat
+            console.log(chalk.blue(`🧹 Archivo temporal eliminado: ${filePath}`));
