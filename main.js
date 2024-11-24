@@ -16,8 +16,8 @@ import {
   watch,
 } from 'fs';
 import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
 import { spawn } from 'child_process';
-import lodash from 'lodash';
 import syntaxerror from 'syntax-error';
 import chalk from 'chalk';
 import readline from 'readline';
@@ -33,7 +33,6 @@ const {
   fetchLatestBaileysVersion,
   makeInMemoryStore,
   makeCacheableSignalKeyStore,
-  PHONENUMBER_MCC,
 } = pkg;
 
 import { Low, JSONFile } from 'lowdb';
@@ -42,7 +41,6 @@ import cloudDBAdapter from './lib/cloudDBAdapter.js';
 import { mongoDB, mongoDBV2 } from './lib/mongoDB.js';
 
 const { CONNECTING } = ws;
-const { chain } = lodash;
 const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
 
 protoType();
@@ -58,9 +56,11 @@ global.__filename = function filename(
       : pathURL
     : pathToFileURL(pathURL).toString();
 };
+
 global.__dirname = function dirname(pathURL) {
   return path.dirname(global.__filename(pathURL, true));
 };
+
 global.__require = function require(dir = import.meta.url) {
   return createRequire(dir);
 };
@@ -84,17 +84,17 @@ global.API = (name, path = '/', query = {}, apikeyqueryname) =>
         })
       )
     : '');
-// global.Fn = function functionCallBack(fn, ...args) { return fn.call(global.conn, ...args) }
+
 global.timestamp = {
   start: new Date(),
 };
 
 const __dirname = global.__dirname(import.meta.url);
 
-global.opts = new Object(yargs(process.argv.slice(2)).exitProcess(false).parse());
+global.opts = yargs(hideBin(process.argv)).exitProcess(false).parse();
 global.prefix = new RegExp(
   '^[' +
-    (opts['prefix'] || '‎xzXZ/i!#$%+£¢€¥^°=¶∆×÷π√✓©®:;?&.\\-').replace(
+    (global.opts['prefix'] || '‎xzXZ/i!#$%+£¢€¥^°=¶∆×÷π√✓©®:;?&.\\-').replace(
       /[|\\{}()[\]^$+*?.\-\^]/g,
       '\\$&'
     ) +
@@ -102,39 +102,40 @@ global.prefix = new RegExp(
 );
 
 global.db = new Low(
-  /https?:\/\//.test(opts['db'] || '')
-    ? new cloudDBAdapter(opts['db'])
-    : /mongodb(\+srv)?:\/\//i.test(opts['db'])
-    ? opts['mongodbv2']
-      ? new mongoDBV2(opts['db'])
-      : new mongoDB(opts['db'])
-    : new JSONFile(`${opts._[0] ? opts._[0] + '_' : ''}database.json`)
+  /https?:\/\//.test(global.opts['db'] || '')
+    ? new cloudDBAdapter(global.opts['db'])
+    : /mongodb(\+srv)?:\/\//i.test(global.opts['db'])
+    ? global.opts['mongodbv2']
+      ? new mongoDBV2(global.opts['db'])
+      : new mongoDB(global.opts['db'])
+    : new JSONFile(`${global.opts._[0] ? global.opts._[0] + '_' : ''}database.json`)
 );
-global.DATABASE = global.db; // Backwards Compatibility
+
+global.DATABASE = global.db; // Compatibilidad con versiones anteriores
+
 global.loadDatabase = async function loadDatabase() {
-  if (db.READ)
+  if (global.db.READ)
     return new Promise((resolve) =>
       setInterval(async function () {
-        if (!db.READ) {
+        if (!global.db.READ) {
           clearInterval(this);
-          resolve(db.data == null ? global.loadDatabase() : db.data);
+          resolve(global.db.data == null ? global.loadDatabase() : global.db.data);
         }
-      }, 1 * 1000)
+      }, 1000)
     );
-  if (db.data !== null) return;
-  db.READ = true;
-  await db.read().catch(console.error);
-  db.READ = null;
-  db.data = {
+  if (global.db.data !== null) return;
+  global.db.READ = true;
+  await global.db.read().catch(console.error);
+  global.db.READ = null;
+  global.db.data = {
     users: {},
     chats: {},
     stats: {},
     msgs: {},
     sticker: {},
     settings: {},
-    ...(db.data || {}),
+    ...(global.db.data || {}),
   };
-  global.db.chain = chain(db.data);
 };
 loadDatabase();
 
@@ -152,7 +153,7 @@ const question = function (text) {
   });
 };
 
-const { version, isLatest } = await fetchLatestBaileysVersion();
+const { version } = await fetchLatestBaileysVersion();
 const { state, saveCreds } = await useMultiFileAuthState('./sessions');
 
 const store = makeInMemoryStore({
@@ -231,7 +232,7 @@ if (usePairingCode && !conn.authState.creds.registered) {
   }
 }
 
-if (!opts['test']) {
+if (!global.opts['test']) {
   (await import('./server.js')).default(PORT);
   setInterval(async () => {
     if (global.db.data) await global.db.write().catch(console.error);
@@ -241,65 +242,61 @@ if (!opts['test']) {
 
 async function resetLimit() {
   try {
-    let list = Object.entries(global.db.data.users);
-    let lim = 25; // Valor de límite predeterminado
+    const users = global.db.data.users || {};
+    const lim = 25; // Valor de límite predeterminado
 
-    list.forEach(([user, data]) => {
-      if (data.limit <= lim) {
-        data.limit = lim;
+    for (let user in users) {
+      if (users[user].limit <= lim) {
+        users[user].limit = lim;
       }
-    });
+    }
 
     console.log(`✅ Límite de usuarios restablecido automáticamente.`);
   } finally {
-    setInterval(() => resetLimit(), 1 * 86400000); // Cada 24 horas
+    setTimeout(() => resetLimit(), 24 * 60 * 60 * 1000); // Cada 24 horas
   }
 }
+resetLimit();
 
 function clearTmp() {
-  const tmp = [tmpdir(), join(__dirname, './tmp')];
-  const filename = [];
-  tmp.forEach((dirname) =>
-    readdirSync(dirname).forEach((file) => filename.push(join(dirname, file)))
-  );
-  return filename.map((file) => {
+  const tmpDirs = [tmpdir(), join(__dirname, './tmp')];
+  const files = [];
+
+  tmpDirs.forEach((dirname) => {
+    readdirSync(dirname).forEach((file) => {
+      files.push(join(dirname, file));
+    });
+  });
+
+  files.forEach((file) => {
     const stats = statSync(file);
     if (
       stats.isFile() &&
       Date.now() - stats.mtimeMs >= 1000 * 60 * 3
     ) {
-      return unlinkSync(file); // 3 minutos
+      unlinkSync(file);
     }
-    return false;
   });
 }
 
 async function clearSessions(folder = './sessions') {
   try {
-    const filenames = await readdirSync(folder);
-    const deletedFiles = await Promise.all(
-      filenames.map(async (file) => {
-        try {
-          const filePath = path.join(folder, file);
-          const stats = await statSync(filePath);
-          if (stats.isFile() && file !== 'creds.json') {
-            await unlinkSync(filePath);
-            console.log('Sesión eliminada:', filePath);
-            return filePath;
-          }
-        } catch (err) {
-          console.error(`Error al procesar ${file}: ${err.message}`);
-        }
-      })
-    );
-    return deletedFiles.filter((file) => file !== null);
+    const filenames = readdirSync(folder);
+    filenames.forEach((file) => {
+      const filePath = path.join(folder, file);
+      const stats = statSync(filePath);
+      if (stats.isFile() && file !== 'creds.json') {
+        unlinkSync(filePath);
+        console.log('Sesión eliminada:', filePath);
+      }
+    });
   } catch (err) {
     console.error(`Error en Clear Sessions: ${err.message}`);
-    return [];
   } finally {
     setTimeout(() => clearSessions(folder), 1 * 3600000); // Cada 1 hora
   }
 }
+clearSessions();
 
 async function connectionUpdate(update) {
   const {
@@ -361,9 +358,7 @@ let isInit = true;
 let handler = await import('./handler.js');
 global.reloadHandler = async function (restartConn) {
   try {
-    const Handler = await import(`./handler.js?update=${Date.now()}`).catch(
-      console.error
-    );
+    const Handler = await import(`./handler.js?update=${Date.now()}`);
     if (Object.keys(Handler || {}).length) handler = Handler;
   } catch (e) {
     console.error(e);
@@ -387,8 +382,22 @@ global.reloadHandler = async function (restartConn) {
   }
 
   // Mensajes personalizados
-  conn.welcome =
-    '❖━━━━━━[ BIENVENIDO ]━━━━━━❖\n\n┏------━━━━━━━━•\n│☘︎ @subject\n┣━━━━━━━━┅┅┅\n│( 👋 Hola @user)\n├[ ¡Soy *Admin-TK* ]\n├ tu administrador en este grupo! —\n\n│ Por favor, regístrate con el comando:\n│ `.reg nombre.edad`\n┗------━━┅┅┅\n\n------┅┅ Descripción ┅┅––––––\n\n@desc';
+  conn.welcome = `❖━━━━━━[ BIENVENIDO ]━━━━━━❖
+
+┏------━━━━━━━━•
+│☘︎ @subject
+┣━━━━━━━━┅┅┅
+│( 👋 Hola @user)
+├[ ¡Soy *Admin-TK* ]
+├ tu administrador en este grupo! —
+
+│ Por favor, regístrate con el comando:
+│ \`.reg nombre.edad\`
+┗------━━┅┅┅
+
+------┅┅ Descripción ┅┅––––––
+
+@desc`;
   conn.bye = '❖━━━━━━[ BYEBYE ]━━━━━━❖\n\nSayonara @user 👋😃';
   conn.spromote = '*✧ @user ahora es admin!*';
   conn.sdemote = '*✧ @user ya no es admin!*';
@@ -531,4 +540,4 @@ _quickTest().then(() =>
     '☑️ Prueba rápida realizada, nombre de la sesión ~> creds.json'
   )
 );
-    
+      
