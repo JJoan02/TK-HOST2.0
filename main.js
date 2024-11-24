@@ -1,36 +1,32 @@
-import './config.js';
+import './config.js'
 
-import path, { join } from 'path';
-import { platform } from 'process';
-import { fileURLToPath } from 'url';
-import { createRequire } from 'module';
-global.__filename = fileURLToPath(import.meta.url);
-global.__dirname = path.dirname(global.__filename);
-global.__require = createRequire(import.meta.url);
-
+import path, { join } from 'path'
+import { platform } from 'process'
+import { fileURLToPath, pathToFileURL } from 'url'
+import { createRequire } from 'module'
+global.__filename = function filename(pathURL = import.meta.url, rmPrefix = platform !== 'win32') { return rmPrefix ? /file:\/\/\//.test(pathURL) ? fileURLToPath(pathURL) : pathURL : pathToFileURL(pathURL).toString() }; global.__dirname = function dirname(pathURL) { return path.dirname(global.__filename(pathURL, true)) }; global.__require = function require(dir = import.meta.url) { return createRequire(dir) }
 import {
   readdirSync,
   statSync,
   unlinkSync,
   existsSync,
   readFileSync,
-  watch,
-} from 'fs';
-import yargs from 'yargs';
-import { spawn } from 'child_process';
-import lodash from 'lodash';
-import syntaxerror from 'syntax-error';
-import chalk from 'chalk';
-import { tmpdir } from 'os';
-import readline from 'readline';
-import { format } from 'util';
-import pino from 'pino';
-import ws from 'ws';
-import pkg from '@adiwajshing/baileys';
-const { useMultiFileAuthState, fetchLatestBaileysVersion, makeWASocket } = pkg;
-
-import { Low, JSONFile } from 'lowdb';
-import { makeWASocket as simpleSocket, protoType, serialize } from './lib/simple.js';
+  watch
+} from 'fs'
+import yargs from 'yargs'
+import { spawn } from 'child_process'
+import lodash from 'lodash'
+import syntaxerror from 'syntax-error'
+import chalk from 'chalk'
+import { tmpdir } from 'os'
+import readline from 'readline'
+import { format } from 'util'
+import pino from 'pino'
+import ws from 'ws'
+import pkg from '@adiwajshing/baileys'
+const { useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeInMemoryStore, makeCacheableSignalKeyStore, PHONENUMBER_MCC } = pkg;
+import { Low, JSONFile } from 'lowdb'
+import { makeWASocket, protoType, serialize } from './lib/simple.js'
 import cloudDBAdapter from './lib/cloudDBAdapter.js'
 import {
   mongoDB,
