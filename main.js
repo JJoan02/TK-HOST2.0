@@ -202,9 +202,7 @@ global.authFile = 'BotSession';
 const { state, saveCreds } = await useMultiFileAuthState(global.authFile);
 const { version } = await fetchLatestBaileysVersion();
 
-let phoneNumber = global.botNumberCode;
-const methodCodeQR = process.argv.includes('qr');
-const methodCode = !!phoneNumber || process.argv.includes('code');
+let phoneNumber = global.botNumberCode || process.argv[2]; // Puedes pasar el número de teléfono como argumento
 const MethodMobile = process.argv.includes('mobile');
 
 // Interfaz para entrada del usuario
@@ -223,39 +221,13 @@ const question = (text) => {
   });
 };
 
-// Selección del método de vinculación
-let opcion;
-if (methodCodeQR) {
-  opcion = '1';
-}
-
-if (!methodCodeQR && !methodCode && !existsSync(`./${authFile}/creds.json`)) {
-  do {
-    opcion = await question(
-      `${chalk.blueBright('Seleccione el método de vinculación:')}
-${chalk.green('1')}: Código QR
-${chalk.green('2')}: Código de 8 dígitos
-
-${chalk.bold.magentaBright('---> ')}`
-    );
-    if (!/^[1-2]$/.test(opcion)) {
-      console.log(chalk.bold.redBright('⚠️ Por favor, ingrese 1 o 2.'));
-    }
-  } while (opcion !== '1' && opcion !== '2');
-}
-
-// Opciones de conexión
+// Opciones de conexión sin QR, solo código de 8 dígitos
 const connectionOptions = {
   version,
   logger: pino({ level: 'silent' }),
-  printQRInTerminal: opcion === '1' ? true : methodCodeQR ? true : false,
+  printQRInTerminal: false, // Desactivar impresión de QR
   mobile: MethodMobile,
-  browser:
-    opcion === '1'
-      ? ['Bot', 'Edge', '2.0.0']
-      : methodCodeQR
-      ? ['Bot', 'Edge', '2.0.0']
-      : ['Ubuntu', 'Edge', '110.0.1587.56'],
+  browser: ['Ubuntu', 'Edge', '110.0.1587.56'],
   auth: {
     creds: state.creds,
     keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'fatal' }).child({ level: 'fatal' })),
@@ -274,35 +246,32 @@ const connectionOptions = {
 // Inicialización de la conexión
 global.conn = makeWASocket(connectionOptions);
 
-// Manejo de emparejamiento por código
+// Manejo de emparejamiento por código de 8 dígitos
 if (!existsSync(`./${authFile}/creds.json`)) {
-  if (opcion === '2' || methodCode) {
-    opcion = '2';
-    if (!conn.authState.creds.registered) {
-      let addNumber;
-      if (phoneNumber) {
-        addNumber = phoneNumber.replace(/[^0-9]/g, '');
-      } else {
-        do {
-          phoneNumber = await question(
-            chalk.bgBlack(
-              chalk.bold.greenBright('📱 Por favor, ingrese su número de teléfono con el código de país: ')
-            )
-          );
-          phoneNumber = phoneNumber.replace(/\D/g, '');
-        } while (!Object.keys(PHONENUMBER_MCC).some((v) => phoneNumber.startsWith(v)));
-        rl.close();
-        addNumber = phoneNumber.replace(/\D/g, '');
-      }
-      setTimeout(async () => {
-        let codeBot = await conn.requestPairingCode(addNumber);
-        codeBot = codeBot?.match(/.{1,4}/g)?.join('-') || codeBot;
-        console.log(
-          chalk.bold.white(chalk.bgMagenta('🔑 Su código de emparejamiento es:')),
-          chalk.bold.white(chalk.white(codeBot))
+  if (!conn.authState.creds.registered) {
+    let addNumber;
+    if (phoneNumber) {
+      addNumber = phoneNumber.replace(/[^0-9]/g, '');
+    } else {
+      do {
+        phoneNumber = await question(
+          chalk.bgBlack(
+            chalk.bold.greenBright('📱 Por favor, ingrese su número de teléfono con el código de país: ')
+          )
         );
-      }, 2000);
+        phoneNumber = phoneNumber.replace(/\D/g, '');
+      } while (!Object.keys(PHONENUMBER_MCC).some((v) => phoneNumber.startsWith(v)));
+      rl.close();
+      addNumber = phoneNumber.replace(/\D/g, '');
     }
+    setTimeout(async () => {
+      let codeBot = await conn.requestPairingCode(addNumber);
+      codeBot = codeBot?.match(/.{1,4}/g)?.join('-') || codeBot;
+      console.log(
+        chalk.bold.white(chalk.bgMagenta('🔑 Su código de emparejamiento es:')),
+        chalk.bold.white(chalk.white(codeBot))
+      );
+    }, 2000);
   }
 }
 
@@ -313,11 +282,7 @@ conn.well = false;
 // MANEJO DE EVENTOS Y CONEXIÓN
 // =======================================
 async function connectionUpdate(update) {
-  const { connection, lastDisconnect, qr } = update;
-
-  if (qr && (opcion === '1' || methodCodeQR)) {
-    console.log(chalk.magenta('📸 Escanea este código QR para vincular el bot.'));
-  }
+  const { connection, lastDisconnect } = update;
 
   if (connection === 'connecting') {
     console.log(chalk.blue('🔄 Conectando al servidor de WhatsApp...'));
