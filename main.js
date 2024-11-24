@@ -17,10 +17,12 @@ import {
   readFileSync,
   watchFile,
   unwatchFile,
+  watch,
 } from 'fs';
 import yargs from 'yargs';
 import { spawn } from 'child_process';
 import lodash from 'lodash';
+import syntaxerror from 'syntax-error';
 import chalk from 'chalk';
 import readline from 'readline';
 import { format } from 'util';
@@ -29,11 +31,13 @@ import { tmpdir } from 'os';
 import { Low, JSONFile } from 'lowdb';
 import NodeCache from 'node-cache';
 import { Boom } from '@hapi/boom';
+import ws from 'ws';
 
 import { makeWASocket, protoType, serialize } from './lib/simple.js';
 import { mongoDB, mongoDBV2 } from './lib/mongoDB.js';
 import store from './lib/store.js';
 import pkg from '@whiskeysockets/baileys';
+
 const {
   useMultiFileAuthState,
   DisconnectReason,
@@ -43,54 +47,7 @@ const {
   PHONENUMBER_MCC,
 } = pkg;
 
-// =======================================
-// SUPRESIÓN DE MENSAJES ESPECÍFICOS DEL CONSOLE
-// =======================================
-
-// Suprimir ciertos mensajes de consola para limpiar la salida
-const originalConsoleWarn = console.warn;
-console.warn = function (...args) {
-  const message = args[0];
-  const decodedMessages = [
-    Buffer.from("Q2xvc2luZyBzdGFsZSBvcGVu", 'base64').toString('utf-8'), // "Closing stale open"
-    Buffer.from("Q2xvc2luZyBvcGVuIHNlc3Npb24=", 'base64').toString('utf-8'), // "Closing open session"
-    Buffer.from("RXJyb3I6IEJhZCBNQUM=", 'base64').toString('utf-8'), // "Error: Bad MAC"
-  ];
-  if (typeof message === 'string' && decodedMessages.some((decMsg) => message.includes(decMsg))) {
-    args[0] = "";
-  }
-  originalConsoleWarn.apply(console, args);
-};
-
-const originalConsoleError = console.error;
-console.error = function (...args) {
-  const message = args[0];
-  const decodedMessages = [
-    Buffer.from("RmFpbGVkIHRvIGRlY3J5cHQ=", 'base64').toString('utf-8'), // "Failed to decrypt"
-    Buffer.from("U2Vzc2lvbiBlcnJvcg==", 'base64').toString('utf-8'), // "Session error"
-    Buffer.from("RXJyb3I6IEJhZCBNQUM=", 'base64').toString('utf-8'), // "Error: Bad MAC"
-  ];
-  if (typeof message === 'string' && decodedMessages.some((decMsg) => message.includes(decMsg))) {
-    args[0] = "";
-  }
-  originalConsoleError.apply(console, args);
-};
-
-const originalConsoleLog = console.log;
-console.log = function (...args) {
-  const message = args[0];
-  const decodedMessages = [
-    Buffer.from("RXJyb3I6IEJhZCBNQUM=", 'base64').toString('utf-8'), // "Error: Bad MAC"
-  ];
-  if (typeof message === 'string' && decodedMessages.some((decMsg) => message.includes(decMsg))) {
-    args[0] = "";
-  }
-  originalConsoleLog.apply(console, args);
-};
-
-// Suprimir console.info y console.debug
-console.info = () => {};
-console.debug = () => {};
+const { CONNECTING } = ws;
 
 // =======================================
 // CONFIGURACIÓN GLOBAL Y FUNCIONES ÚTILES
@@ -121,7 +78,7 @@ global.opts = new Object(yargs(process.argv.slice(2)).exitProcess(false).parse()
 // Establecer prefijos de comandos
 global.prefix = new RegExp(
   '^[' +
-    (opts['prefix'] || '*/!#$%&?@.-').replace(/[|\\{}()[\]^$+*?.-]/g, '\\$&') +
+    (opts['prefix'] || '*/!#$%&?@.-').replace(/[|\\{}()[\]^$+*?.\-\^]/g, '\\$&') +
     ']'
 );
 
@@ -132,7 +89,7 @@ global.db = new Low(
     : new JSONFile(`${opts._[0] ? opts._[0] + '_' : ''}database.json`)
 );
 
-global.DATABASE = global.db; // Backwards Compatibility
+global.DATABASE = global.db; // Compatibilidad hacia atrás
 
 global.loadDatabase = async function loadDatabase() {
   if (global.db.READ)
@@ -188,6 +145,55 @@ global.loadChatgptDB = async function loadChatgptDB() {
 };
 
 loadChatgptDB();
+
+// =======================================
+// SUPRESIÓN DE MENSAJES ESPECÍFICOS DEL CONSOLE
+// =======================================
+
+// Suprimir ciertos mensajes de consola para limpiar la salida
+const originalConsoleWarn = console.warn;
+console.warn = function (...args) {
+  const message = args[0];
+  const decodedMessages = [
+    Buffer.from('Q2xvc2luZyBzdGFsZSBvcGVu', 'base64').toString('utf-8'), // "Closing stale open"
+    Buffer.from('Q2xvc2luZyBvcGVuIHNlc3Npb24=', 'base64').toString('utf-8'), // "Closing open session"
+    Buffer.from('RXJyb3I6IEJhZCBNQUM=', 'base64').toString('utf-8'), // "Error: Bad MAC"
+  ];
+  if (typeof message === 'string' && decodedMessages.some((decMsg) => message.includes(decMsg))) {
+    args[0] = '';
+  }
+  originalConsoleWarn.apply(console, args);
+};
+
+const originalConsoleError = console.error;
+console.error = function (...args) {
+  const message = args[0];
+  const decodedMessages = [
+    Buffer.from('RmFpbGVkIHRvIGRlY3J5cHQ=', 'base64').toString('utf-8'), // "Failed to decrypt"
+    Buffer.from('U2Vzc2lvbiBlcnJvcg==', 'base64').toString('utf-8'), // "Session error"
+    Buffer.from('RXJyb3I6IEJhZCBNQUM=', 'base64').toString('utf-8'), // "Error: Bad MAC"
+  ];
+  if (typeof message === 'string' && decodedMessages.some((decMsg) => message.includes(decMsg))) {
+    args[0] = '';
+  }
+  originalConsoleError.apply(console, args);
+};
+
+const originalConsoleLog = console.log;
+console.log = function (...args) {
+  const message = args[0];
+  const decodedMessages = [
+    Buffer.from('RXJyb3I6IEJhZCBNQUM=', 'base64').toString('utf-8'), // "Error: Bad MAC"
+  ];
+  if (typeof message === 'string' && decodedMessages.some((decMsg) => message.includes(decMsg))) {
+    args[0] = '';
+  }
+  originalConsoleLog.apply(console, args);
+};
+
+// Suprimir console.info y console.debug
+console.info = () => {};
+console.debug = () => {};
 
 // =======================================
 // CONFIGURACIÓN DE CONEXIÓN Y VINCULACIÓN
@@ -380,7 +386,7 @@ async function connectionUpdate(update) {
     lastDisconnect.error &&
     lastDisconnect.error.output &&
     lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut &&
-    conn.ws.readyState !== ws.CONNECTING
+    conn.ws.readyState !== CONNECTING
   ) {
     console.log(await reloadHandler(true));
   }
@@ -516,7 +522,7 @@ global.reloadHandler = async function (restartConn) {
 
   // Información para Grupos con emojis
   conn.welcome = `🎉❖━━━━━━[ BIENVENIDO ]━━━━━━❖🎉
-  
+
 ┏------━━━━━━━━•
 │☘︎ @subject
 ┣━━━━━━━━┅┅┅
@@ -545,7 +551,7 @@ global.reloadHandler = async function (restartConn) {
 @revoke`;
   conn.sAnnounceOn = `*✧ Grupo cerrado!*\n> Ahora solo los admins pueden enviar mensajes.`;
   conn.sAnnounceOff = `*✧ El grupo fue abierto!*\n> Ahora todos pueden enviar mensajes.`;
-  conn.sRestrictOn = `*✧ Ahora solo los admin podran editar la información del grupo!*`;
+  conn.sRestrictOn = `*✧ Ahora solo los admin podrán editar la información del grupo!*`;
   conn.sRestrictOff = `*✧ Ahora todos pueden editar la información del grupo!*`;
 
   // Asignar funciones manejadoras
@@ -574,12 +580,12 @@ global.reloadHandler = async function (restartConn) {
 // =======================================
 async function _quickTest() {
   const tools = [
-    { name: 'ffmpeg', args: [] },
-    { name: 'ffprobe', args: [] },
+    { name: 'ffmpeg', args: ['-version'] },
+    { name: 'ffprobe', args: ['-version'] },
     { name: 'ffmpegWebp', args: ['-hide_banner', '-loglevel', 'error', '-filter_complex', 'color', '-frames:v', '1', '-f', 'webp', '-'] },
-    { name: 'convert', args: [] },
-    { name: 'magick', args: [] },
-    { name: 'gm', args: [] },
+    { name: 'convert', args: ['-version'] },
+    { name: 'magick', args: ['-version'] },
+    { name: 'gm', args: ['version'] },
     { name: 'find', args: ['--version'] },
   ];
 
@@ -587,7 +593,7 @@ async function _quickTest() {
     tools.map(({ name, args }) =>
       new Promise((resolve) => {
         const proc = spawn(name, args);
-        proc.on('close', (code) => resolve(code !== 127));
+        proc.on('close', (code) => resolve(code === 0));
         proc.on('error', () => resolve(false));
       })
     )
@@ -619,7 +625,7 @@ function clearTmp() {
         const filePath = join(dir, file);
         try {
           const stats = statSync(filePath);
-          if (stats.isFile() && Date.now() - stats.mtimeMs > 60000) { // 1 minuto
+          if (stats.isFile() && Date.now() - stats.mtimeMs > 60000) {
             unlinkSync(filePath);
             console.log(chalk.blue(`🧹 Archivo temporal eliminado: ${filePath}`));
           }
@@ -631,47 +637,66 @@ function clearTmp() {
   });
 }
 
-// =======================================
-// CONFIGURACIÓN DE CONEXIÓN Y VINCULACIÓN
-// =======================================
-global.authFile = 'BotSession';
-const { state, saveCreds } = await useMultiFileAuthState(global.authFile);
-const { version } = await fetchLatestBaileysVersion();
+function purgeOldSessions() {
+  const sessionDirs = ['./sessions', './BotSession'];
+  sessionDirs.forEach((dir) => {
+    if (existsSync(dir)) {
+      readdirSync(dir).forEach((file) => {
+        if (file !== 'creds.json' && file.startsWith('pre-key-')) {
+          const filePath = join(dir, file);
+          try {
+            unlinkSync(filePath);
+            console.log(chalk.blue(`🧹 Sesión eliminada: ${filePath}`));
+          } catch (error) {
+            console.error(chalk.red(`❌ Error al eliminar sesión ${filePath}: ${error.message}`));
+          }
+        }
+      });
+    }
+  });
+}
 
-const connectionOptions = {
-  version,
-  logger: pino({ level: 'silent' }),
-  browser: ['Admin-TK', 'Chrome', '3.0.0'],
-  auth: {
-    creds: state.creds,
-    keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'fatal' }).child({ level: 'fatal' })),
-  },
-  syncFullHistory: true,
-  markOnlineOnConnect: true,
-};
-
-// Inicialización de la conexión
-global.conn = makeWASocket(connectionOptions);
-
-conn.ev.on('connection.update', async (update) => {
-  const { connection, lastDisconnect } = update;
-  if (connection === 'open') {
-    console.log(chalk.green('✅ Bot conectado correctamente.'));
-  } else if (connection === 'close') {
-    const reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
-    console.error(chalk.red(`❌ Conexión cerrada, razón: ${reason || 'Desconocida'}`));
-  }
-});
-
-conn.ev.on('creds.update', saveCreds);
-
-// =======================================
-// LIMPIEZA Y CICLO AUTOMÁTICO
-// =======================================
 setInterval(() => {
-  clearTmp();
-  console.log(chalk.green('✅ Limpieza automática completada.'));
+  if (conn && conn.user) {
+    clearTmp();
+    purgeOldSessions();
+    console.log(chalk.green('✅ Limpieza automática realizada.'));
+  }
 }, 60000); // Cada 1 minuto
+
+// =======================================
+// MANEJO DE LIMITES Y OTRAS FUNCIONES
+// =======================================
+async function resetLimit() {
+  try {
+    let list = Object.entries(global.db.data.users);
+    let lim = 25; // Límite default a resetear
+
+    list.forEach(([user, data]) => {
+      if (data.limit <= lim) {
+        data.limit = lim;
+      }
+    });
+
+    console.log(chalk.green('✅ Límites de usuarios reseteados automáticamente.'));
+  } catch (error) {
+    console.error(chalk.red(`❌ Error al resetear límites: ${error.message}`));
+  } finally {
+    setInterval(resetLimit, 86400000); // Cada 24 horas
+  }
+}
+
+resetLimit();
+
+// =======================================
+// MANEJO DE EVENTOS PARA ARCHIVO MAIN
+// =======================================
+let mainFile = fileURLToPath(import.meta.url);
+watchFile(mainFile, () => {
+  unwatchFile(mainFile);
+  console.log(chalk.bold.greenBright('🔄 Archivo main.js actualizado. Reiniciando...'));
+  import(`${pathToFileURL(mainFile)}?update=${Date.now()}`).catch(console.error);
+});
 
 // =======================================
 // PROCESO PRINCIPAL
@@ -679,7 +704,14 @@ setInterval(() => {
 (async () => {
   try {
     console.log(chalk.blue('⚡ Iniciando Admin-TK...'));
-    await conn;
+    await connectionUpdate({ connection: 'connecting' });
+
+    if (!opts['test']) {
+      const server = await import('./server.js');
+      server.default(PORT);
+    }
+
+    console.log(chalk.green('🚀 Bot iniciado correctamente.'));
   } catch (error) {
     console.error(chalk.red(`❌ Error al iniciar el bot: ${error.message}`));
     process.exit(1);
