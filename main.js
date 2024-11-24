@@ -622,3 +622,66 @@ function clearTmp() {
           if (stats.isFile() && Date.now() - stats.mtimeMs > 60000) { // 1 minuto
             unlinkSync(filePath);
             console.log(chalk.blue(`🧹 Archivo temporal eliminado: ${filePath}`));
+          }
+        } catch (error) {
+          console.error(chalk.red(`❌ Error al eliminar archivo temporal ${filePath}: ${error.message}`));
+        }
+      });
+    }
+  });
+}
+
+// =======================================
+// CONFIGURACIÓN DE CONEXIÓN Y VINCULACIÓN
+// =======================================
+global.authFile = 'BotSession';
+const { state, saveCreds } = await useMultiFileAuthState(global.authFile);
+const { version } = await fetchLatestBaileysVersion();
+
+const connectionOptions = {
+  version,
+  logger: pino({ level: 'silent' }),
+  browser: ['Admin-TK', 'Chrome', '3.0.0'],
+  auth: {
+    creds: state.creds,
+    keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'fatal' }).child({ level: 'fatal' })),
+  },
+  syncFullHistory: true,
+  markOnlineOnConnect: true,
+};
+
+// Inicialización de la conexión
+global.conn = makeWASocket(connectionOptions);
+
+conn.ev.on('connection.update', async (update) => {
+  const { connection, lastDisconnect } = update;
+  if (connection === 'open') {
+    console.log(chalk.green('✅ Bot conectado correctamente.'));
+  } else if (connection === 'close') {
+    const reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
+    console.error(chalk.red(`❌ Conexión cerrada, razón: ${reason || 'Desconocida'}`));
+  }
+});
+
+conn.ev.on('creds.update', saveCreds);
+
+// =======================================
+// LIMPIEZA Y CICLO AUTOMÁTICO
+// =======================================
+setInterval(() => {
+  clearTmp();
+  console.log(chalk.green('✅ Limpieza automática completada.'));
+}, 60000); // Cada 1 minuto
+
+// =======================================
+// PROCESO PRINCIPAL
+// =======================================
+(async () => {
+  try {
+    console.log(chalk.blue('⚡ Iniciando Admin-TK...'));
+    await conn;
+  } catch (error) {
+    console.error(chalk.red(`❌ Error al iniciar el bot: ${error.message}`));
+    process.exit(1);
+  }
+})();
