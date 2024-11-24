@@ -7,11 +7,11 @@ import chalk from 'chalk';
 
 const { proto } = (await import('@adiwajshing/baileys')).default;
 
-// Funciones auxiliares
+// Utilidades
 const isNumber = x => typeof x === 'number' && !isNaN(x);
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-// Función para estilizar texto
+// Estiliza texto
 const estilo = (text, style = 1) => {
     const xStr = 'abcdefghijklmnopqrstuvwxyz1234567890'.split('');
     const yStr = { 1: 'ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘqʀꜱᴛᴜᴠᴡxʏᴢ1234567890' };
@@ -22,24 +22,38 @@ const estilo = (text, style = 1) => {
         .join('');
 };
 
-// Función para obtener una imagen aleatoria de bienvenida
+// Devuelve una imagen aleatoria de bienvenida
 function getRandomWelcomeImage() {
     const links = [
         'https://pomf2.lain.la/f/onvv8i5b.jpg',
         'https://pomf2.lain.la/f/ucogaqax.jpg',
         'https://pomf2.lain.la/f/m1z5y7ju.jpg',
-        'https://pomf2.lain.la/f/fqeogyqi.jpg'
+        'https://pomf2.lain.la/f/fqeogyqi.jpg',
     ];
     return links[Math.floor(Math.random() * links.length)];
 }
 
-// Manejo del mensaje entrante
+// Manejo de plugins
+const loadPlugins = () => {
+    const plugins = {};
+    const pluginPath = path.join(path.dirname(fileURLToPath(import.meta.url)), './plugins');
+    for (const file of require('fs').readdirSync(pluginPath).filter(file => file.endsWith('.js'))) {
+        const name = file.replace('.js', '');
+        plugins[name] = require(join(pluginPath, file));
+    }
+    return plugins;
+};
+
+global.plugins = loadPlugins();
+
+// Manejo de mensajes
 export async function handler(chatUpdate) {
     this.msgqueque = this.msgqueque || [];
     if (!chatUpdate) return;
 
     try {
-        let m = chatUpdate.messages[chatUpdate.messages.length - 1];
+        const messages = chatUpdate.messages;
+        let m = messages[messages.length - 1];
         if (!m) return;
 
         m = smsg(this, m) || m;
@@ -48,13 +62,47 @@ export async function handler(chatUpdate) {
         m.exp = 0;
         m.limit = false;
 
-        await handleUserData(m);
-        await handleChatData(m);
-        await handleSettings(m);
+        if (global.db.data == null) await global.loadDatabase();
 
+        // Configuración de usuario y chat
+        let user = global.db.data.users[m.sender] || {};
+        global.db.data.users[m.sender] = {
+            exp: 0,
+            limit: 10,
+            afk: -1,
+            afkReason: '',
+            banned: false,
+            role: 'Free user',
+            autolevelup: false,
+            bank: 0,
+            ...user,
+        };
+
+        let chat = global.db.data.chats[m.chat] || {};
+        global.db.data.chats[m.chat] = {
+            isBanned: false,
+            welcome: true,
+            sWelcomeImageLink: getRandomWelcomeImage(),
+            detect: false,
+            autoSticker: false,
+            nsfw: true,
+            ...chat,
+        };
+
+        // Configuraciones globales
+        let settings = global.db.data.settings[this.user.jid] || {};
+        global.db.data.settings[this.user.jid] = {
+            self: true,
+            autoread: true,
+            restrict: true,
+            anticall: true,
+            ...settings,
+        };
+
+        // Ignorar mensajes según configuraciones
         if (shouldIgnoreMessage(m)) return;
 
-        // Incrementa la experiencia
+        // Incrementar experiencia
         m.exp += Math.ceil(Math.random() * 10);
 
         const { isCommand, usedPrefix, command, args } = parseMessage(m);
@@ -63,66 +111,18 @@ export async function handler(chatUpdate) {
         const plugin = findMatchingPlugin(command);
         if (!plugin) return;
 
-        // Validaciones de permisos y restricciones
+        // Validaciones de permisos
         if (!(await checkPermissions(m, plugin))) return;
 
-        // Ejecuta el plugin
+        // Ejecutar el plugin
         await executePlugin(m, plugin, { usedPrefix, args });
+
     } catch (e) {
         console.error('Error en el handler:', e);
     }
 }
 
-// Maneja datos del usuario
-async function handleUserData(m) {
-    const user = global.db.data.users[m.sender] || {};
-    const defaultUserData = {
-        exp: 0,
-        limit: 10,
-        afk: -1,
-        afkReason: '',
-        banned: false,
-        role: 'Free user',
-        autolevelup: false,
-        bank: 0,
-    };
-    global.db.data.users[m.sender] = { ...defaultUserData, ...user };
-}
-
-// Maneja datos del chat
-async function handleChatData(m) {
-    const chat = global.db.data.chats[m.chat] || {};
-    const defaultChatData = {
-        isBanned: false,
-        welcome: true,
-        antiLink: true,
-        nsfw: true,
-        autodl: false,
-        detect: false,
-        sWelcomeImageLink: getRandomWelcomeImage(), // Asigna una imagen de bienvenida aleatoria
-    };
-
-    // Si no existe la propiedad, se asegura de asignarla
-    if (!('sWelcomeImageLink' in chat)) {
-        chat.sWelcomeImageLink = getRandomWelcomeImage();
-    }
-
-    global.db.data.chats[m.chat] = { ...defaultChatData, ...chat };
-}
-
-// Maneja configuraciones globales
-async function handleSettings(m) {
-    const settings = global.db.data.settings[this.user.jid] || {};
-    const defaultSettings = {
-        self: true,
-        autoread: true,
-        restrict: true,
-        anticall: true,
-    };
-    global.db.data.settings[this.user.jid] = { ...defaultSettings, ...settings };
-}
-
-// Verifica si debe ignorar el mensaje
+// Determina si debe ignorar el mensaje
 function shouldIgnoreMessage(m) {
     const opts = global.opts || {};
     return (
@@ -134,13 +134,13 @@ function shouldIgnoreMessage(m) {
 
 // Analiza el mensaje y extrae información
 function parseMessage(m) {
-    const usedPrefix = (global.prefix || '.'); // Cambia esto según tu configuración
+    const usedPrefix = global.prefix || '.';
     const noPrefix = m.text.replace(usedPrefix, '');
     const [command, ...args] = noPrefix.trim().split(/\s+/);
     return { isCommand: m.text.startsWith(usedPrefix), usedPrefix, command, args };
 }
 
-// Busca el plugin correspondiente al comando
+// Encuentra el plugin que corresponde al comando
 function findMatchingPlugin(command) {
     return Object.values(global.plugins).find(plugin =>
         Array.isArray(plugin.command)
@@ -149,21 +149,12 @@ function findMatchingPlugin(command) {
     );
 }
 
-// Verifica permisos y restricciones sin notificar al usuario
+// Verifica permisos
 async function checkPermissions(m, plugin) {
     const user = global.db.data.users[m.sender];
-
-    // Ignorar si el comando requiere ser administrador y el usuario no lo es
-    if (plugin.admin && !m.isAdmin) {
-        return false; // No mostrar mensaje, solo ignorar
-    }
-
-    // Ignorar si el comando requiere ser premium y el usuario no lo es
-    if (plugin.premium && !user.premium) {
-        return false; // No mostrar mensaje, solo ignorar
-    }
-
-    return true; // Permitir si cumple con los permisos
+    if (plugin.admin && !m.isAdmin) return false;
+    if (plugin.premium && !user.premium) return false;
+    return true;
 }
 
 // Ejecuta el plugin
@@ -177,8 +168,11 @@ async function executePlugin(m, plugin, { usedPrefix, args }) {
 }
 
 // Observa cambios en el archivo
-watchFile(import.meta.url, () => {
+let file = fileURLToPath(import.meta.url);
+watchFile(file, () => {
     console.log(chalk.redBright('Actualizando handler.js'));
-    global.reloadHandler && global.reloadHandler();
+    unwatchFile(file);
+    import(`${file}?update=${Date.now()}`);
 });
+
 
