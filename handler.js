@@ -1,3 +1,4 @@
+import { readdirSync } from 'fs';
 import { smsg } from './lib/simple.js';
 import { format } from 'util';
 import { fileURLToPath } from 'url';
@@ -34,17 +35,21 @@ function getRandomWelcomeImage() {
 }
 
 // Manejo de plugins
-const loadPlugins = () => {
+const loadPlugins = async () => {
     const plugins = {};
-    const pluginPath = path.join(path.dirname(fileURLToPath(import.meta.url)), './plugins');
-    for (const file of require('fs').readdirSync(pluginPath).filter(file => file.endsWith('.js'))) {
+    const pluginPath = join(path.dirname(fileURLToPath(import.meta.url)), './plugins');
+    const files = readdirSync(pluginPath).filter(file => file.endsWith('.js'));
+
+    for (const file of files) {
         const name = file.replace('.js', '');
-        plugins[name] = require(join(pluginPath, file));
+        const plugin = await import(join(pluginPath, file));
+        plugins[name] = plugin.default || plugin;
     }
+
     return plugins;
 };
 
-global.plugins = loadPlugins();
+global.plugins = await loadPlugins();
 
 // Manejo de mensajes
 export async function handler(chatUpdate) {
@@ -174,5 +179,4 @@ watchFile(file, () => {
     unwatchFile(file);
     import(`${file}?update=${Date.now()}`);
 });
-
 
