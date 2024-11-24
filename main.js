@@ -1,13 +1,11 @@
 // =======================================
 // CONFIGURACIONES INICIALES Y MÓDULOS
 // =======================================
-process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '1';
 import './config.js';
-import './plugins/_content.js';
 
 import path, { join } from 'path';
-import { fileURLToPath, pathToFileURL } from 'url';
 import { platform } from 'process';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { createRequire } from 'module';
 import {
   readdirSync,
@@ -15,8 +13,6 @@ import {
   unlinkSync,
   existsSync,
   readFileSync,
-  watchFile,
-  unwatchFile,
   watch,
 } from 'fs';
 import yargs from 'yargs';
@@ -28,320 +24,318 @@ import readline from 'readline';
 import { format } from 'util';
 import pino from 'pino';
 import { tmpdir } from 'os';
-import { Low, JSONFile } from 'lowdb';
-import NodeCache from 'node-cache';
-import { Boom } from '@hapi/boom';
 import ws from 'ws';
 
-import { makeWASocket, protoType, serialize } from './lib/simple.js';
-import { mongoDB, mongoDBV2 } from './lib/mongoDB.js';
-import store from './lib/store.js';
-import pkg from '@whiskeysockets/baileys';
-
+import pkg from '@adiwajshing/baileys'; // Importar el paquete correcto
 const {
   useMultiFileAuthState,
   DisconnectReason,
   fetchLatestBaileysVersion,
+  makeInMemoryStore,
   makeCacheableSignalKeyStore,
-  jidNormalizedUser,
   PHONENUMBER_MCC,
 } = pkg;
 
+import { Low, JSONFile } from 'lowdb';
+import { makeWASocket, protoType, serialize } from './lib/simple.js';
+import cloudDBAdapter from './lib/cloudDBAdapter.js';
+import { mongoDB, mongoDBV2 } from './lib/mongoDB.js';
+
 const { CONNECTING } = ws;
+const { chain } = lodash;
+const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
 
-// =======================================
-// CONFIGURACIÓN GLOBAL Y FUNCIONES ÚTILES
-// =======================================
+protoType();
+serialize();
 
-global.__filename = function filename(pathURL = import.meta.url, rmPrefix = platform !== 'win32') {
+global.__filename = function filename(
+  pathURL = import.meta.url,
+  rmPrefix = platform !== 'win32'
+) {
   return rmPrefix
     ? pathURL.startsWith('file://')
       ? fileURLToPath(pathURL)
       : pathURL
     : pathToFileURL(pathURL).toString();
 };
-
 global.__dirname = function dirname(pathURL) {
   return path.dirname(global.__filename(pathURL, true));
 };
-
 global.__require = function require(dir = import.meta.url) {
   return createRequire(dir);
 };
 
-protoType();
-serialize();
+global.API = (name, path = '/', query = {}, apikeyqueryname) =>
+  (name in global.APIs ? global.APIs[name] : name) +
+  path +
+  (query || apikeyqueryname
+    ? '?' +
+      new URLSearchParams(
+        Object.entries({
+          ...query,
+          ...(apikeyqueryname
+            ? {
+                [apikeyqueryname]:
+                  global.APIKeys[
+                    name in global.APIs ? global.APIs[name] : name
+                  ],
+              }
+            : {}),
+        })
+      )
+    : '');
+// global.Fn = function functionCallBack(fn, ...args) { return fn.call(global.conn, ...args) }
+global.timestamp = {
+  start: new Date(),
+};
 
-// Parsear argumentos de línea de comandos
+const __dirname = global.__dirname(import.meta.url);
+
 global.opts = new Object(yargs(process.argv.slice(2)).exitProcess(false).parse());
-
-// Establecer prefijos de comandos
 global.prefix = new RegExp(
   '^[' +
-    (opts['prefix'] || '*/!#$%&?@.-').replace(/[|\\{}()[\]^$+*?.\-\^]/g, '\\$&') +
+    (opts['prefix'] || '‎xzXZ/i!#$%+£¢€¥^°=¶∆×÷π√✓©®:;?&.\\-').replace(
+      /[|\\{}()[\]^$+*?.\-\^]/g,
+      '\\$&'
+    ) +
     ']'
 );
 
-// Configurar base de datos principal
 global.db = new Low(
   /https?:\/\//.test(opts['db'] || '')
     ? new cloudDBAdapter(opts['db'])
+    : /mongodb(\+srv)?:\/\//i.test(opts['db'])
+    ? opts['mongodbv2']
+      ? new mongoDBV2(opts['db'])
+      : new mongoDB(opts['db'])
     : new JSONFile(`${opts._[0] ? opts._[0] + '_' : ''}database.json`)
 );
-
-global.DATABASE = global.db; // Compatibilidad hacia atrás
-
+global.DATABASE = global.db; // Backwards Compatibility
 global.loadDatabase = async function loadDatabase() {
-  if (global.db.READ)
+  if (db.READ)
     return new Promise((resolve) =>
       setInterval(async function () {
-        if (!global.db.READ) {
+        if (!db.READ) {
           clearInterval(this);
-          resolve(global.db.data == null ? global.loadDatabase() : global.db.data);
+          resolve(db.data == null ? global.loadDatabase() : db.data);
         }
-      }, 1000)
+      }, 1 * 1000)
     );
-  if (global.db.data !== null) return;
-  global.db.READ = true;
-  await global.db.read().catch(console.error);
-  global.db.READ = null;
-  global.db.data = {
+  if (db.data !== null) return;
+  db.READ = true;
+  await db.read().catch(console.error);
+  db.READ = null;
+  db.data = {
     users: {},
     chats: {},
     stats: {},
     msgs: {},
     sticker: {},
     settings: {},
-    ...(global.db.data || {}),
+    ...(db.data || {}),
   };
-  global.db.chain = lodash.chain(global.db.data);
+  global.db.chain = chain(db.data);
 };
-
 loadDatabase();
 
-// =======================================
-// CONFIGURACIÓN DE CHATGPT
-// =======================================
-global.chatgpt = new Low(new JSONFile(path.join(__dirname, '/db/chatgpt.json')));
-global.loadChatgptDB = async function loadChatgptDB() {
-  if (global.chatgpt.READ)
-    return new Promise((resolve) =>
-      setInterval(async function () {
-        if (!global.chatgpt.READ) {
-          clearInterval(this);
-          resolve(global.chatgpt.data === null ? global.loadChatgptDB() : global.chatgpt.data);
-        }
-      }, 1000)
-    );
-  if (global.chatgpt.data !== null) return;
-  global.chatgpt.READ = true;
-  await global.chatgpt.read().catch(console.error);
-  global.chatgpt.READ = null;
-  global.chatgpt.data = {
-    users: {},
-    ...(global.chatgpt.data || {}),
-  };
-  global.chatgpt.chain = lodash.chain(global.chatgpt.data);
-};
+const usePairingCode = true; // Usar siempre el código de emparejamiento de 8 dígitos
+const useMobile = process.argv.includes('--mobile');
 
-loadChatgptDB();
-
-// =======================================
-// SUPRESIÓN DE MENSAJES ESPECÍFICOS DEL CONSOLE
-// =======================================
-
-// Suprimir ciertos mensajes de consola para limpiar la salida
-const originalConsoleWarn = console.warn;
-console.warn = function (...args) {
-  const message = args[0];
-  const decodedMessages = [
-    Buffer.from('Q2xvc2luZyBzdGFsZSBvcGVu', 'base64').toString('utf-8'), // "Closing stale open"
-    Buffer.from('Q2xvc2luZyBvcGVuIHNlc3Npb24=', 'base64').toString('utf-8'), // "Closing open session"
-    Buffer.from('RXJyb3I6IEJhZCBNQUM=', 'base64').toString('utf-8'), // "Error: Bad MAC"
-  ];
-  if (typeof message === 'string' && decodedMessages.some((decMsg) => message.includes(decMsg))) {
-    args[0] = '';
-  }
-  originalConsoleWarn.apply(console, args);
-};
-
-const originalConsoleError = console.error;
-console.error = function (...args) {
-  const message = args[0];
-  const decodedMessages = [
-    Buffer.from('RmFpbGVkIHRvIGRlY3J5cHQ=', 'base64').toString('utf-8'), // "Failed to decrypt"
-    Buffer.from('U2Vzc2lvbiBlcnJvcg==', 'base64').toString('utf-8'), // "Session error"
-    Buffer.from('RXJyb3I6IEJhZCBNQUM=', 'base64').toString('utf-8'), // "Error: Bad MAC"
-  ];
-  if (typeof message === 'string' && decodedMessages.some((decMsg) => message.includes(decMsg))) {
-    args[0] = '';
-  }
-  originalConsoleError.apply(console, args);
-};
-
-const originalConsoleLog = console.log;
-console.log = function (...args) {
-  const message = args[0];
-  const decodedMessages = [
-    Buffer.from('RXJyb3I6IEJhZCBNQUM=', 'base64').toString('utf-8'), // "Error: Bad MAC"
-  ];
-  if (typeof message === 'string' && decodedMessages.some((decMsg) => message.includes(decMsg))) {
-    args[0] = '';
-  }
-  originalConsoleLog.apply(console, args);
-};
-
-// Suprimir console.info y console.debug
-console.info = () => {};
-console.debug = () => {};
-
-// =======================================
-// CONFIGURACIÓN DE CONEXIÓN Y VINCULACIÓN
-// =======================================
-global.authFile = 'BotSession';
-const { state, saveCreds } = await useMultiFileAuthState(global.authFile);
-const { version } = await fetchLatestBaileysVersion();
-
-let phoneNumber = global.botNumberCode || process.argv[2]; // Puedes pasar el número de teléfono como argumento
-const MethodMobile = process.argv.includes('mobile');
-
-// Interfaz para entrada del usuario
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
-  terminal: true,
 });
 
-const question = (text) => {
-  rl.prompt();
-  return new Promise((resolve) => {
-    rl.question(text, (answer) => {
-      resolve(answer.trim());
-    });
+const question = function (text) {
+  return new Promise(function (resolve) {
+    rl.question(text, resolve);
   });
 };
 
-// Opciones de conexión sin QR, solo código de 8 dígitos
+const { version, isLatest } = await fetchLatestBaileysVersion();
+const { state, saveCreds } = await useMultiFileAuthState('./sessions');
+
+const store = makeInMemoryStore({
+  logger: pino().child({ level: 'silent', stream: 'store' }),
+});
+store.readFromFile('./baileys_store.json');
+setInterval(() => {
+  store.writeToFile('./baileys_store.json');
+}, 10_000);
+
 const connectionOptions = {
   version,
   logger: pino({ level: 'silent' }),
-  printQRInTerminal: false, // Desactivar impresión de QR
-  mobile: MethodMobile,
-  browser: ['Ubuntu', 'Edge', '110.0.1587.56'],
+  printQRInTerminal: false, // No imprimir QR
+  browser: ['Ubuntu', 'Chrome', '20.0.04'],
   auth: {
     creds: state.creds,
-    keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'fatal' }).child({ level: 'fatal' })),
+    keys: makeCacheableSignalKeyStore(
+      state.keys,
+      pino().child({
+        level: 'silent',
+        stream: 'store',
+      })
+    ),
   },
-  markOnlineOnConnect: true,
-  generateHighQualityLinkPreview: true,
-  syncFullHistory: true,
   getMessage: async (key) => {
-    const msg = await store.loadMessage(key.remoteJid, key.id);
-    return msg?.message || undefined;
+    const messageData = await store.loadMessage(key.remoteJid, key.id);
+    return messageData?.message || undefined;
   },
-  msgRetryCounterCache: new NodeCache(),
-  defaultQueryTimeoutMs: undefined,
+  generateHighQualityLinkPreview: true,
+  patchMessageBeforeSending: (message) => {
+    const requiresPatch = !!(
+      message.buttonsMessage ||
+      message.templateMessage ||
+      message.listMessage
+    );
+    if (requiresPatch) {
+      message = {
+        viewOnceMessage: {
+          message: {
+            messageContextInfo: {
+              deviceListMetadataVersion: 2,
+              deviceListMetadata: {},
+            },
+            ...message,
+          },
+        },
+      };
+    }
+
+    return message;
+  },
+  connectTimeoutMs: 60000,
+  defaultQueryTimeoutMs: 0,
+  syncFullHistory: true,
+  markOnlineOnConnect: true,
 };
 
-// Inicialización de la conexión
 global.conn = makeWASocket(connectionOptions);
+conn.isInit = false;
 
-// Manejo de emparejamiento por código de 8 dígitos
-if (!existsSync(`./${authFile}/creds.json`)) {
-  if (!conn.authState.creds.registered) {
-    let addNumber;
-    if (phoneNumber) {
-      addNumber = phoneNumber.replace(/[^0-9]/g, '');
-    } else {
-      do {
-        phoneNumber = await question(
-          chalk.bgBlack(
-            chalk.bold.greenBright('📱 Por favor, ingrese su número de teléfono con el código de país: ')
-          )
-        );
-        phoneNumber = phoneNumber.replace(/\D/g, '');
-      } while (!Object.keys(PHONENUMBER_MCC).some((v) => phoneNumber.startsWith(v)));
-      rl.close();
-      addNumber = phoneNumber.replace(/\D/g, '');
-    }
-    setTimeout(async () => {
-      let codeBot = await conn.requestPairingCode(addNumber);
-      codeBot = codeBot?.match(/.{1,4}/g)?.join('-') || codeBot;
-      console.log(
-        chalk.bold.white(chalk.bgMagenta('🔑 Su código de emparejamiento es:')),
-        chalk.bold.white(chalk.white(codeBot))
-      );
-    }, 2000);
+if (usePairingCode && !conn.authState.creds.registered) {
+  const phoneNumber = await question(
+    chalk.blue(
+      'Ingresa el número de WhatsApp en el cual estará el Bot (con código de país, sin +): '
+    )
+  );
+  rl.close();
+
+  if (conn.requestPairingCode) {
+    let code = await conn.requestPairingCode(phoneNumber);
+    code = code?.match(/.{1,4}/g)?.join('-') || code;
+    console.log(chalk.magenta(`Su código de emparejamiento es:`, code));
+  } else {
+    console.error('La función requestPairingCode no está disponible.');
   }
 }
 
-conn.isInit = false;
-conn.well = false;
+if (!opts['test']) {
+  (await import('./server.js')).default(PORT);
+  setInterval(async () => {
+    if (global.db.data) await global.db.write().catch(console.error);
+    clearTmp();
+  }, 60 * 1000);
+}
 
-// =======================================
-// MANEJO DE EVENTOS Y CONEXIÓN
-// =======================================
+async function resetLimit() {
+  try {
+    let list = Object.entries(global.db.data.users);
+    let lim = 25; // Valor de límite predeterminado
+
+    list.forEach(([user, data]) => {
+      if (data.limit <= lim) {
+        data.limit = lim;
+      }
+    });
+
+    console.log(`✅ Límite de usuarios restablecido automáticamente.`);
+  } finally {
+    setInterval(() => resetLimit(), 1 * 86400000); // Cada 24 horas
+  }
+}
+
+function clearTmp() {
+  const tmp = [tmpdir(), join(__dirname, './tmp')];
+  const filename = [];
+  tmp.forEach((dirname) =>
+    readdirSync(dirname).forEach((file) => filename.push(join(dirname, file)))
+  );
+  return filename.map((file) => {
+    const stats = statSync(file);
+    if (
+      stats.isFile() &&
+      Date.now() - stats.mtimeMs >= 1000 * 60 * 3
+    ) {
+      return unlinkSync(file); // 3 minutos
+    }
+    return false;
+  });
+}
+
+async function clearSessions(folder = './sessions') {
+  try {
+    const filenames = await readdirSync(folder);
+    const deletedFiles = await Promise.all(
+      filenames.map(async (file) => {
+        try {
+          const filePath = path.join(folder, file);
+          const stats = await statSync(filePath);
+          if (stats.isFile() && file !== 'creds.json') {
+            await unlinkSync(filePath);
+            console.log('Sesión eliminada:', filePath);
+            return filePath;
+          }
+        } catch (err) {
+          console.error(`Error al procesar ${file}: ${err.message}`);
+        }
+      })
+    );
+    return deletedFiles.filter((file) => file !== null);
+  } catch (err) {
+    console.error(`Error en Clear Sessions: ${err.message}`);
+    return [];
+  } finally {
+    setTimeout(() => clearSessions(folder), 1 * 3600000); // Cada 1 hora
+  }
+}
+
 async function connectionUpdate(update) {
-  const { connection, lastDisconnect } = update;
+  const {
+    receivedPendingNotifications,
+    connection,
+    lastDisconnect,
+    isOnline,
+    isNewLogin,
+  } = update;
+
+  if (isNewLogin) {
+    conn.isInit = true;
+  }
 
   if (connection === 'connecting') {
-    console.log(chalk.blue('🔄 Conectando al servidor de WhatsApp...'));
-  } else if (connection === 'open') {
-    console.log(chalk.green('✅ Conexión establecida con éxito.'));
-  } else if (connection === 'close') {
-    const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
     console.log(
-      chalk.red(`❌ Conexión cerrada: ${lastDisconnect?.error?.message || 'Desconocido'}. Reintentando: ${shouldReconnect ? 'Sí' : 'No'}`)
+      chalk.redBright('✦ Activando el bot, por favor espere un momento...')
     );
-    if (shouldReconnect) {
-      await reloadHandler(true);
-    } else {
-      console.log(chalk.red('El bot fue desconectado permanentemente.'));
-    }
+  } else if (connection === 'open') {
+    console.log(chalk.green('✅ Conectado'));
   }
 
-  if (lastDisconnect?.error?.output?.statusCode === 405) {
-    await unlinkSync(`${authFile}/creds.json`);
-    console.log(chalk.bold.redBright('❌ Sesión inválida. Reiniciando...'));
-    process.send('reset');
+  if (isOnline === true) {
+    console.log(chalk.green('✦ Estado online'));
+  } else if (isOnline === false) {
+    console.log(chalk.red('✦ Estado offline'));
   }
 
-  if (connection === 'open') {
-    console.log(chalk.bold.greenBright('✅ Conexión abierta.'));
+  if (receivedPendingNotifications) {
+    console.log(chalk.yellow('✧ Esperando mensajes'));
   }
 
   if (connection === 'close') {
-    const reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
-    switch (reason) {
-      case DisconnectReason.badSession:
-        console.log(chalk.bold.cyanBright('❌ Sesión mala. Reiniciando...'));
-        break;
-      case DisconnectReason.connectionClosed:
-        console.log(chalk.bold.magentaBright('🔒 Conexión cerrada. Reintentando...'));
-        await reloadHandler(true);
-        break;
-      case DisconnectReason.connectionLost:
-        console.log(chalk.bold.blueBright('🔍 Conexión perdida. Reintentando...'));
-        await reloadHandler(true);
-        break;
-      case DisconnectReason.connectionReplaced:
-        console.log(chalk.bold.yellowBright('🔄 Conexión reemplazada.'));
-        break;
-      case DisconnectReason.loggedOut:
-        console.log(chalk.bold.redBright('❌ Cerrado. Sesión cerrada.'));
-        await reloadHandler(true);
-        break;
-      case DisconnectReason.restartRequired:
-        console.log(chalk.bold.cyanBright('🔁 Reinicio requerido. Reiniciando...'));
-        await reloadHandler(true);
-        break;
-      case DisconnectReason.timedOut:
-        console.log(chalk.bold.yellowBright('⏰ Tiempo de espera agotado. Reintentando...'));
-        await reloadHandler(true);
-        break;
-      default:
-        console.log(chalk.bold.redBright(`❌ Desconexión inesperada: ${reason}`));
-    }
+    console.log(
+      chalk.red('✦ Desconectado e intentando volver a conectarse...')
+    );
   }
 
   global.timestamp.connect = new Date();
@@ -353,7 +347,7 @@ async function connectionUpdate(update) {
     lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut &&
     conn.ws.readyState !== CONNECTING
   ) {
-    console.log(await reloadHandler(true));
+    console.log(await global.reloadHandler(true));
   }
 
   if (global.db.data == null) {
@@ -361,110 +355,19 @@ async function connectionUpdate(update) {
   }
 }
 
-// Asociar el manejador de eventos de conexión
-conn.ev.on('connection.update', connectionUpdate);
+process.on('uncaughtException', console.error);
 
-// Manejo de credenciales
-conn.ev.on('creds.update', saveCreds);
-
-// =======================================
-// CARGA Y RECARGA DE PLUGINS
-// =======================================
-const pluginFolderPath = join(__dirname, './plugins/index');
-const pluginFilter = (filename) => /\.js$/.test(filename);
-global.plugins = {};
-
-// Función para cargar plugins
-async function loadPlugins() {
-  try {
-    if (!existsSync(pluginFolderPath)) {
-      console.warn(chalk.yellow(`⚠️ Carpeta de plugins no encontrada: ${pluginFolderPath}`));
-      return;
-    }
-
-    const pluginFiles = readdirSync(pluginFolderPath).filter(pluginFilter);
-
-    if (pluginFiles.length === 0) {
-      console.warn(chalk.yellow(`⚠️ No se encontraron plugins en: ${pluginFolderPath}`));
-      return;
-    }
-
-    for (const file of pluginFiles) {
-      try {
-        const filePath = join(pluginFolderPath, file);
-        const plugin = await import(filePath);
-        global.plugins[file] = plugin.default || plugin;
-        console.log(chalk.green(`📦 Plugin cargado: ${file}`));
-      } catch (error) {
-        console.error(chalk.red(`❌ Error al cargar plugin ${file}:`, error.message));
-        delete global.plugins[file];
-      }
-    }
-  } catch (error) {
-    console.error(chalk.red(`❌ Error al cargar plugins: ${error.message}`));
-  }
-}
-
-// Cargar plugins inicialmente
-await loadPlugins();
-
-// Recarga dinámica de plugins
-global.reload = async (_event, filename) => {
-  if (pluginFilter(filename)) {
-    const filePath = join(pluginFolderPath, filename);
-    if (filename in global.plugins) {
-      if (existsSync(filePath)) {
-        console.info(chalk.blue(`♻️ Recargando plugin: ${filename}`));
-      } else {
-        console.warn(chalk.yellow(`⚠️ Plugin eliminado: ${filename}`));
-        delete global.plugins[filename];
-        return;
-      }
-    } else {
-      console.info(chalk.green(`➕ Cargando nuevo plugin: ${filename}`));
-    }
-
-    const err = syntaxerror(readFileSync(filePath), filename, {
-      sourceType: 'module',
-      allowAwaitOutsideFunction: true,
-    });
-
-    if (err) {
-      console.error(chalk.red(`❌ Error de sintaxis en plugin '${filename}':\n${format(err)}`));
-      return;
-    }
-
-    try {
-      const plugin = await import(`${filePath}?update=${Date.now()}`);
-      global.plugins[filename] = plugin.default || plugin;
-      console.log(chalk.green(`✅ Plugin actualizado: ${filename}`));
-    } catch (error) {
-      console.error(chalk.red(`❌ Error recargando plugin '${filename}':\n${format(error)}`));
-    } finally {
-      // Ordenar plugins alfabéticamente
-      global.plugins = Object.fromEntries(
-        Object.entries(global.plugins).sort(([a], [b]) => a.localeCompare(b))
-      );
-    }
-  }
-};
-
-// Bloquear la función de recarga para evitar modificaciones accidentales
-Object.freeze(global.reload);
-
-// Observar cambios en la carpeta de plugins
-watch(pluginFolderPath, global.reload);
-
-// Función de recarga de handler
+let isInit = true;
 let handler = await import('./handler.js');
 global.reloadHandler = async function (restartConn) {
   try {
-    const Handler = await import(`./handler.js?update=${Date.now()}`).catch(console.error);
+    const Handler = await import(`./handler.js?update=${Date.now()}`).catch(
+      console.error
+    );
     if (Object.keys(Handler || {}).length) handler = Handler;
   } catch (e) {
     console.error(e);
   }
-
   if (restartConn) {
     const oldChats = global.conn.chats;
     try {
@@ -474,211 +377,158 @@ global.reloadHandler = async function (restartConn) {
     global.conn = makeWASocket(connectionOptions, { chats: oldChats });
     isInit = true;
   }
-
   if (!isInit) {
     conn.ev.off('messages.upsert', conn.handler);
     conn.ev.off('group-participants.update', conn.participantsUpdate);
     conn.ev.off('groups.update', conn.groupsUpdate);
     conn.ev.off('message.delete', conn.onDelete);
-    conn.ev.off('call', conn.onCall);
     conn.ev.off('connection.update', conn.connectionUpdate);
     conn.ev.off('creds.update', conn.credsUpdate);
   }
 
-  // Información para Grupos con emojis
-  conn.welcome = `🎉❖━━━━━━[ BIENVENIDO ]━━━━━━❖🎉
+  // Mensajes personalizados
+  conn.welcome =
+    '❖━━━━━━[ BIENVENIDO ]━━━━━━❖\n\n┏------━━━━━━━━•\n│☘︎ @subject\n┣━━━━━━━━┅┅┅\n│( 👋 Hola @user)\n├[ ¡Soy *Admin-TK* ]\n├ tu administrador en este grupo! —\n\n│ Por favor, regístrate con el comando:\n│ `.reg nombre.edad`\n┗------━━┅┅┅\n\n------┅┅ Descripción ┅┅––––––\n\n@desc';
+  conn.bye = '❖━━━━━━[ BYEBYE ]━━━━━━❖\n\nSayonara @user 👋😃';
+  conn.spromote = '*✧ @user ahora es admin!*';
+  conn.sdemote = '*✧ @user ya no es admin!*';
+  conn.sDesc = '*✧ La descripción se actualizó a* \n@desc';
+  conn.sSubject = '*✧ El nombre del grupo fue alterado a* \n@subject';
+  conn.sIcon = '*✧ Se actualizó el nombre del grupo!*';
+  conn.sRevoke = '*✧ El link del grupo se actualizó a* \n@revoke';
+  conn.sAnnounceOn =
+    '*✧ Grupo cerrado!*\n> Ahora solo los admins pueden enviar mensajes.';
+  conn.sAnnounceOff =
+    '*✧ El grupo fue abierto!*\n> Ahora todos pueden enviar mensajes.';
+  conn.sRestrictOn =
+    '*✧ Ahora solo los admin podrán editar la información del grupo!*';
+  conn.sRestrictOff =
+    '*✧ Ahora todos pueden editar la información del grupo!*';
 
-┏------━━━━━━━━•
-│☘︎ @subject
-┣━━━━━━━━┅┅┅
-│( 👋 Hola @user)
-├[ ¡Soy *Admin-TK* ]
-├ tu administrador en este grupo! —
-│\n
-│ Por favor, regístrate con el comando:
-│ \`.reg nombre.edad\`
-┗------━━┅┅┅
-
-------┅┅ Descripción ┅┅––––––
-
-@desc`;
-  conn.bye = `❖━━━━━━[ BYEBYE ]━━━━━━❖
-
-👋😃 Sayonara @user`;
-  conn.spromote = `*✧ @user ahora es admin!*`;
-  conn.sdemote = `*✧ @user ya no es admin!*`;
-  conn.sDesc = `*✧ La descripción se actualizó a* 
-@desc`;
-  conn.sSubject = `*✧ El nombre del grupo fue alterado a* 
-@subject`;
-  conn.sIcon = `*✧ Se actualizó el nombre del grupo!*`;
-  conn.sRevoke = `*✧ El link del grupo se actualizó a* 
-@revoke`;
-  conn.sAnnounceOn = `*✧ Grupo cerrado!*\n> Ahora solo los admins pueden enviar mensajes.`;
-  conn.sAnnounceOff = `*✧ El grupo fue abierto!*\n> Ahora todos pueden enviar mensajes.`;
-  conn.sRestrictOn = `*✧ Ahora solo los admin podrán editar la información del grupo!*`;
-  conn.sRestrictOff = `*✧ Ahora todos pueden editar la información del grupo!*`;
-
-  // Asignar funciones manejadoras
   conn.handler = handler.handler.bind(global.conn);
   conn.participantsUpdate = handler.participantsUpdate.bind(global.conn);
   conn.groupsUpdate = handler.groupsUpdate.bind(global.conn);
   conn.onDelete = handler.deleteUpdate.bind(global.conn);
-  conn.onCall = handler.callUpdate.bind(global.conn);
   conn.connectionUpdate = connectionUpdate.bind(global.conn);
   conn.credsUpdate = saveCreds.bind(global.conn);
 
-  // Registrar eventos
   conn.ev.on('messages.upsert', conn.handler);
   conn.ev.on('group-participants.update', conn.participantsUpdate);
   conn.ev.on('groups.update', conn.groupsUpdate);
   conn.ev.on('message.delete', conn.onDelete);
-  conn.ev.on('call', conn.onCall);
   conn.ev.on('connection.update', conn.connectionUpdate);
   conn.ev.on('creds.update', conn.credsUpdate);
   isInit = false;
   return true;
 };
 
-// =======================================
-// PRUEBAS RÁPIDAS
-// =======================================
+const pluginFolder = global.__dirname(join(__dirname, './plugins/index'));
+const pluginFilter = (filename) => /\.js$/.test(filename);
+global.plugins = {};
+async function filesInit() {
+  for (let filename of readdirSync(pluginFolder).filter(pluginFilter)) {
+    try {
+      let file = global.__filename(join(pluginFolder, filename));
+      const module = await import(file);
+      global.plugins[filename] = module.default || module;
+    } catch (e) {
+      delete global.plugins[filename];
+    }
+  }
+}
+filesInit().then(() => Object.keys(global.plugins));
+
+global.reload = async (_ev, filename) => {
+  if (pluginFilter(filename)) {
+    let dir = global.__filename(join(pluginFolder, filename), true);
+    if (filename in global.plugins) {
+      if (existsSync(dir)) conn.logger.info(`Re - require plugin '${filename}'`);
+      else {
+        conn.logger.warn(`Plugin eliminado '${filename}'`);
+        return delete global.plugins[filename];
+      }
+    } else conn.logger.info(`Requiriendo nuevo plugin '${filename}'`);
+    let err = syntaxerror(readFileSync(dir), filename, {
+      sourceType: 'module',
+      allowAwaitOutsideFunction: true,
+    });
+    if (err)
+      conn.logger.error(
+        `Error de sintaxis al cargar '${filename}'\n${format(err)}`
+      );
+    else
+      try {
+        const module = await import(
+          `${global.__filename(dir)}?update=${Date.now()}`
+        );
+        global.plugins[filename] = module.default || module;
+      } catch (e) {
+        conn.logger.error(
+          `Error al requerir plugin '${filename}'\n${format(e)}`
+        );
+      } finally {
+        global.plugins = Object.fromEntries(
+          Object.entries(global.plugins).sort(([a], [b]) => a.localeCompare(b))
+        );
+      }
+  }
+};
+Object.freeze(global.reload);
+watch(pluginFolder, global.reload);
+await global.reloadHandler();
+
+// Prueba rápida
+
 async function _quickTest() {
-  const tools = [
-    { name: 'ffmpeg', args: ['-version'] },
-    { name: 'ffprobe', args: ['-version'] },
-    { name: 'ffmpegWebp', args: ['-hide_banner', '-loglevel', 'error', '-filter_complex', 'color', '-frames:v', '1', '-f', 'webp', '-'] },
-    { name: 'convert', args: ['-version'] },
-    { name: 'magick', args: ['-version'] },
-    { name: 'gm', args: ['version'] },
-    { name: 'find', args: ['--version'] },
-  ];
-
-  const results = await Promise.all(
-    tools.map(({ name, args }) =>
-      new Promise((resolve) => {
-        const proc = spawn(name, args);
-        proc.on('close', (code) => resolve(code === 0));
-        proc.on('error', () => resolve(false));
-      })
-    )
+  let test = await Promise.all(
+    [
+      spawn('ffmpeg'),
+      spawn('ffprobe'),
+      spawn('ffmpeg', [
+        '-hide_banner',
+        '-loglevel',
+        'error',
+        '-filter_complex',
+        'color',
+        '-frames:v',
+        '1',
+        '-f',
+        'webp',
+        '-',
+      ]),
+      spawn('convert'),
+      spawn('magick'),
+      spawn('gm'),
+      spawn('find', ['--version']),
+    ].map((p) => {
+      return Promise.race([
+        new Promise((resolve) => {
+          p.on('close', (code) => {
+            resolve(code !== 127);
+          });
+        }),
+        new Promise((resolve) => {
+          p.on('error', (_) => resolve(false));
+        }),
+      ]);
+    })
   );
-
-  const support = tools.reduce((acc, tool, index) => {
-    acc[tool.name] = results[index];
-    return acc;
-  }, {});
-
-  global.support = support;
-  console.log(chalk.blue('📊 Soporte de herramientas:'), support);
+  let [ffmpeg, ffprobe, ffmpegWebp, convert, magick, gm, find] = test;
+  console.log(test);
+  let s = (global.support = {
+    ffmpeg,
+    ffprobe,
+    ffmpegWebp,
+    convert,
+    magick,
+    gm,
+    find,
+  });
   Object.freeze(global.support);
 }
-
-_quickTest()
-  .then(() => console.info(chalk.bold.green('☑️ Prueba rápida completada.')))
-  .catch(console.error);
-
-// =======================================
-// LIMPIEZA Y MANTENIMIENTO AUTOMÁTICO
-// =======================================
-
-function clearTmp() {
-  const tmpDirs = [tmpdir(), join(__dirname, 'tmp')];
-  tmpDirs.forEach((dir) => {
-    if (existsSync(dir)) {
-      readdirSync(dir).forEach((file) => {
-        const filePath = join(dir, file);
-        try {
-          const stats = statSync(filePath);
-          if (stats.isFile() && Date.now() - stats.mtimeMs > 60000) {
-            unlinkSync(filePath);
-            console.log(chalk.blue(`🧹 Archivo temporal eliminado: ${filePath}`));
-          }
-        } catch (error) {
-          console.error(chalk.red(`❌ Error al eliminar archivo temporal ${filePath}: ${error.message}`));
-        }
-      });
-    }
-  });
-}
-
-function purgeOldSessions() {
-  const sessionDirs = ['./sessions', './BotSession'];
-  sessionDirs.forEach((dir) => {
-    if (existsSync(dir)) {
-      readdirSync(dir).forEach((file) => {
-        if (file !== 'creds.json' && file.startsWith('pre-key-')) {
-          const filePath = join(dir, file);
-          try {
-            unlinkSync(filePath);
-            console.log(chalk.blue(`🧹 Sesión eliminada: ${filePath}`));
-          } catch (error) {
-            console.error(chalk.red(`❌ Error al eliminar sesión ${filePath}: ${error.message}`));
-          }
-        }
-      });
-    }
-  });
-}
-
-setInterval(() => {
-  if (conn && conn.user) {
-    clearTmp();
-    purgeOldSessions();
-    console.log(chalk.green('✅ Limpieza automática realizada.'));
-  }
-}, 60000); // Cada 1 minuto
-
-// =======================================
-// MANEJO DE LIMITES Y OTRAS FUNCIONES
-// =======================================
-async function resetLimit() {
-  try {
-    let list = Object.entries(global.db.data.users);
-    let lim = 25; // Límite default a resetear
-
-    list.forEach(([user, data]) => {
-      if (data.limit <= lim) {
-        data.limit = lim;
-      }
-    });
-
-    console.log(chalk.green('✅ Límites de usuarios reseteados automáticamente.'));
-  } catch (error) {
-    console.error(chalk.red(`❌ Error al resetear límites: ${error.message}`));
-  } finally {
-    setInterval(resetLimit, 86400000); // Cada 24 horas
-  }
-}
-
-resetLimit();
-
-// =======================================
-// MANEJO DE EVENTOS PARA ARCHIVO MAIN
-// =======================================
-let mainFile = fileURLToPath(import.meta.url);
-watchFile(mainFile, () => {
-  unwatchFile(mainFile);
-  console.log(chalk.bold.greenBright('🔄 Archivo main.js actualizado. Reiniciando...'));
-  import(`${pathToFileURL(mainFile)}?update=${Date.now()}`).catch(console.error);
-});
-
-// =======================================
-// PROCESO PRINCIPAL
-// =======================================
-(async () => {
-  try {
-    console.log(chalk.blue('⚡ Iniciando Admin-TK...'));
-    await connectionUpdate({ connection: 'connecting' });
-
-    if (!opts['test']) {
-      const server = await import('./server.js');
-      server.default(PORT);
-    }
-
-    console.log(chalk.green('🚀 Bot iniciado correctamente.'));
-  } catch (error) {
-    console.error(chalk.red(`❌ Error al iniciar el bot: ${error.message}`));
-    process.exit(1);
-  }
-})();
+_quickTest().then(() =>
+  conn.logger.info(
+    '☑️ Prueba rápida realizada, nombre de la sesión ~> creds.json'
+  )
+);
+    
