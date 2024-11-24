@@ -7,7 +7,7 @@ import chalk from 'chalk';
 
 const { proto } = (await import('@adiwajshing/baileys')).default;
 
-// Utilidades básicas
+// Funciones auxiliares
 const isNumber = x => typeof x === 'number' && !isNaN(x);
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -21,6 +21,17 @@ const estilo = (text, style = 1) => {
         .map(v => yStr[style]?.[xStr.indexOf(v)] || v)
         .join('');
 };
+
+// Función para obtener una imagen aleatoria de bienvenida
+function getRandomWelcomeImage() {
+    const links = [
+        'https://pomf2.lain.la/f/onvv8i5b.jpg',
+        'https://pomf2.lain.la/f/ucogaqax.jpg',
+        'https://pomf2.lain.la/f/m1z5y7ju.jpg',
+        'https://pomf2.lain.la/f/fqeogyqi.jpg'
+    ];
+    return links[Math.floor(Math.random() * links.length)];
+}
 
 // Manejo del mensaje entrante
 export async function handler(chatUpdate) {
@@ -88,7 +99,14 @@ async function handleChatData(m) {
         nsfw: true,
         autodl: false,
         detect: false,
+        sWelcomeImageLink: getRandomWelcomeImage(), // Asigna una imagen de bienvenida aleatoria
     };
+
+    // Si no existe la propiedad, se asegura de asignarla
+    if (!('sWelcomeImageLink' in chat)) {
+        chat.sWelcomeImageLink = getRandomWelcomeImage();
+    }
+
     global.db.data.chats[m.chat] = { ...defaultChatData, ...chat };
 }
 
