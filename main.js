@@ -101,9 +101,6 @@ global.prefix = new RegExp(
     ']'
 );
 
-// =======================================
-// CONFIGURACIÓN DE LA BASE DE DATOS
-// =======================================
 global.db = new Low(
   /https?:\/\//.test(opts['db'] || '')
     ? new cloudDBAdapter(opts['db'])
@@ -113,7 +110,7 @@ global.db = new Low(
       : new mongoDB(opts['db'])
     : new JSONFile(`${opts._[0] ? opts._[0] + '_' : ''}database.json`)
 );
-global.DATABASE = global.db; // Compatibilidad hacia atrás
+global.DATABASE = global.db; // Backwards Compatibility
 global.loadDatabase = async function loadDatabase() {
   if (db.READ)
     return new Promise((resolve) =>
@@ -141,9 +138,6 @@ global.loadDatabase = async function loadDatabase() {
 };
 loadDatabase();
 
-// =======================================
-// CONFIGURACIÓN DE CONEXIÓN Y VINCULACIÓN
-// =======================================
 const usePairingCode = true; // Usar siempre el código de emparejamiento de 8 dígitos
 const useMobile = process.argv.includes('--mobile');
 
@@ -173,7 +167,7 @@ const connectionOptions = {
   version,
   logger: pino({ level: 'silent' }),
   printQRInTerminal: false, // No imprimir QR
-  browser: ['Admin-TK', 'Chrome', '1.0.0'],
+  browser: ['Ubuntu', 'Chrome', '20.0.04'],
   auth: {
     creds: state.creds,
     keys: makeCacheableSignalKeyStore(
@@ -220,11 +214,10 @@ const connectionOptions = {
 global.conn = makeWASocket(connectionOptions);
 conn.isInit = false;
 
-// Solicitud de código de emparejamiento
 if (usePairingCode && !conn.authState.creds.registered) {
   const phoneNumber = await question(
     chalk.blue(
-      '📱 Ingresa el número de WhatsApp en el cual estará el Bot (con código de país, sin +): '
+      'Ingresa el número de WhatsApp en el cual estará el Bot (con código de país, sin +): '
     )
   );
   rl.close();
@@ -232,23 +225,20 @@ if (usePairingCode && !conn.authState.creds.registered) {
   if (conn.requestPairingCode) {
     let code = await conn.requestPairingCode(phoneNumber);
     code = code?.match(/.{1,4}/g)?.join('-') || code;
-    console.log(chalk.greenBright(`🔑 Tu código de emparejamiento es: ${code}`));
+    console.log(chalk.magenta(`Su código de emparejamiento es:`, code));
   } else {
-    console.error('❌ La función requestPairingCode no está disponible.');
+    console.error('La función requestPairingCode no está disponible.');
   }
 }
 
-// Iniciar servidor y limpieza automática
 if (!opts['test']) {
   (await import('./server.js')).default(PORT);
   setInterval(async () => {
     if (global.db.data) await global.db.write().catch(console.error);
     clearTmp();
-    console.log(chalk.yellow('🧹 Limpieza automática realizada.'));
-  }, 60 * 1000); // Limpieza cada minuto
+  }, 60 * 1000);
 }
 
-// Resetear límites automáticamente
 async function resetLimit() {
   try {
     let list = Object.entries(global.db.data.users);
@@ -260,14 +250,12 @@ async function resetLimit() {
       }
     });
 
-    console.log(chalk.green('🔄 Límite de usuarios restablecido automáticamente.'));
+    console.log(`✅ Límite de usuarios restablecido automáticamente.`);
   } finally {
     setInterval(() => resetLimit(), 1 * 86400000); // Cada 24 horas
   }
 }
-resetLimit();
 
-// Función de limpieza de archivos temporales
 function clearTmp() {
   const tmp = [tmpdir(), join(__dirname, './tmp')];
   const filename = [];
@@ -278,17 +266,14 @@ function clearTmp() {
     const stats = statSync(file);
     if (
       stats.isFile() &&
-      Date.now() - stats.mtimeMs >= 1000 * 60 // Archivos de más de 1 minuto
+      Date.now() - stats.mtimeMs >= 1000 * 60 * 3
     ) {
-      unlinkSync(file);
-      console.log(chalk.yellow(`🗑️ Archivo temporal eliminado: ${file}`));
-      return true;
+      return unlinkSync(file); // 3 minutos
     }
     return false;
   });
 }
 
-// Función para limpiar sesiones antiguas
 async function clearSessions(folder = './sessions') {
   try {
     const filenames = await readdirSync(folder);
@@ -299,25 +284,23 @@ async function clearSessions(folder = './sessions') {
           const stats = await statSync(filePath);
           if (stats.isFile() && file !== 'creds.json') {
             await unlinkSync(filePath);
-            console.log(chalk.red(`🗑️ Sesión eliminada: ${filePath}`));
+            console.log('Sesión eliminada:', filePath);
             return filePath;
           }
         } catch (err) {
-          console.error(chalk.red(`❌ Error al procesar ${file}: ${err.message}`));
+          console.error(`Error al procesar ${file}: ${err.message}`);
         }
       })
     );
     return deletedFiles.filter((file) => file !== null);
   } catch (err) {
-    console.error(chalk.red(`❌ Error en Clear Sessions: ${err.message}`));
+    console.error(`Error en Clear Sessions: ${err.message}`);
     return [];
   } finally {
     setTimeout(() => clearSessions(folder), 1 * 3600000); // Cada 1 hora
   }
 }
-clearSessions();
 
-// Manejo de eventos de conexión
 async function connectionUpdate(update) {
   const {
     receivedPendingNotifications,
@@ -333,25 +316,25 @@ async function connectionUpdate(update) {
 
   if (connection === 'connecting') {
     console.log(
-      chalk.blueBright('🔌 Conectando Admin-TK, por favor espera un momento...')
+      chalk.redBright('✦ Activando el bot, por favor espere un momento...')
     );
   } else if (connection === 'open') {
-    console.log(chalk.green('✅ Admin-TK conectado exitosamente.'));
+    console.log(chalk.green('✅ Conectado'));
   }
 
   if (isOnline === true) {
-    console.log(chalk.green('🌐 Admin-TK está en línea.'));
+    console.log(chalk.green('✦ Estado online'));
   } else if (isOnline === false) {
-    console.log(chalk.red('🔴 Admin-TK está fuera de línea.'));
+    console.log(chalk.red('✦ Estado offline'));
   }
 
   if (receivedPendingNotifications) {
-    console.log(chalk.yellow('📨 Recibiendo mensajes pendientes...'));
+    console.log(chalk.yellow('✧ Esperando mensajes'));
   }
 
   if (connection === 'close') {
     console.log(
-      chalk.red('🔌 Conexión cerrada, intentando reconectar...')
+      chalk.red('✦ Desconectado e intentando volver a conectarse...')
     );
   }
 
@@ -374,7 +357,6 @@ async function connectionUpdate(update) {
 
 process.on('uncaughtException', console.error);
 
-// Recarga del handler y plugins
 let isInit = true;
 let handler = await import('./handler.js');
 global.reloadHandler = async function (restartConn) {
@@ -404,24 +386,24 @@ global.reloadHandler = async function (restartConn) {
     conn.ev.off('creds.update', conn.credsUpdate);
   }
 
-  // Mensajes personalizados de Admin-TK que se refiere directamente al usuario
+  // Mensajes personalizados
   conn.welcome =
-    '👋 Hola @user, soy *Admin-TK*. ¡Bienvenido al grupo *${conn.getName(conn.chat)}*!\n\nPor favor, regístrate usando el comando: `.reg nombre.edad`\n\n📄 Aquí está la descripción del grupo:\n@desc';
-  conn.bye = '👋 @user, soy *Admin-TK*. Lamento verte partir. ¡Hasta pronto!';
-  conn.spromote = '🎖️ @user, has sido promovido a *ADMIN* por mí, *Admin-TK*. Felicidades.';
-  conn.sdemote = '❌ @user, has sido degradado de *ADMIN* por mí, *Admin-TK*.';
-  conn.sDesc = '📝 He actualizado la descripción del grupo a:\n\n@desc';
-  conn.sSubject = '📝 He cambiado el nombre del grupo a:\n\n*${conn.getName(conn.chat)}*';
-  conn.sIcon = '🖼️ He actualizado la imagen del grupo.';
-  conn.sRevoke = '🔗 He actualizado el enlace del grupo:\n\n@revoke';
+    '❖━━━━━━[ BIENVENIDO ]━━━━━━❖\n\n┏------━━━━━━━━•\n│☘︎ @subject\n┣━━━━━━━━┅┅┅\n│( 👋 Hola @user)\n├[ ¡Soy *Admin-TK* ]\n├ tu administrador en este grupo! —\n\n│ Por favor, regístrate con el comando:\n│ `.reg nombre.edad`\n┗------━━┅┅┅\n\n------┅┅ Descripción ┅┅––––––\n\n@desc';
+  conn.bye = '❖━━━━━━[ BYEBYE ]━━━━━━❖\n\nSayonara @user 👋😃';
+  conn.spromote = '*✧ @user ahora es admin!*';
+  conn.sdemote = '*✧ @user ya no es admin!*';
+  conn.sDesc = '*✧ La descripción se actualizó a* \n@desc';
+  conn.sSubject = '*✧ El nombre del grupo fue alterado a* \n@subject';
+  conn.sIcon = '*✧ Se actualizó el nombre del grupo!*';
+  conn.sRevoke = '*✧ El link del grupo se actualizó a* \n@revoke';
   conn.sAnnounceOn =
-    '🔒 He cerrado el grupo. Ahora solo los administradores pueden enviar mensajes.';
+    '*✧ Grupo cerrado!*\n> Ahora solo los admins pueden enviar mensajes.';
   conn.sAnnounceOff =
-    '🔓 He abierto el grupo. Todos los miembros pueden enviar mensajes.';
+    '*✧ El grupo fue abierto!*\n> Ahora todos pueden enviar mensajes.';
   conn.sRestrictOn =
-    '🔒 He restringido la edición de la información del grupo. Solo los administradores pueden hacerlo.';
+    '*✧ Ahora solo los admin podrán editar la información del grupo!*';
   conn.sRestrictOff =
-    '🔓 He permitido que todos los miembros puedan editar la información del grupo.';
+    '*✧ Ahora todos pueden editar la información del grupo!*';
 
   conn.handler = handler.handler.bind(global.conn);
   conn.participantsUpdate = handler.participantsUpdate.bind(global.conn);
@@ -440,7 +422,6 @@ global.reloadHandler = async function (restartConn) {
   return true;
 };
 
-// Inicialización de plugins
 const pluginFolder = global.__dirname(join(__dirname, './plugins/index'));
 const pluginFilter = (filename) => /\.js$/.test(filename);
 global.plugins = {};
@@ -457,24 +438,23 @@ async function filesInit() {
 }
 filesInit().then(() => Object.keys(global.plugins));
 
-// Recarga dinámica de plugins
 global.reload = async (_ev, filename) => {
   if (pluginFilter(filename)) {
     let dir = global.__filename(join(pluginFolder, filename), true);
     if (filename in global.plugins) {
-      if (existsSync(dir)) conn.logger.info(`♻️ Recargando plugin '${filename}'`);
+      if (existsSync(dir)) conn.logger.info(`Re - require plugin '${filename}'`);
       else {
-        conn.logger.warn(`🗑️ Plugin eliminado '${filename}'`);
+        conn.logger.warn(`Plugin eliminado '${filename}'`);
         return delete global.plugins[filename];
       }
-    } else conn.logger.info(`📦 Cargando nuevo plugin '${filename}'`);
+    } else conn.logger.info(`Requiriendo nuevo plugin '${filename}'`);
     let err = syntaxerror(readFileSync(dir), filename, {
       sourceType: 'module',
       allowAwaitOutsideFunction: true,
     });
     if (err)
       conn.logger.error(
-        `❌ Error de sintaxis al cargar '${filename}'\n${format(err)}`
+        `Error de sintaxis al cargar '${filename}'\n${format(err)}`
       );
     else
       try {
@@ -484,7 +464,7 @@ global.reload = async (_ev, filename) => {
         global.plugins[filename] = module.default || module;
       } catch (e) {
         conn.logger.error(
-          `❌ Error al requerir plugin '${filename}'\n${format(e)}`
+          `Error al requerir plugin '${filename}'\n${format(e)}`
         );
       } finally {
         global.plugins = Object.fromEntries(
@@ -498,6 +478,7 @@ watch(pluginFolder, global.reload);
 await global.reloadHandler();
 
 // Prueba rápida
+
 async function _quickTest() {
   let test = await Promise.all(
     [
@@ -550,4 +531,4 @@ _quickTest().then(() =>
     '☑️ Prueba rápida realizada, nombre de la sesión ~> creds.json'
   )
 );
-  
+    
