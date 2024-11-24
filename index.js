@@ -17,11 +17,9 @@ let procesoEjecutandose = false; // Indicador para saber si el proceso está cor
 // Función para mostrar los banners de inicio
 function mostrarBanner() {
   const banners = [
-    { texto: 'Admin-TK', fuente: 'block', alineación: 'center', colores: ['cyan'] }             // Escala 3
-    { texto: 'TK-HOST', fuente: 'console', alineación: 'center', colores: ['red'] },             // Escala 2
-    { texto: 'Creado por • JoanTK', fuente: 'tiny', alineación: 'center', colores: ['magenta'] }, // Escala 1
-    
-    
+    { texto: 'Admin-TK', fuente: 'block', alineación: 'center', colores: ['cyan'] },             // Escala 3 (grande)
+    { texto: 'TK-HOST', fuente: 'console', alineación: 'center', colores: ['red'] },             // Escala 2 (mediano)
+    { texto: 'Creado por • JoanTK', fuente: 'tiny', alineación: 'center', colores: ['magenta'] } // Escala 1 (pequeño)
   ];
 
   banners.forEach((banner) =>
