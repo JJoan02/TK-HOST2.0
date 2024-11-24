@@ -1,79 +1,95 @@
-import yargs from 'yargs'
-import cfonts from 'cfonts'
-import { fileURLToPath } from 'url'
-import { join, dirname } from 'path'
-import { createRequire } from 'module'
-import { createInterface } from 'readline'
-import { setupMaster, fork } from 'cluster'
-import { watchFile, unwatchFile } from 'fs'
+import yargs from 'yargs';
+import cfonts from 'cfonts';
+import { fileURLToPath } from 'url';
+import { join, dirname } from 'path';
+import { createRequire } from 'module';
+import { createInterface } from 'readline';
+import { setupMaster, fork } from 'cluster';
+import { watchFile, unwatchFile } from 'fs';
 
-// https://stackoverflow.com/a/50052194
-const { say } = cfonts
-const rl = createInterface(process.stdin, process.stdout)
-const __dirname = dirname(fileURLToPath(import.meta.url))
-const require = createRequire(__dirname) // Bring in the ability to create the 'require' method
-const { name, author } = require(join(__dirname, './package.json')) // https://www.stefanjudis.com/snippets/how-to-import-json-files-in-es-modules-node-js/
+// Configuración global
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const require = createRequire(__dirname); // Permite usar `require` en ES Modules
+const { name, author } = require(join(__dirname, './package.json')); // Carga la información desde el package.json
+const rl = createInterface(process.stdin, process.stdout);
+let procesoEjecutandose = false; // Indicador para saber si el proceso está corriendo
 
-  say('Admin-TK', {
-    font: 'block',
-    align: 'center',
-    colors: ['cyan'],
-  });
-  say('TK-HOST', {
-    font: 'chrome',
-    align: 'center',
-    colors: ['red'],
-  });
-  say('Creado por • JoanTK', {
-    font: 'console',
-    align: 'center',
-    colors: ['magenta'],
-  });
+// Función para mostrar los banners de inicio
+function mostrarBanner() {
+  const banners = [
+    { texto: 'Admin-TK', fuente: 'block', alineación: 'center', colores: ['cyan'] },
+    { texto: 'TK-HOST', fuente: 'chrome', alineación: 'center', colores: ['red'] },
+    { texto: 'Creado por • JoanTK', fuente: 'console', alineación: 'center', colores: ['magenta'] },
+  ];
 
-console.log('✦ Iniciando a Admin TK...')
-
-//say('Waguri Ai', { font: 'chrome', align: 'center', gradient: ['blue', 'green'] })
-//say(`Whatsapp Bot esm by KenisawaDev`, { font: 'console', align: 'center', gradient: ['blue', 'green'] })
-
-var isRunning = false
-/**
- * Start a js file
- * @param {String} file `path/to/file`
- */
-function start(file) {
-  if (isRunning) return
-  isRunning = true
-  let args = [join(__dirname, file), ...process.argv.slice(2)]
-  say([process.argv[0], ...args].join(' '), { font: 'console', align: 'center', gradient: ['red', 'magenta'] })
-  setupMaster({ exec: args[0], args: args.slice(1) })
-  let p = fork()
-  p.on('message', data => {
-    console.log('[✅RECEIVED]', data)
-    switch (data) {
-      case 'reset':
-        p.process.kill()
-        isRunning = false
-        start.apply(this, arguments)
-        break
-      case 'uptime':
-        p.send(process.uptime())
-        break
-    }
-  })
-  p.on('exit', (_, code) => {
-    isRunning = false
-    console.error('[✦] Salió con el código:', code)
-    if (code !== 0) return start(file)
-    watchFile(args[0], () => {
-      unwatchFile(args[0])
-      start(file)
+  banners.forEach((banner) =>
+    cfonts.say(banner.texto, {
+      font: banner.fuente,
+      align: banner.alineación,
+      colors: banner.colores,
     })
-  })
-  let opts = new Object(yargs(process.argv.slice(2)).exitProcess(false).parse())
-    if (!rl.listenerCount()) rl.on('line', line => {
-      p.emit('message', line.trim())
-    })
-  // console.log(p)
+  );
+
+  console.log('✦ Iniciando Admin TK...');
 }
 
-start('main.js')
+// Función para iniciar un archivo principal
+function iniciar(file) {
+  if (procesoEjecutandose) return; // Evitar múltiples instancias
+  procesoEjecutandose = true;
+
+  const args = [join(__dirname, file), ...process.argv.slice(2)];
+  cfonts.say(args.join(' '), { font: 'console', align: 'center', gradient: ['red', 'magenta'] });
+
+  // Configurar proceso maestro y forkar el proceso hijo
+  setupMaster({ exec: args[0], args: args.slice(1) });
+  const procesoHijo = fork();
+
+  // Escuchar mensajes del proceso hijo
+  procesoHijo.on('message', (data) => {
+    console.log('[✅RECIBIDO]', data);
+
+    switch (data) {
+      case 'reset': // Reiniciar el proceso
+        procesoHijo.kill();
+        procesoEjecutandose = false;
+        iniciar(file);
+        break;
+
+      case 'uptime': // Enviar tiempo de actividad
+        procesoHijo.send(process.uptime());
+        break;
+
+      default:
+        console.log('Mensaje desconocido recibido:', data);
+        break;
+    }
+  });
+
+  // Manejo de salida del proceso hijo
+  procesoHijo.on('exit', (code) => {
+    procesoEjecutandose = false;
+    console.error('[✦] El proceso finalizó con el código:', code);
+
+    if (code !== 0) {
+      iniciar(file); // Reinicia automáticamente si falla
+    } else {
+      watchFile(args[0], () => {
+        unwatchFile(args[0]);
+        iniciar(file); // Reinicia si el archivo principal cambia
+      });
+    }
+  });
+
+  // Configurar entrada interactiva desde la línea de comandos
+  const opciones = new Object(yargs(process.argv.slice(2)).exitProcess(false).parse());
+  if (!rl.listenerCount('line')) {
+    rl.on('line', (linea) => {
+      procesoHijo.emit('message', linea.trim());
+    });
+  }
+}
+
+// Mostrar el banner y arrancar el proceso principal
+mostrarBanner();
+iniciar('main.js');
