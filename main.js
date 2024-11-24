@@ -1,3 +1,6 @@
+// ===============================
+// IMPORTACIONES Y CONFIGURACIONES INICIALES
+// ===============================
 import './config.js';
 import path, { join } from 'path';
 import { platform } from 'process';
@@ -29,7 +32,9 @@ import { makeWASocket, protoType, serialize } from './lib/simple.js';
 
 const { useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeCacheableSignalKeyStore } = pkg;
 
-// Configuración global
+// ===============================
+// CONFIGURACIONES GLOBALES
+// ===============================
 global.__filename = (pathURL = import.meta.url, rmPrefix = platform !== 'win32') =>
   rmPrefix ? (pathURL.startsWith('file://') ? fileURLToPath(pathURL) : pathURL) : pathToFileURL(pathURL).toString();
 global.__dirname = (pathURL) => path.dirname(global.__filename(pathURL, true));
@@ -39,7 +44,7 @@ const PORT = process.env.PORT || 3000;
 const TMP_DIR = tmpdir();
 const __dirname = global.__dirname(import.meta.url);
 
-// Inicialización
+// Inicialización de prototipos y utilidades
 protoType();
 serialize();
 global.opts = new Object(yargs(process.argv.slice(2)).exitProcess(false).parse());
@@ -49,7 +54,9 @@ global.prefix = new RegExp(
     ']'
 );
 
-// Base de datos
+// ===============================
+// CONFIGURACIÓN DE LA BASE DE DATOS
+// ===============================
 global.db = new Low(
   /https?:\/\//.test(opts.db || '')
     ? new cloudDBAdapter(opts.db)
@@ -59,6 +66,7 @@ global.db = new Low(
       : new mongoDB(opts.db)
     : new JSONFile(`${opts._[0] ? `${opts._[0]}_` : ''}database.json`)
 );
+global.DATABASE = global.db;
 
 global.loadDatabase = async function () {
   if (db.READ) {
@@ -88,13 +96,15 @@ global.loadDatabase = async function () {
 };
 await global.loadDatabase();
 
-// Configuración de conexión
+// ===============================
+// CONFIGURACIÓN DE CONEXIÓN DE WhatsApp
+// ===============================
 const { version } = await fetchLatestBaileysVersion();
 const { state, saveCreds } = await useMultiFileAuthState('./sessions');
 
 const connectionOptions = {
   version,
-  logger: pino({ level: 'info' }),
+  logger: pino({ level: 'silent' }),
   browser: ['Admin-TK', 'Chrome', '1.0.0'],
   auth: {
     creds: state.creds,
@@ -103,11 +113,54 @@ const connectionOptions = {
   syncFullHistory: true,
   markOnlineOnConnect: true,
   connectTimeoutMs: 60000,
+  getMessage: async (key) => {
+    const messageData = await store.loadMessage(key.remoteJid, key.id);
+    return messageData?.message || undefined;
+  },
 };
 
 global.conn = makeWASocket(connectionOptions);
 
-// Carga automática de plugins
+// ===============================
+// MANEJO DE CONEXIÓN Y EVENTOS
+// ===============================
+async function connectionUpdate(update) {
+  const { connection, lastDisconnect, isOnline, receivedPendingNotifications } = update;
+
+  if (connection === 'connecting') console.log(chalk.blue('🔄 Conectando...'));
+  else if (connection === 'open') console.log(chalk.green('✅ Conexión establecida.'));
+  else if (connection === 'close') {
+    console.log(chalk.red('❌ Conexión cerrada. Intentando reconectar...'));
+    if (
+      lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut &&
+      conn.ws.readyState !== ws.CONNECTING
+    ) {
+      await global.reloadHandler(true);
+    }
+  }
+
+  if (isOnline) console.log(chalk.green('📶 Bot en línea.'));
+  if (receivedPendingNotifications) console.log(chalk.yellow('🔔 Recibiendo notificaciones pendientes.'));
+}
+
+conn.ev.on('connection.update', connectionUpdate);
+
+// ===============================
+// MENSAJES PERSONALIZADOS
+// ===============================
+conn.welcome = '🎉 Bienvenido @user al grupo: @subject\n\n¡Usa el comando `.reg nombre.edad` para registrarte!';
+conn.bye = '👋 Adiós @user, esperamos verte de nuevo.';
+conn.spromote = '🎖️ @user ahora es administrador.';
+conn.sdemote = '⚠️ @user ya no es administrador.';
+conn.sSubject = '📛 El nombre del grupo se cambió a: @subject';
+conn.sDesc = '📝 La descripción del grupo se actualizó a: @desc';
+conn.sAnnounceOn = '🔒 El grupo ahora está cerrado. Solo los administradores pueden enviar mensajes.';
+conn.sAnnounceOff = '🔓 El grupo se ha abierto. Todos pueden enviar mensajes.';
+conn.sRevoke = '🔗 El enlace del grupo se actualizó a: @revoke';
+
+// ===============================
+// CARGA Y RECARGA AUTOMÁTICA DE PLUGINS
+// ===============================
 const pluginFolder = join(__dirname, './plugins');
 const pluginFilter = (filename) => /\.js$/.test(filename);
 
@@ -140,6 +193,7 @@ async function cargarPlugins() {
     console.error(`❌ Error general al cargar plugins: ${err.message}`);
   }
 }
+
 await cargarPlugins();
 
 watch(pluginFolder, async (eventType, filename) => {
@@ -156,30 +210,41 @@ watch(pluginFolder, async (eventType, filename) => {
   }
 });
 
-// Eventos de conexión
-conn.ev.on('connection.update', (update) => {
-  const { connection } = update;
-  if (connection === 'connecting') console.log(chalk.blue('🔄 Conectando...'));
-  else if (connection === 'open') console.log(chalk.green('✅ Conexión establecida.'));
-  else if (connection === 'close') console.log(chalk.red('❌ Conexión cerrada.'));
-});
-
-// Limpieza de temporales
-const limpiarTemp = () => {
-  const rutas = [TMP_DIR, join(__dirname, './tmp')];
-  rutas.forEach((dir) => {
+// ===============================
+// FUNCIONES ADICIONALES
+// ===============================
+function clearTmp() {
+  const tmpDirs = [TMP_DIR, join(__dirname, './tmp')];
+  tmpDirs.forEach((dir) => {
     readdirSync(dir).forEach((file) => {
-      const ruta = join(dir, file);
-      if (statSync(ruta).isFile() && Date.now() - statSync(ruta).mtimeMs >= 3 * 60 * 1000) {
-        unlinkSync(ruta);
+      const filePath = join(dir, file);
+      const stats = statSync(filePath);
+      if (stats.isFile() && Date.now() - stats.mtimeMs >= 3 * 60 * 1000) {
+        unlinkSync(filePath);
+        console.log(`🧹 Archivo temporal eliminado: ${filePath}`);
       }
     });
   });
-};
+}
 
-// Pruebas rápidas de entorno
-(async () => {
-  const pruebas = await Promise.all(
+async function resetLimit() {
+  const users = Object.entries(global.db.data.usuarios || {});
+  users.forEach(([id, data]) => {
+    data.limit = 25;
+  });
+  console.log('✅ Límite diario reiniciado.');
+}
+
+setInterval(() => {
+  clearTmp();
+  resetLimit();
+}, 24 * 60 * 60 * 1000); // Ejecutar cada 24 horas
+
+// ===============================
+// PRUEBAS RÁPIDAS
+// ===============================
+async function _quickTest() {
+  const tests = await Promise.all(
     ['ffmpeg', 'ffprobe', 'convert', 'magick', 'gm', 'find'].map((cmd) =>
       new Promise((resolve) => {
         const proceso = spawn(cmd);
@@ -188,13 +253,15 @@ const limpiarTemp = () => {
       })
     )
   );
-  global.support = Object.freeze({
-    ffmpeg: pruebas[0],
-    ffprobe: pruebas[1],
-    convert: pruebas[2],
-    magick: pruebas[3],
-    gm: pruebas[4],
-    find: pruebas[5],
-  });
-  console.log('📊 Soporte verificado:', global.support);
-})();
+  global.support = {
+    ffmpeg: tests[0],
+    ffprobe: tests[1],
+    convert: tests[2],
+    magick: tests[3],
+    gm: tests[4],
+    find: tests[5],
+  };
+  console.log('📊 Soporte de herramientas:', global.support);
+}
+
+_quickTest();
