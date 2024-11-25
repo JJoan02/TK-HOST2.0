@@ -1,27 +1,26 @@
-
-
 let handler = async (m, { args }) => {
    let user = global.db.data.users[m.sender]
-   if (!args[0]) return m.reply('✧ Ingresa la cantidad de *coins* que deseas Depositar.')
-   if ((args[0]) < 1) return m.reply('✧ Ingresa una cantidad válida de *coins*.')
-   if (args[0] == 'all') {
-      let count = parseInt(user.limit)
-      user.limit -= count * 1
-      user.bank += count * 1
-      await m.reply(`Depositaste *${count} coins* al Banco.`)
-      return !0
+   if (!args[0]) return m.reply('✧ Por favor, ingresa la cantidad de *coins* que deseas depositar. 💰')
+   if (isNaN(args[0]) && args[0].toLowerCase() !== 'all') return m.reply('✧ La cantidad debe ser un número válido o la palabra "all". 🔢')
+   if (args[0] < 1 && args[0].toLowerCase() !== 'all') return m.reply('✧ Ingresa una cantidad válida de *coins*. ⚠️')
+
+   let count
+   if (args[0].toLowerCase() === 'all') {
+      count = parseInt(user.limit)
+      if (count === 0) return m.reply('✧ No tienes *coins* disponibles en la cartera para depositar. ❌')
+   } else {
+      count = parseInt(args[0])
+      if (count > user.limit) return m.reply(`✧ No tienes suficientes *coins*. Solo tienes *${user.limit} coins* en la cartera. 💸`)
    }
-   if (!Number(args[0])) return m.reply('✧ La cantidad deve ser un Numero.')
-   let count = parseInt(args[0])
-   if (!user.limit) return m.reply('No tienes *coins* en la Cartera.')
-   if (user.limit < count) return m.reply(`Solo tienes *${user.limit} coins* en la Cartera.`)
-   user.limit -= count * 1
-   user.bank += count * 1
-   await m.reply(`Depositaste *${count} coins* al Banco.`)
+
+   user.limit -= count
+   user.bank += count
+
+   await m.reply(`✧ Has depositado *${count} coins* al banco. 🏦 ¡Sigue ahorrando para alcanzar tus metas! 💪✨`)
 }
 
 handler.help = ['depositar']
 handler.tags = ['rpg']
 handler.command = ['deposit', 'depositar', 'dep', 'd']
-handler.register = true 
-export default handler 
+handler.register = true
+export default handler
