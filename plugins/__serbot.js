@@ -28,5 +28,26 @@ let handler = async (m, { conn, args }) => {
     writeFileSync(codigosPath, JSON.stringify(data, null, 2));
 };
 
+// plugins/__serbot.js
+// ... (mismo código anterior)
+
+let handler = async (m, { conn, args }) => {
+    let data = JSON.parse(readFileSync(codigosPath, 'utf-8'));
+    let sessionPath = join(authFolder, m.sender.split('@')[0]);
+
+    if (existsSync(sessionPath)) {
+        // Si ya existe la sesión, reconectar
+        try {
+            await Jadibot(m.sender, conn, m);
+            m.reply('¡Te has reconectado exitosamente como sub-bot!');
+        } catch (e) {
+            throw `Error al reconectar el bot: ${e.message}`;
+        }
+    } else {
+        // Si no existe sesión, solicitar código de vinculación
+        m.reply('No tienes una sesión activa. Por favor, canjea un código primero usando `.canjearcodigosb`.');
+    }
+};
+
 handler.command = /^serbot$/i;
 export default handler;
