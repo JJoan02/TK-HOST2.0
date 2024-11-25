@@ -43,7 +43,7 @@ async function inicializarBaseDeDatos() {
     await db.exec(`
       CREATE TABLE IF NOT EXISTS codigos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        codigo TEXT,
+        codigo TEXT UNIQUE,
         usuario TEXT,
         creadoEn TEXT,
         expiraEn TEXT,
@@ -52,15 +52,16 @@ async function inicializarBaseDeDatos() {
 
       CREATE TABLE IF NOT EXISTS vinculaciones (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        codigoVinculacion TEXT,
+        codigoVinculacion TEXT UNIQUE,
         usuario TEXT,
         creadoEn TEXT,
-        expiraEn TEXT
+        expiraEn TEXT,
+        utilizado INTEGER DEFAULT 0
       );
 
       CREATE TABLE IF NOT EXISTS sesiones (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        usuario TEXT,
+        usuario TEXT UNIQUE,
         inicio TEXT,
         fin TEXT
       );
@@ -82,8 +83,8 @@ function configurarTareasProgramadas() {
       // Marcar códigos expirados
       await db.run('UPDATE codigos SET expirado = 1 WHERE expiraEn <= ?', [ahora]);
 
-      // Eliminar vinculaciones expiradas
-      await db.run('DELETE FROM vinculaciones WHERE expiraEn <= ?', [ahora]);
+      // Marcar vinculaciones expiradas como utilizadas
+      await db.run('UPDATE vinculaciones SET utilizado = 1 WHERE expiraEn <= ?', [ahora]);
 
       console.log('Tarea programada ejecutada: Limpieza de códigos expirados.');
     } catch (error) {
@@ -102,7 +103,7 @@ function iniciar(file) {
   const args = [join(__dirname, file), ...process.argv.slice(2)];
   cfonts.say(args.join(' '), { font: 'console', align: 'center', gradient: ['red', 'magenta'] });
 
-  // Configurar proceso maestro y forkar el proceso hijo
+  // Configurar proceso maestro y forkear el proceso hijo
   setupMaster({ exec: args[0], args: args.slice(1) });
   const procesoHijo = fork();
 
