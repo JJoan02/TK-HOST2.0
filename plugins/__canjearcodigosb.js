@@ -1,63 +1,57 @@
 // plugins/__canjearcodigosb.js
-
-import { readFileSync, writeFileSync } from 'fs';
-import { join } from 'path';
-
-const codigosPath = join(process.cwd(), 'data', 'codigos.json');
+import { openDb } from '../database.js';
 
 let handler = async (m, { conn, args }) => {
     let codigoIngresado = args[0];
     if (!codigoIngresado) throw '❌ Debes ingresar el código proporcionado. Ejemplo: .canjearcodigosb xxxx-xxxx';
 
-    // Limpiar códigos expirados antes de proceder
-    limpiarCodigosExpirados();
+    let db = await openDb();
 
-    let data = JSON.parse(readFileSync(codigosPath, 'utf-8'));
-    let codigoObj = data.codigos.find(c => c.codigo === codigoIngresado && c.usuario === m.sender);
+    // Limpiar códigos expirados antes de proceder
+    await limpiarCodigosExpirados(db);
+
+    let codigoObj = await db.get('SELECT * FROM codigos WHERE codigo = ? AND usuario = ? AND expirado = 0', [codigoIngresado, m.sender]);
 
     if (!codigoObj) throw '❌ Código inválido o no está asociado a tu número.';
     if (new Date() > new Date(codigoObj.expiraEn)) {
-        // Eliminar código expirado
-        data.codigos = data.codigos.filter(c => c.codigo !== codigoIngresado);
-        writeFileSync(codigosPath, JSON.stringify(data, null, 2));
+        // Marcar el código como expirado
+        await db.run('UPDATE codigos SET expirado = 1 WHERE codigo = ?', [codigoIngresado]);
         throw '❌ El código ha expirado.';
     }
 
     // Generar código de vinculación de 8 dígitos
     let codigoVinculacion = generarCodigoVinculacion();
+    let expiracion = new Date(Date.now() + 5 * 60 * 1000); // 5 minutos
 
-    // Agregar el código de vinculación al array de vinculaciones
-    data.vinculaciones.push({
+    // Insertar el código de vinculación en la base de datos
+    await db.run('INSERT INTO vinculaciones (codigoVinculacion, usuario, creadoEn, expiraEn) VALUES (?, ?, ?, ?)', [
         codigoVinculacion,
-        usuario: m.sender,
-        creadoEn: new Date().toISOString(),
-        expiraEn: new Date(Date.now() + 5 * 60 * 1000).toISOString() // Expira en 5 minutos
-    });
-
-    // Guardar el archivo actualizado
-    writeFileSync(codigosPath, JSON.stringify(data, null, 2));
+        m.sender,
+        new Date().toISOString(),
+        expiracion.toISOString()
+    ]);
 
     // Enviar el código de vinculación al usuario
-    await conn.sendMessage(m.chat, { text: `*🍁 Código de Vinculación 🍁*\n\nTu código de vinculación es: *${codigoVinculacion}*\n\nIngresa este código en tu WhatsApp siguiendo las instrucciones.\n\n*Nota:* El código expira en 5 minutos.` });
+    await conn.sendMessage(m.chat, {
+        text: `*🍁 Código de Vinculación 🍁*\n\nTu código de vinculación es: *${codigoVinculacion}*\n\nIngresa este código en tu WhatsApp siguiendo las instrucciones.\n\n*Nota:* El código expira en 5 minutos.`
+    });
 
-    // Eliminar el código canjeado para evitar reutilización
-    data.codigos = data.codigos.filter(c => c.codigo !== codigoIngresado);
-    writeFileSync(codigosPath, JSON.stringify(data, null, 2));
+    // Marcar el código como canjeado
+    await db.run('UPDATE codigos SET expirado = 1 WHERE codigo = ?', [codigoIngresado]);
 };
 
 function generarCodigoVinculacion() {
     return Math.floor(10000000 + Math.random() * 90000000).toString();
 }
 
-function limpiarCodigosExpirados() {
-    let data = JSON.parse(readFileSync(codigosPath, 'utf-8'));
-    const ahora = new Date();
+async function limpiarCodigosExpirados(db) {
+    const ahora = new Date().toISOString();
 
-    // Eliminar códigos y vinculaciones expirados
-    data.codigos = data.codigos.filter(c => new Date(c.expiraEn) > ahora);
-    data.vinculaciones = data.vinculaciones.filter(v => new Date(v.expiraEn) > ahora);
+    // Marcar códigos expirados
+    await db.run('UPDATE codigos SET expirado = 1 WHERE expiraEn <= ?', [ahora]);
 
-    writeFileSync(codigosPath, JSON.stringify(data, null, 2));
+    // Eliminar vinculaciones expiradas
+    await db.run('DELETE FROM vinculaciones WHERE expiraEn <= ?', [ahora]);
 }
 
 handler.command = /^canjearcodigosb$/i;
