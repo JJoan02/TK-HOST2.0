@@ -1,15 +1,10 @@
 // data/codigos.js
 import sqlite3 from 'sqlite3';
+import { open } from 'sqlite';
 
 export async function openDb() {
-    return new Promise((resolve, reject) => {
-        const db = new sqlite3.Database('./data/bot.db', (err) => {
-            if (err) {
-                console.error('Error opening database:', err.message);
-                reject(err);
-            } else {
-                resolve(db);
-            }
-        });
+    return open({
+        filename: './data/bot.db',
+        driver: sqlite3.Database
     });
 }
