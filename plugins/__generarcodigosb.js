@@ -1,9 +1,5 @@
 // plugins/__generarcodigosb.js
-
-import { readFileSync, writeFileSync } from 'fs';
-import { join } from 'path';
-
-const codigosPath = join(process.cwd(), 'data', 'codigos.json');
+import { openDb } from '../data/codigos.js';
 
 let handler = async (m, { conn, args, isOwner }) => {
     if (!isOwner) throw '❌ Solo el owner puede usar este comando.';
@@ -11,31 +7,29 @@ let handler = async (m, { conn, args, isOwner }) => {
     let user = m.mentionedJid && m.mentionedJid[0];
     if (!user) throw '❌ Debes mencionar a un usuario. Ejemplo: .generarcodigosb @usuario';
 
-    // Generar un código único, por ejemplo, xxxx-xxxx
     let codigo = generarCodigoInicial();
+    let db = await openDb();
 
-    // Leer el archivo de códigos existente
-    let data = JSON.parse(readFileSync(codigosPath, 'utf-8'));
-
-    // Verificar si el usuario ya tiene un código generado
-    let existingCode = data.codigos.find(c => c.usuario === user);
+    // Verificar si el usuario ya tiene un código activo
+    let existingCode = await db.get('SELECT * FROM codigos WHERE usuario = ? AND expirado = 0', [user]);
     if (existingCode) {
-        throw '⚠️ Este usuario ya tiene un código generado. Debe canjearlo antes de generar uno nuevo.';
+        throw '⚠️ Este usuario ya tiene un código activo. Debe canjearlo antes de generar uno nuevo.';
     }
 
-    // Agregar el nuevo código al array de códigos
-    data.codigos.push({
-        codigo,
-        usuario: user,
-        creadoEn: new Date().toISOString(),
-        expiraEn: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // Expira en 24 horas
-    });
+    let expiracion = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 1 mes
 
-    // Guardar el archivo actualizado
-    writeFileSync(codigosPath, JSON.stringify(data, null, 2));
+    // Insertar el nuevo código en la base de datos
+    await db.run('INSERT INTO codigos (codigo, usuario, creadoEn, expiraEn, expirado) VALUES (?, ?, ?, ?, 0)', [
+        codigo,
+        user,
+        new Date().toISOString(),
+        expiracion.toISOString()
+    ]);
 
     // Enviar el código al usuario
-    await conn.sendMessage(user, { text: `*🍁 Código de Sub-Bot 🍁*\n\nTu código es: *${codigo}*\n\nPuedes canjearlo usando el comando:\n*.canjearcodigosb ${codigo}*\n\n*Nota:* El código expira en 24 horas.` });
+    await conn.sendMessage(user, {
+        text: `*🍁 Código de Sub-Bot 🍁*\n\nTu código es: *${codigo}*\n\nPuedes canjearlo usando el comando:\n*.canjearcodigosb ${codigo}*\n\n*Nota:* El código expira en 1 mes.`
+    });
 
     // Confirmar al owner
     m.reply('✅ Código generado y enviado al usuario.');
@@ -47,4 +41,3 @@ function generarCodigoInicial() {
 
 handler.command = /^generarcodigosb$/i;
 export default handler;
-
