@@ -2,43 +2,46 @@
 import { openDb } from '../data/codigos.js';
 
 let handler = async (m, { conn, args, isOwner }) => {
-    if (!isOwner) throw '❌ Solo el owner puede usar este comando.';
-    
-    let user = m.mentionedJid && m.mentionedJid[0];
-    if (!user) throw '❌ Debes mencionar a un usuario. Ejemplo: .generarcodigosb @usuario';
+    if (!isOwner) throw '*[❗] Solo el owner puede usar este comando.*';
 
-    let codigo = generarCodigoInicial();
-    let db = await openDb();
-
-    // Verificar si el usuario ya tiene un código activo
-    let existingCode = await db.get('SELECT * FROM codigos WHERE usuario = ? AND expirado = 0', [user]);
-    if (existingCode) {
-        throw '⚠️ Este usuario ya tiene un código activo. Debe canjearlo antes de generar uno nuevo.';
+    if (!m.mentionedJid || m.mentionedJid.length === 0) {
+        return conn.sendMessage(m.chat, { text: 'Por favor, menciona al usuario para el que deseas generar el código. Ejemplo: `.generarcodigosb @usuario`' }, { quoted: m });
     }
 
-    let expiracion = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 1 mes
+    let usuario = m.mentionedJid[0];
+    let codigo = generarCodigoUnico();
 
-    // Insertar el nuevo código en la base de datos
-    await db.run('INSERT INTO codigos (codigo, usuario, creadoEn, expiraEn, expirado) VALUES (?, ?, ?, ?, 0)', [
-        codigo,
-        user,
-        new Date().toISOString(),
-        expiracion.toISOString()
-    ]);
+    let db = await openDb();
 
-    // Enviar el código al usuario
-    await conn.sendMessage(user, {
-        text: `*🍁 Código de Sub-Bot 🍁*\n\nTu código es: *${codigo}*\n\nPuedes canjearlo usando el comando:\n*.canjearcodigosb ${codigo}*\n\n*Nota:* El código expira en 1 mes.`
-    });
+    try {
+        await db.run(`INSERT INTO codigos (codigo, usuario, creadoEn, expiraEn, expirado) VALUES (?, ?, ?, ?, ?)`, 
+                     [codigo, usuario, new Date().toISOString(), new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), 0]);
 
-    // Confirmar al owner
-    m.reply('✅ Código generado y enviado al usuario.');
+        conn.sendMessage(m.chat, { text: `📜 *Código Generado*\n\nCódigo: *${codigo}*\nEste código expira en 30 días.` }, { quoted: m });
+        
+        // Enviar mensaje al usuario
+        await conn.sendMessage(usuario, { text: `🔑 Has recibido un código para vincularte como Sub-Bot.\n\nCódigo: *${codigo}*\n\nUsa este código con el comando *.canjearcodigosb ${codigo}* para obtener tu código de vinculación.` });
+    } catch (error) {
+        console.error('Error al generar el código:', error);
+        conn.sendMessage(m.chat, { text: 'Hubo un error al generar el código. Por favor, intenta nuevamente.' }, { quoted: m });
+    }
 };
 
-function generarCodigoInicial() {
-    return `${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}`;
+// Función para generar un código único de formato xxxx-xxxx
+function generarCodigoUnico() {
+    let codigo = '';
+    for (let i = 0; i < 4; i++) {
+        codigo += String.fromCharCode(65 + Math.floor(Math.random() * 26)); // Letras A-Z
+    }
+    codigo += '-';
+    for (let i = 0; i < 4; i++) {
+        codigo += String.fromCharCode(65 + Math.floor(Math.random() * 26));
+    }
+    return codigo;
 }
 
+handler.help = ['generarcodigosb @usuario'];
+handler.tags = ['owner'];
 handler.command = /^generarcodigosb$/i;
-export default handler;
 
+export default handler;
