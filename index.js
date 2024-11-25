@@ -153,7 +153,9 @@ function iniciar(file) {
 
 // Mostrar el banner y arrancar el proceso principal
 mostrarBanner();
-await inicializarBaseDeDatos(); // Inicializamos la base de datos antes de iniciar el bot
-configurarTareasProgramadas(); // Configuramos las tareas programadas
-iniciar('main.js'); // Iniciamos el bot
 
+(async () => {
+  await inicializarBaseDeDatos(); // Inicializamos la base de datos antes de iniciar el bot
+  configurarTareasProgramadas(); // Configuramos las tareas programadas
+  iniciar('main.js'); // Iniciamos el bot
+})();
