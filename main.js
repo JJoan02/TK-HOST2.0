@@ -94,9 +94,11 @@ const __dirname = global.__dirname(import.meta.url);
 global.opts = yargs(hideBin(process.argv)).exitProcess(false).parse();
 global.prefix = new RegExp(
   '^[' +
-    (global.opts['prefix'] || '‎/^.\').replace(
-      \*^/,
-      '\\'
+    (global.prefix = new RegExp(
+  '^[' +
+    (global.opts['prefix'] || '/^.').replace(
+      /[|\\{}()[\]^$+*?.\-\^]/g,
+      '\\$&'
     ) +
     ']'
 );
