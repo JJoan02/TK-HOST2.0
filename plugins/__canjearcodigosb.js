@@ -1,51 +1,30 @@
-// plugins/__canjearcodigosb.js
-import { readFileSync, writeFileSync } from 'fs';
-import { join } from 'path';
-import Jadibot from '../lib/jadibot.js';
-import qrcode from 'qrcode';
-
-const codigosPath = join(process.cwd(), 'data', 'codigos.json');
-
+// plugins/canjearcodigosb.js
 let handler = async (m, { conn, args }) => {
-    const codigoIngresado = args[0];
-    if (!codigoIngresado || !/^(\d{4}-\d{4})$/.test(codigoIngresado)) throw 'Debes ingresar un código válido en formato xxxx-xxxx.';
+  let codigoIngresado = args[0];
+  if (!codigoIngresado) throw 'Debes ingresar el código proporcionado.';
 
-    let data = JSON.parse(readFileSync(codigosPath, 'utf-8'));
-    const codigo = data.codigos.find(c => c.codigo === codigoIngresado);
+  let data = JSON.parse(fs.readFileSync('./codigos.json'));
+  let codigoObj = data.codigos.find(c => c.codigo === codigoIngresado && c.usuario === m.sender);
 
-    if (!codigo) throw 'Código inválido.';
-    if (codigo.usuario !== m.sender) throw 'Este código no está registrado para tu número.';
-    if (new Date() > new Date(codigo.expiraEn)) throw 'Este código ha expirado.';
+  if (!codigoObj) throw 'Código inválido o no está asociado a tu número.';
+  if (new Date() > new Date(codigoObj.expiraEn)) throw 'El código ha expirado.';
 
-    try {
-        await Jadibot(m.sender, conn, m, true);
-        await conn.sendMessage(m.chat, { text: 'Sub-Bot vinculado exitosamente.' }, { quoted: m });
-    } catch (e) {
-        if (e.message.includes('pairing code')) {
-            // Generar código de vinculación
-            const pairingCode = await generatePairingCode();
-            await conn.sendMessage(m.chat, { text: `Tu código de vinculación es: *${pairingCode}*\nIngresa este código en tu WhatsApp para completar la vinculación.` }, { quoted: m });
-        } else {
-            throw `Error al vincular el bot: ${e.message}`;
-        }
-    }
+  // Generar código de vinculación
+  let codigoVinculacion = generarCodigoVinculacion();
+  data.codigosVinculacion.push({
+    codigo: codigoVinculacion,
+    usuario: m.sender,
+    expiraEn: new Date(Date.now() + 5 * 60 * 1000) // Expira en 5 minutos
+  });
+  fs.writeFileSync('./codigos.json', JSON.stringify(data, null, 2));
+
+  conn.sendMessage(m.chat, { text: `Tu código de vinculación es: ${codigoVinculacion}\nIngresa este código usando el comando .vincularcodigo ${codigoVinculacion}` });
 };
 
-async function generatePairingCode() {
-    // Generar código de 8 dígitos
-    const code = `${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}`;
-    return code;
+function generarCodigoVinculacion() {
+  return Math.floor(10000000 + Math.random() * 90000000).toString();
 }
 
-handler.help = ['canjearcodigosb <codigo>'];
-handler.tags = ['jadibot'];
 handler.command = /^canjearcodigosb$/i;
-
 export default handler;
 
-
-handler.help = ['canjearcodigosb'];
-handler.tags = ['jadibot'];
-handler.command = /^canjearcodigosb$/i;
-
-export default handler;
