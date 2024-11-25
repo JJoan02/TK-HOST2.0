@@ -92,10 +92,9 @@ global.timestamp = {
 const __dirname = global.__dirname(import.meta.url);
 
 global.opts = yargs(hideBin(process.argv)).exitProcess(false).parse();
-// Actualiza el prefijo aquí según tus necesidades
 global.prefix = new RegExp(
   '^[' +
-    (global.opts['/*.\^'] || '!#$%&/').replace(
+    (global.opts['prefix'] || '\/\*\.\\\^').replace(
       /[|\\{}()[\]^$+*?.\-\^]/g,
       '\\$&'
     ) +
@@ -541,4 +540,3 @@ _quickTest().then(() =>
     '☑️ Prueba rápida realizada, nombre de la sesión ~> creds.json'
   )
 );
-      
