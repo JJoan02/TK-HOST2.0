@@ -1,5 +1,5 @@
 // plugins/__canjearcodigosb.js
-import { openDb } from '../database.js';
+import { openDb } from '../data/codigos.js';
 
 let handler = async (m, { conn, args }) => {
     let codigoIngresado = args[0];
