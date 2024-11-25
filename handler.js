@@ -616,7 +616,7 @@ unreg: "> _*‼️USUARIO NO REGISTRADO‼️*_\n\n`Para registrarse:`\n\n> usa 
 restrict: "> _*✧ Comando desactivado por mi Owner`*_" 
 }[type]
 
-let deco_msg = "`ׅㅤ ⵿͝ ፝֟͜口֟፝͜ ͝ ⵿࿙࿚ ⚠️  Admin TK ⚠️ ࿙࿚⵿۫ ͝ ፝֟͜口፝֟͜ ⵿͝*`\n"+`${msg}\n`+"`︶ִֶָ⏝︶ִֶָ⏝˖ ࣪ ୨✧୧ ࣪ ˖⏝ִֶָ︶⏝ִֶָ︶`"
+let deco_msg = "⚠️  Admin TK ⚠️\n"+`${msg}`"
 if (msg) return conn.reply(m.chat, estilo(deco_msg), m)
 }
 
