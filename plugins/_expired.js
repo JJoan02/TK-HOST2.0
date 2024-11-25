@@ -1,5 +1,5 @@
 // ===========================================================
-// 📌 Actualizado por JoanTK
+// 📌 Actualizado por Admin-TK ✧
 // ✦ Función: Verifica si el grupo ha superado su fecha de expiración y si es así, el bot abandona el grupo.
 // ✦ Características principales:
 //   1. **Verificación de expiración**: Revisa si la fecha de expiración ha pasado.
@@ -23,7 +23,9 @@ export async function all(m) {
         // Verifica si la fecha de expiración ha pasado
         if (+new Date() > chats.expired) {
             // Permite personalizar el mensaje de despedida
-            let goodbyeMessage = chats.expiredMessage || '*✧ Bye, se acabó la renta!!*/nComunicate con el owner para comprar Admin-TK otro mes';
+            let goodbyeMessage = chats.expiredMessage || '✧ *Adiós a todos* ✧\n
+⏳ *La renta del grupo ha finalizado*. Si desean renovar, por favor contacten con el owner para continuar disfrutando del servicio de Admin-TK. ¡Gracias por confiar en nosotros!';
+            
             // Notifica en el grupo que la renta ha finalizado
             await this.reply(m.chat, goodbyeMessage);
 
@@ -33,14 +35,11 @@ export async function all(m) {
             // Resetea la fecha de expiración en la base de datos
             chats.expired = null;
 
-            // Reinicia el contador si el grupo decide renovarse o pagar nuevamente
-            chats.expired = null;
-
             return true;
         }
     } catch (error) {
-        console.error('Error al verificar la expiración:', error);
-        await this.reply(m.chat, '*✧ Hubo un error al intentar verificar la expiración.*');
+        console.error('❌ Error al verificar la expiración:', error);
+        await this.reply(m.chat, '✧ *Hubo un error al intentar verificar la expiración del grupo*. Admin-TK está trabajando para solucionarlo.');
     }
 
     // Si no ha expirado, no hace nada
@@ -54,10 +53,10 @@ export async function setExpiration(m, newExpirationDate) {
     try {
         // Establece la nueva fecha de expiración
         chats.expired = newExpirationDate.getTime();  // Establece la nueva fecha
-        await this.reply(m.chat, `La fecha de expiración ha sido actualizada a ${newExpirationDate.toString()}`);
+        await this.reply(m.chat, `✧ *La fecha de expiración ha sido actualizada* ✧\n📅 Nueva fecha: ${newExpirationDate.toString()}`);
     } catch (error) {
-        console.error('Error al actualizar la fecha de expiración:', error);
-        await this.reply(m.chat, '*✧ Hubo un error al intentar actualizar la fecha de expiración.*');
+        console.error('❌ Error al actualizar la fecha de expiración:', error);
+        await this.reply(m.chat, '✧ *Hubo un error al intentar actualizar la fecha de expiración*. Admin-TK lo solucionará pronto.');
     }
 }
 
@@ -68,9 +67,9 @@ export async function resetExpiration(m) {
     try {
         // Reinicia la fecha de expiración
         chats.expired = null;  // Resetea la fecha de expiración
-        await this.reply(m.chat, '*✧ La renta ha sido renovada. ¡El grupo sigue activo! ✧*');
+        await this.reply(m.chat, '✧ *¡La renta ha sido renovada!* ✧\n🎉 ¡El grupo sigue activo! Gracias por continuar con Admin-TK. ✨');
     } catch (error) {
-        console.error('Error al reiniciar la expiración:', error);
-        await this.reply(m.chat, '*✧ Hubo un error al intentar reiniciar la expiración.*');
+        console.error('❌ Error al reiniciar la expiración:', error);
+        await this.reply(m.chat, '✧ *Hubo un error al intentar reiniciar la expiración*. Admin-TK está trabajando para solucionarlo.');
     }
 }
