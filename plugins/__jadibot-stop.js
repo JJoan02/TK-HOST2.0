@@ -1,21 +1,24 @@
 // plugins/__jadibot-stop.js
-import { conns } from "../lib/jadibots.js";
-import { isOwner } from '../lib/permissions.js';
+import { existsSync, promises as fs } from "fs";
+import { join } from "path";
+import { authFolder } from "../lib/jadibots.js";
 
 let handler = async (m, { conn }) => {
-    const userId = m.sender.split('@')[0];
+    let userId = m.sender.split("@")[0];
+    const userSessionPath = join(authFolder, userId);
 
-    if (!conns.has(userId)) throw 'No tienes un bot activo.';
-    if (!isOwner(m.sender) && m.sender !== conns.get(userId).user.jid) throw 'No tienes permiso para detener este bot.';
-
-    await conns.get(userId).end();
-    conns.delete(userId);
-
-    await conn.sendMessage(m.chat, { text: 'Sub-Bot detenido exitosamente.' }, { quoted: m });
+    try {
+        if (existsSync(userSessionPath)) {
+            await fs.rm(userSessionPath, { recursive: true, force: true });
+            conn.sendMessage(m.chat, { text: '✦ Sub-Bot detenido y sesión eliminada exitosamente.' }, { quoted: m });
+        } else {
+            conn.sendMessage(m.chat, { text: 'No tienes una sesión activa de Sub-Bot.' }, { quoted: m });
+        }
+    } catch (err) {
+        console.error(err);
+        conn.sendMessage(m.chat, { text: 'Error al detener la sesión de Sub-Bot.' }, { quoted: m });
+    }
 };
 
-handler.help = ['stopjadibot'];
-handler.tags = ['jadibot'];
-handler.command = /^stopjadibot$/i;
-
+handler.command = /^(stopjadibot|delsession|eliminarsesion)$/i;
 export default handler;
