@@ -41,3 +41,4 @@ function generarCodigoInicial() {
 
 handler.command = /^generarcodigosb$/i;
 export default handler;
+
