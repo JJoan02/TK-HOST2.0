@@ -9,14 +9,29 @@ export function before(m, { isBotAdmin }) {
 
     if (chat.antiBadword && isBadword) {
         user.warning += 1
-        m.reply('No digas eso!!\n' + `ahora tienes ${user.warning} advertencia/s` + '\nsi eres admin y quieres apagar esta funsion *.disable antibadword*')
-        if (user.warning >= 5) {
+        let warningMessage = `⚠️ *Admin-TK* ⚠️\n\nPor favor, evita utilizar ese lenguaje inapropiado. Ahora tienes *${user.warning}* advertencia/s. 😔\nRecuerda que si llegas a 3 advertencias serás expulsado/a del grupo. Si eres admin y deseas desactivar esta función, usa el comando: *.disable antibadword*.`
+        
+        // Enviar advertencia al privado del usuario
+        await this.sendMessage(m.sender, { text: warningMessage }, { quoted: m })
+        
+        // Eliminar el mensaje que contiene una mala palabra
+        if (m.isGroup) {
+            await this.sendMessage(m.chat, { delete: { remoteJid: m.chat, fromMe: false, id: m.key.id, participant: m.key.participant } })
+        }
+        
+        if (user.warning >= 3) {
             user.banned = false
             user.warning = 0
             if (m.isGroup) {
                 if (isBotAdmin) {
-                    this.groupParticipantsUpdate(m.chat, [m.sender], "remove")
-                    //this.groupSettingChange(m.chat, GroupSettingChange.messageSend, false)
+                    // Notificar al usuario en privado sobre la expulsión
+                    let privateRemovalMessage = `🚫 *Admin-TK* 🚫\n\nHas sido expulsado/a del grupo por acumular 3 advertencias debido al uso de lenguaje inapropiado. Por favor, respeta las normas del grupo para evitar sanciones futuras.`
+                    await this.sendMessage(m.sender, { text: privateRemovalMessage })
+                    
+                    // Notificar en el grupo sobre la expulsión del usuario
+                    let groupRemovalMessage = `🚫 *Admin-TK* 🚫\n\nEl usuario *@${m.sender.split('@')[0]}* ha sido eliminado del grupo por acumular 3 advertencias por mal lenguaje. Por favor, respeten las reglas del grupo para mantener un ambiente agradable para todos. ✨`
+                    await this.groupParticipantsUpdate(m.chat, [m.sender], "remove")
+                    await m.reply(groupRemovalMessage, null, { mentions: [m.sender] })
                 }
             }
         }
