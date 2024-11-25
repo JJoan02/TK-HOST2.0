@@ -1,3 +1,4 @@
+// index.js
 import yargs from 'yargs';
 import cfonts from 'cfonts';
 import { fileURLToPath } from 'url';
@@ -6,6 +7,8 @@ import { createRequire } from 'module';
 import { createInterface } from 'readline';
 import { setupMaster, fork } from 'cluster';
 import { watchFile, unwatchFile } from 'fs';
+import { openDb } from './data/codigos.js'; // Importamos la función openDb
+import cron from 'node-cron'; // Importamos node-cron para tareas programadas
 
 // Configuración global
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -31,6 +34,64 @@ function mostrarBanner() {
   );
 
   console.log('✦ Iniciando Admin TK...');
+}
+
+// Función para inicializar la base de datos y crear tablas
+async function inicializarBaseDeDatos() {
+  try {
+    let db = await openDb();
+    await db.exec(`
+      CREATE TABLE IF NOT EXISTS codigos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        codigo TEXT,
+        usuario TEXT,
+        creadoEn TEXT,
+        expiraEn TEXT,
+        expirado INTEGER
+      );
+
+      CREATE TABLE IF NOT EXISTS vinculaciones (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        codigoVinculacion TEXT,
+        usuario TEXT,
+        creadoEn TEXT,
+        expiraEn TEXT
+      );
+
+      CREATE TABLE IF NOT EXISTS sesiones (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        usuario TEXT,
+        inicio TEXT,
+        fin TEXT
+      );
+    `);
+    console.log('Base de datos inicializada y tablas creadas.');
+  } catch (error) {
+    console.error('Error al inicializar la base de datos:', error);
+  }
+}
+
+// Función para configurar tareas programadas
+function configurarTareasProgramadas() {
+  // Tarea programada para limpiar códigos expirados diariamente a medianoche
+  cron.schedule('0 0 * * *', async () => {
+    try {
+      let db = await openDb();
+      const ahora = new Date().toISOString();
+
+      // Marcar códigos expirados
+      await db.run('UPDATE codigos SET expirado = 1 WHERE expiraEn <= ?', [ahora]);
+
+      // Eliminar vinculaciones expiradas
+      await db.run('DELETE FROM vinculaciones WHERE expiraEn <= ?', [ahora]);
+
+      console.log('Tarea programada ejecutada: Limpieza de códigos expirados.');
+    } catch (error) {
+      console.error('Error en la tarea programada:', error);
+    }
+  });
+
+  console.log('Tareas programadas configuradas.');
 }
 
 // Función para iniciar un archivo principal
@@ -92,4 +153,7 @@ function iniciar(file) {
 
 // Mostrar el banner y arrancar el proceso principal
 mostrarBanner();
-iniciar('main.js');
+await inicializarBaseDeDatos(); // Inicializamos la base de datos antes de iniciar el bot
+configurarTareasProgramadas(); // Configuramos las tareas programadas
+iniciar('main.js'); // Iniciamos el bot
+
