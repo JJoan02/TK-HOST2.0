@@ -1,15 +1,27 @@
 import { openDb } from '../data/codigos.js';
 import fs from 'fs';
 
+// Function to generate a unique code
+function generarCodigoUnico() {
+  const longitud = 6; // longitud del código
+  const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'; // caracteres permitidos
+  let codigo = '';
+  for (let i = 0; i < longitud; i++) {
+    codigo += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+  }
+  return codigo;
+}
+
+// Main handler function
 let handler = async (m, { conn, args }) => {
   try {
     let codigoIngresado = args[0];
     if (!codigoIngresado) throw '❌ *Debes ingresar el código proporcionado.*\n\n💡 _Ejemplo:_ `.canjearcodigosb xxx-xxx`';
 
     // Verificar si el usuario ya está verificado
-    let verificacion = fs.readFileSync('./data/codigos.json');
-    if (verificacion) {
-      verificacion = JSON.parse(verificacion);
+    let verificacion;
+    if (fs.existsSync('./data/codigos.json')) {
+      verificacion = JSON.parse(fs.readFileSync('./data/codigos.json'));
       if (verificacion[m.sender]) {
         throw '❌ *Ya estás verificado.*';
       }
