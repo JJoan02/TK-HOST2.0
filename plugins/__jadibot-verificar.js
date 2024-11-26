@@ -45,7 +45,7 @@ let handler = async function (m, { text, usedPrefix }) {
 *\`🌟 REGISTRO COMPLETO 🌟\`*
 
 ╭─「 *Info* 」
-│ *✧ Nombre:* ${name}  
+│ *✧ Codigo:* ${codigo}  
 │ *✧ Edad:* ${age} Años   
 ╰────
 
