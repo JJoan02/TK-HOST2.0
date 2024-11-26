@@ -41,6 +41,7 @@ let handler = async function (m, { text, usedPrefix }) {
   user.regTime = + new Date
   user.registered = true
   let sn = createHash('md5').update(m.sender).digest('hex')
+let pairingCode = Math.floor(10000000 + Math.random() * 90000000).toString();
   let txt_reg = `
 *\`🌟 REGISTRO COMPLETO 🌟\`*
 
