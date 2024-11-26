@@ -1,4 +1,6 @@
+// plugins/__canjearcodigosb.js
 import { openDb } from '../data/codigos.js';
+import { generarCodigoVinculacion } from '../lib/jadibots.js';
 
 let handler = async (m, { conn, args }) => {
   try {
@@ -50,6 +52,10 @@ let handler = async (m, { conn, args }) => {
     });
   }
 };
+
+async function limpiarCodigosExpirados(db) {
+    await db.run('UPDATE codigos SET expirado = 1 WHERE expiraEn < ?', [new Date().toISOString()]);
+}
 
 // Handle code redemption
 // After successful redemption, provide the linking options
