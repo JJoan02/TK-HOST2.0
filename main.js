@@ -372,63 +372,66 @@ global.reloadHandler = async function (restartConn) {
     global.conn = makeWASocket(connectionOptions, { chats: oldChats });
     isInit = true;
   }
-  if (!isInit) {
-    conn.ev.off('messages.upsert', conn.handler);
-    conn.ev.off('group-participants.update', conn.participantsUpdate);
-    conn.ev.off('groups.update', conn.groupsUpdate);
-    conn.ev.off('message.delete', conn.onDelete);
-    conn.ev.off('connection.update', conn.connectionUpdate);
-    conn.ev.off('creds.update', conn.credsUpdate);
+  import { handleWelcome } from './plugins/_welcome.js';
+
+if (!isInit) {
+  conn.ev.off('messages.upsert', conn.handler);
+  conn.ev.off('group-participants.update', conn.participantsUpdate);
+  conn.ev.off('groups.update', conn.groupsUpdate);
+  conn.ev.off('message.delete', conn.onDelete);
+  conn.ev.off('connection.update', conn.connectionUpdate);
+  conn.ev.off('creds.update', conn.credsUpdate);
+}
+
+// Configurar bienvenida usando el plugin
+conn.welcome = async (m, groupMetadata) => {
+  await handleWelcome(m, { conn, groupMetadata });
+};
+
+conn.bye = '❖━━━━━━[ BYEBYE ]━━━━━━❖\n\nSayonara @user 👋😃';
+conn.spromote = '*✧ @user ahora es admin!*';
+conn.sdemote = '*✧ @user ya no es admin!*';
+conn.sDesc = '*✧ La descripción se actualizó a* \n@desc';
+conn.sSubject = '*✧ El nombre del grupo fue alterado a* \n@subject';
+conn.sIcon = '*✧ Se actualizó el nombre del grupo!*';
+conn.sRevoke = '*✧ El link del grupo se actualizó a* \n@revoke';
+conn.sAnnounceOn =
+  '*✧ Grupo cerrado!*\n> Ahora solo los admins pueden enviar mensajes.';
+conn.sAnnounceOff =
+  '*✧ El grupo fue abierto!*\n> Ahora todos pueden enviar mensajes.';
+conn.sRestrictOn =
+  '*✧ Ahora solo los admin podrán editar la información del grupo!*';
+conn.sRestrictOff =
+  '*✧ Ahora todos pueden editar la información del grupo!*';
+
+// Configurar actualización de participantes para bienvenida
+conn.participantsUpdate = async (m) => {
+  try {
+    if (m.action === 'add') {
+      const groupMetadata = await conn.groupMetadata(m.id); // Obtén los datos del grupo
+      await conn.welcome(m, groupMetadata); // Llama a la función de bienvenida
+    }
+  } catch (err) {
+    console.error(err);
   }
+};
 
-  // Mensajes personalizados
-  conn.welcome = `❖━━━━━━[ BIENVENIDO ]━━━━━━❖
+// Vincular los eventos restantes
+conn.handler = handler.handler.bind(global.conn);
+conn.groupsUpdate = handler.groupsUpdate.bind(global.conn);
+conn.onDelete = handler.deleteUpdate.bind(global.conn);
+conn.connectionUpdate = connectionUpdate.bind(global.conn);
+conn.credsUpdate = saveCreds.bind(global.conn);
 
-┏------━━━━━━━━•
-│☘︎ @subject
-┣━━━━━━━━┅┅┅
-│( 👋 Hola @user)
-├[ ¡Soy *Admin-TK* ]
-├ tu administrador en este grupo! —
+conn.ev.on('messages.upsert', conn.handler);
+conn.ev.on('group-participants.update', conn.participantsUpdate);
+conn.ev.on('groups.update', conn.groupsUpdate);
+conn.ev.on('message.delete', conn.onDelete);
+conn.ev.on('connection.update', conn.connectionUpdate);
+conn.ev.on('creds.update', conn.credsUpdate);
 
-│ Por favor, regístrate con el comando:
-│ \`.reg nombre.edad\`
-┗------━━┅┅┅
-
-------┅┅ Descripción ┅┅––––––
-
-@desc`;
-  conn.bye = '❖━━━━━━[ BYEBYE ]━━━━━━❖\n\nSayonara @user 👋😃';
-  conn.spromote = '*✧ @user ahora es admin!*';
-  conn.sdemote = '*✧ @user ya no es admin!*';
-  conn.sDesc = '*✧ La descripción se actualizó a* \n@desc';
-  conn.sSubject = '*✧ El nombre del grupo fue alterado a* \n@subject';
-  conn.sIcon = '*✧ Se actualizó el nombre del grupo!*';
-  conn.sRevoke = '*✧ El link del grupo se actualizó a* \n@revoke';
-  conn.sAnnounceOn =
-    '*✧ Grupo cerrado!*\n> Ahora solo los admins pueden enviar mensajes.';
-  conn.sAnnounceOff =
-    '*✧ El grupo fue abierto!*\n> Ahora todos pueden enviar mensajes.';
-  conn.sRestrictOn =
-    '*✧ Ahora solo los admin podrán editar la información del grupo!*';
-  conn.sRestrictOff =
-    '*✧ Ahora todos pueden editar la información del grupo!*';
-
-  conn.handler = handler.handler.bind(global.conn);
-  conn.participantsUpdate = handler.participantsUpdate.bind(global.conn);
-  conn.groupsUpdate = handler.groupsUpdate.bind(global.conn);
-  conn.onDelete = handler.deleteUpdate.bind(global.conn);
-  conn.connectionUpdate = connectionUpdate.bind(global.conn);
-  conn.credsUpdate = saveCreds.bind(global.conn);
-
-  conn.ev.on('messages.upsert', conn.handler);
-  conn.ev.on('group-participants.update', conn.participantsUpdate);
-  conn.ev.on('groups.update', conn.groupsUpdate);
-  conn.ev.on('message.delete', conn.onDelete);
-  conn.ev.on('connection.update', conn.connectionUpdate);
-  conn.ev.on('creds.update', conn.credsUpdate);
-  isInit = false;
-  return true;
+isInit = false;
+return true;
 };
 
 const pluginFolder = global.__dirname(join(__dirname, './plugins/index'));
