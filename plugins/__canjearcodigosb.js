@@ -16,27 +16,20 @@ function generarCodigoUnico() {
 let handler = async (m, { conn, args }) => {
   try {
     let codigoIngresado = args[0];
-    if (!codigoIngresado) throw '❌ *Debes ingresar el código proporcionado.*\n\n💡 _Ejemplo:_ `.canjearcodigosb xxx-xxx`';
+    if (!codigoIngresado) throw '❌ *Debes ingresar el código proporcionado.*\n\n💡 _Ejemplo:_ `.canjearcodigosb XXX-XXX`';
 
     // Verificar si el usuario ya está verificado
-    let verificacion;
+    let verificacion = {};
     if (fs.existsSync('./data/codigos.json')) {
       verificacion = JSON.parse(fs.readFileSync('./data/codigos.json'));
       if (verificacion[m.sender]) {
         throw '❌ *Ya estás verificado.*';
       }
-    } else {
-      verificacion = {};
     }
 
-    // Proceder con la verificación
-    let db = await openDb(); 
-
-    if (!db) {
-      throw '❌ *Error al abrir la base de datos.*';
-    }
-
-    console.log(`Código ingresado: ${codigoIngresado}`);
+    // Abrir la base de datos
+    let db = await openDb();
+    if (!db) throw '❌ *Error al abrir la base de datos.*';
 
     // Crear la tabla `codigos` si no existe
     await db.run(`CREATE TABLE IF NOT EXISTS codigos (
@@ -52,15 +45,11 @@ let handler = async (m, { conn, args }) => {
     // Limpiar códigos expirados antes de proceder
     await limpiarCodigosExpirados(db);
 
-    let codigoObj = await db.get(`SELECT * FROM codigos WHERE codigo = '${codigoIngresado}' AND usuario = '${m.sender}' AND expirado = 0`);
-
-    console.log(`Verificación: ${!!verificacion[m.sender]}`);
-    console.log(`Código Obj: ${JSON.stringify(codigoObj)}`);
+    let codigoObj = await db.get(`SELECT * FROM codigos WHERE codigo = ? AND usuario = ? AND expirado = 0`, [codigoIngresado, m.sender]);
 
     if (!codigoObj) throw '❌ *El código ingresado no es válido o no está asociado a tu número.*';
     if (codigoObj.canjeado) throw '❌ *El código ya ha sido canjeado.*';
     if (new Date() > new Date(codigoObj.expiraEn)) {
-      // Marcar el código como expirado
       await db.run('UPDATE codigos SET expirado = 1 WHERE codigo = ?', [codigoIngresado]);
       throw '⏳ *El código ha expirado.* Por favor, solicita uno nuevo al administrador.';
     }
@@ -116,7 +105,9 @@ let handler = async (m, { conn, args }) => {
 };
 
 async function limpiarCodigosExpirados(db) {
-    await db.run('UPDATE codigos SET expirado = 1 WHERE expiraEn < ?', [new Date().toISOString()]);
+  await db.run('UPDATE codigos SET expirado = 1 WHERE expiraEn < ?', [new Date().toISOString()]);
 }
 
+// Configuración del comando
+handler.command = ['canjearcodigosb'];
 export default handler;
