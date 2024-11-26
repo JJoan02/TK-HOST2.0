@@ -1,23 +1,21 @@
-import {WAMessageStubType} from '@adiwajshing/baileys'
-import fetch from 'node-fetch'
+import fetch from 'node-fetch';
 
-export async function before(m, {conn, participants, groupMetadata}) {
-  if (!m.messageStubType || !m.isGroup) return !0;
-  let pp = await conn.profilePictureUrl(m.messageStubParameters[0], 'image').catch(_ => 'https://pomf2.lain.la/f/b03w5p5.jpg')
-  let img = await (await fetch(`${pp}`)).buffer()
-  let chat = global.db.data.chats[m.chat]
+export async function handleWelcome(m, { conn, groupMetadata }) {
+  if (!m.messageStubType || m.messageStubType !== 27 || !m.isGroup) return; // Verificar si es un evento válido de bienvenida
 
-  if (chat.bienvenida && m.messageStubType == 27) {
-    let welcome = `*⭒─ׄ─ׅ─ׄ─⭒ \`ʙɪᴇɴᴠᴇɴɪᴅᴀ\` ⭒─ׄ─ׅ─ׄ─⭒*\n\n╭── ︿︿︿︿︿ *⭒   ⭒   ⭒   ⭒   ⭒   ⭒*\n┊:⁖֟⊱┈֟፝❥ *ᴡᴇʟᴄᴏᴍᴇ* :: @${m.messageStubParameters[0].split`@`[0]}\n┊:⁖֟⊱┈֟፝❥  ${groupMetadata.subject}\n╰─── ︶︶︶︶ ✰⃕  ⌇ *⭒ ⭒ ⭒*   ˚̩̥̩̥*̩̩͙✩`
-await conn.sendMini(m.chat, titulowm2, titu, welcome, img, img, canal, estilo)
-  }
+  // Obtener imagen de perfil del usuario que se une
+  let pp = await conn.profilePictureUrl(m.messageStubParameters[0], 'image').catch(
+    (_) => 'https://pomf2.lain.la/f/b03w5p5.jpg'
+  );
+  let img = await (await fetch(pp)).buffer();
 
-  if (chat.bienvenida && m.messageStubType == 28) {
-    let bye = `*⭒─ׄ─ׅ─ׄ─⭒ \`ᴀ ᴅ ɪ ᴏ ꜱ\` ⭒─ׄ─ׅ─ׄ─⭒*\n\n╭── ︿︿︿︿︿ *⭒   ⭒   ⭒   ⭒   ⭒   ⭒*\n┊:⁖֟⊱┈֟፝❥ *ʙ ʏ ᴇ* :: @${m.messageStubParameters[0].split`@`[0]}\n┊:⁖֟⊱┈֟፝❥   *ꜱ ᴀ ʏ ᴏ ɴ ᴀ ʀ ᴀ 👋*\n╰─── ︶︶︶︶ ✰⃕  ⌇ *⭒ ⭒ ⭒*   ˚̩̥̩̥*̩̩͙✩`
-await conn.sendMini(m.chat, titulowm2, titu, bye, img, img, canal, estilo)
-  }
+  // Verificar si la funcionalidad de bienvenida está habilitada
+  let chat = global.db.data.chats[m.chat];
+  if (!chat?.bienvenida) return;
 
-  if (chat.bienvenida && m.messageStubType == 32) {
-    let kick = `*⭒─ׄ─ׅ─ׄ─⭒ \`ᴀ ᴅ ɪ ᴏ ꜱ\` ⭒─ׄ─ׅ─ׄ─⭒*\n\n╭── ︿︿︿︿︿ *⭒   ⭒   ⭒   ⭒   ⭒   ⭒*\n┊:⁖֟⊱┈֟፝❥ *ʙ ʏ ᴇ* :: @${m.messageStubParameters[0].split`@`[0]}\n┊:⁖֟⊱┈֟፝❥   *ꜱ ᴀ ʏ ᴏ ɴ ᴀ ʀ ᴀ 👋*\n╰─── ︶︶︶︶ ✰⃕  ⌇ *⭒ ⭒ ⭒*   ˚̩̥̩̥*̩̩͙✩`
-await conn.sendMini(m.chat, titulowm2, titu, kick, img, img, canal, estilo)
-}}
+  // Mensaje de bienvenida personalizado
+  let welcome = `*⭒─ׄ─ׅ─ׄ─⭒ \`ʙɪᴇɴᴠᴇɴɪᴅᴀ\` ⭒─ׄ─ׅ─ׄ─⭒*\n\n╭── ︿︿︿︿︿ *⭒   ⭒   ⭒   ⭒   ⭒   ⭒*\n┊:⁖֟⊱┈֟፝❥ *ᴡᴇʟᴄᴏᴍᴇ* :: @${m.messageStubParameters[0].split`@`[0]}\n┊:⁖֟⊱┈֟፝❥  ${groupMetadata.subject}\n╰─── ︶︶︶︶ ✰⃕  ⌇ *⭒ ⭒ ⭒*   ˚̩̥̩̥*̩̩͙✩`;
+
+  // Enviar mensaje de bienvenida al grupo
+  await conn.sendMini(m.chat, 'Bienvenida', '', welcome, img, img, 'Canal', 'Estilo');
+}
