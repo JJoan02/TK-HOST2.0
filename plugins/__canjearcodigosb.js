@@ -1,11 +1,23 @@
-// plugins/__canjearcodigosb.js
 import { openDb } from '../data/codigos.js';
+import fs from 'fs';
 
 let handler = async (m, { conn, args }) => {
   try {
     let codigoIngresado = args[0];
     if (!codigoIngresado) throw '❌ *Debes ingresar el código proporcionado.*\n\n💡 _Ejemplo:_ `.canjearcodigosb xxx-xxx`';
 
+    // Verificar si el usuario ya está verificado
+    let verificacion = fs.readFileSync('./data/codigos.json');
+    if (verificacion) {
+      verificacion = JSON.parse(verificacion);
+      if (verificacion[m.sender]) {
+        throw '❌ *Ya estás verificado.*';
+      }
+    } else {
+      verificacion = {};
+    }
+
+    // Proceder con la verificación
     let db = await openDb(); // Aquí se llama a la función openDb()
 
     if (!db) {
@@ -72,6 +84,13 @@ let handler = async (m, { conn, args }) => {
     await conn.sendMessage(m.chat, {
       text: `✅ *¡Código de SubBot canjeado con éxito!* 🎉\n\nPuedes continuar usando las funcionalidades del SubBot.`,
     });
+
+    // Grabar la verificación en el archivo /data/codigos.json
+    verificacion[m.sender] = {
+      codigo: codigoIngresado,
+      expiracion: expiracion.toISOString(),
+    };
+    fs.writeFileSync('./data/codigos.json', JSON.stringify(verificacion, null, 2));
   } catch (error) {
     await conn.sendMessage(m.chat, {
       text: `❌ *Ha ocurrido un error:* ${error}`,
