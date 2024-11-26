@@ -1,24 +1,34 @@
-// data/codigos.js
-import sqlite3 from 'sqlite3';
-import { open } from 'sqlite';
-import fs from 'fs';
-
-// Función para abrir la base de datos SQLite
+/**
+ * Abre una conexión a la base de datos SQLite.
+ * 
+ * @returns {Promise<sqlite3.Database>} La conexión a la base de datos.
+ */
 export async function openDb() {
-    // Crear el directorio `data` si no existe
-    if (!fs.existsSync('./data')) {
-        fs.mkdirSync('./data', { recursive: true });
-    }
+  // Crear el directorio `data` si no existe
+  if (!fs.existsSync('./data')) {
+    fs.mkdirSync('./data', { recursive: true });
+  }
 
-    try {
-        // Abrir la conexión a la base de datos
-        const db = await open({
-            filename: './data/bot.db', // Archivo de base de datos
-            driver: sqlite3.Database // Especifica el driver aquí
-        });
-        return db;
-    } catch (error) {
-        console.error('❌ Error al abrir la base de datos:', error);
-        throw error; // Propaga el error para que se gestione más arriba
+  let db;
+  try {
+    // Verificar si la base de datos ya existe
+    if (!fs.existsSync('./data/bot.db')) {
+      // Crear la base de datos si no existe
+      db = await open({
+        filename: './data/bot.db',
+        driver: sqlite3.Database,
+        mode: 'create', // Crear la base de datos si no existe
+      });
+    } else {
+      // Abrir la conexión a la base de datos
+      db = await open({
+        filename: './data/bot.db',
+        driver: sqlite3.Database,
+      });
     }
+    return db;
+  } catch (error) {
+    // Reportar el error al usuario
+    throw new Error(`Error al abrir la base de datos: ${error.message}`);
+  }
 }
