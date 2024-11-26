@@ -1,4 +1,22 @@
 import moment from 'moment-timezone';
+import { xpRange } from '../lib/levelling.js';
+
+const estilo = (text, style = 1) => {
+    const xStr = 'abcdefghijklmnopqrstuvwxyz1234567890'.split('');
+    const yStr = Object.freeze({
+        1: 'ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘqʀꜱᴛᴜᴠᴡxʏᴢ1234567890'
+    });
+    const replacer = [];
+    xStr.map((v, i) => replacer.push({
+        original: v,
+        convert: yStr[style].split('')[i]
+    }));
+    return text
+        .toLowerCase()
+        .split('')
+        .map(v => replacer.find(x => x.original === v)?.convert || v)
+        .join('');
+};
 
 const tags = {
     main: '`💎 FUNCIONES PRINCIPALES`',
@@ -34,10 +52,10 @@ En este menú encontrarás una descripción detallada de cada comando disponible
 🛠️ **¿Cómo usar este menú?**
 1️⃣ Lee cada categoría y familiarízate con su propósito.  
 2️⃣ Busca los comandos disponibles en cada sección.  
-3️⃣ Usa el prefijo adecuado antes de cada comando (por ejemplo: `!comando`).  
+3️⃣ Usa el prefijo adecuado antes de cada comando (por ejemplo: \`!comando\`).  
 4️⃣ Sigue las instrucciones para obtener el mejor resultado.
 
-📝 _Consulta esta guía siempre que necesites orientación._  
+🌟 _Consulta esta guía siempre que necesites orientación._  
 %readmore
 `.trimStart(),
     header: `
@@ -49,14 +67,16 @@ En este menú encontrarás una descripción detallada de cada comando disponible
 🌟 *Exclusivo*: %isPremium`,
     footer: `
 ╰──────────────╯  
-✨ _Consulta más categorías para explorar todas las funciones disponibles._ ✨`,
+✨ _Explora más categorías para descubrir todas las funciones._ ✨`,
     after: `
 🌐 **Comunidad TK: Más que un bot, somos un equipo.**  
-👑 *Admin-TK te orienta hacia el uso correcto y seguro del sistema.*`,
+👑 *Admin-TK siempre está contigo.*`,
 };
 
 const handler = async (m, { conn, usedPrefix: _p }) => {
     try {
+        const { exp, limit, level } = global.db.data.users[m.sender];
+        const { min, xp, max } = xpRange(level, global.multiplier);
         const names = await conn.getName(m.sender);
         const d = new Date();
         const locale = 'es';
@@ -64,62 +84,51 @@ const handler = async (m, { conn, usedPrefix: _p }) => {
         const date = d.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
         const totalreg = Object.keys(global.db.data.users).length;
 
-        const help = Object.values(global.plugins)
-            .filter((plugins) => !plugins.disabled)
-            .map((plugins) => ({
-                help: Array.isArray(plugins.tags) ? plugins.help : [plugins.help],
-                tags: Array.isArray(plugins.tags) ? plugins.tags : [plugins.tags],
-                description: plugins.description || 'Sin descripción',
-                limit: plugins.limit,
-                premium: plugins.premium,
-            }));
+        const help = Object.values(global.plugins).filter(plugins => !plugins.disabled).map(plugins => ({
+            help: Array.isArray(plugins.tags) ? plugins.help : [plugins.help],
+            tags: Array.isArray(plugins.tags) ? plugins.tags : [plugins.tags],
+            description: plugins.description || 'Sin descripción disponible.',
+            limit: plugins.limit,
+            premium: plugins.premium,
+        }));
 
-        const menuSections = Object.keys(tags)
-            .map((tag) => {
-                const sectionCommands = help
-                    .filter((plugin) => plugin.tags.includes(tag) && plugin.help)
-                    .map((plugin) =>
-                        plugin.help
-                            .map((cmd) =>
-                                defaultMenu.body
-                                    .replace(/%cmd/g, `${_p}${cmd}`)
-                                    .replace(/%description/g, plugin.description)
-                                    .replace(/%islimit/g, plugin.limit ? 'Requiere límite' : 'Sin restricciones')
-                                    .replace(/%isPremium/g, plugin.premium ? 'Solo para usuarios Premium' : 'Disponible para todos')
-                            )
-                            .join('\n')
-                    )
-                    .join('\n');
-                if (!sectionCommands) return '';
-                return (
-                    defaultMenu.header.replace(/%category/g, tags[tag]) +
-                    '\n' +
-                    sectionCommands +
-                    '\n' +
-                    defaultMenu.footer
-                );
-            })
-            .filter((v) => v)
-            .join('\n\n');
+        const menuSections = Object.keys(tags).map(tag => {
+            const sectionCommands = help
+                .filter(plugin => plugin.tags.includes(tag) && plugin.help)
+                .map(plugin => plugin.help.map(cmd => defaultMenu.body
+                    .replace(/%cmd/g, `${_p}${cmd}`)
+                    .replace(/%description/g, plugin.description)
+                    .replace(/%islimit/g, plugin.limit ? 'Requiere límite' : 'Sin restricciones')
+                    .replace(/%isPremium/g, plugin.premium ? 'Solo para usuarios Premium' : 'Disponible para todos')
+                ).join('\n')).join('\n');
+            if (!sectionCommands) return '';
+            return defaultMenu.header.replace(/%category/g, tags[tag]) + '\n' + sectionCommands + '\n' + defaultMenu.footer;
+        }).filter(v => v).join('\n\n');
 
         const text = [
             defaultMenu.before,
             menuSections,
-            defaultMenu.after,
-        ]
-            .join('\n')
+            defaultMenu.after
+        ].join('\n')
             .replace(/%names/g, names)
             .replace(/%time/g, time)
             .replace(/%date/g, date)
             .replace(/%totalreg/g, totalreg);
 
-        const imageUrl = 'https://pomf2.lain.la/f/ucogaqax.jpg'; // Cambia esta URL por la imagen que quieras usar
+        const imageUrl = 'https://pomf2.lain.la/f/ucogaqax.jpg'; // Cambia esta URL por la imagen que prefieras
 
-        await conn.sendFile(m.chat, imageUrl, 'menu.jpg', text.trim(), m);
+        await conn.sendFile(m.chat, imageUrl, 'menu.jpg', estilo(text), m);
     } catch (error) {
         console.error(error);
-        throw 'Lo siento, hubo un error generando el menú. Intenta de nuevo.';
+        throw 'Hubo un error generando el menú. Por favor, intenta nuevamente.';
     }
+};
+
+// Funciones auxiliares
+const getGreeting = (hour) => {
+    if (hour >= 5 && hour < 12) return 'Buenos Días ☀️';
+    if (hour >= 12 && hour < 19) return 'Buenas Tardes 🌅';
+    return 'Buenas Noches 🌙';
 };
 
 handler.help = ['menu'];
