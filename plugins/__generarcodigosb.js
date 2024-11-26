@@ -1,13 +1,13 @@
 import { openDb } from '../data/codigos.js';
 
 let handler = async (m, { conn, args, isOwner }) => {
-    if (!isOwner) throw '*[â—] Este comando solo puede ser usado por el owner.*';
+    if (!isOwner) throw '*[❌] Este comando solo puede ser usado por el owner.*';
 
     if (!m.mentionedJid || m.mentionedJid.length === 0) {
         return conn.sendMessage(
             m.chat,
             {
-                text: 'ðŸ”” *Por favor menciona al usuario para el que deseas generar el cÃ³digo de vinculaciÃ³n.*\nEjemplo: `.generarcodigosb @usuario`',
+                text: '🔔 *Por favor menciona al usuario para el que deseas generar el código de vinculación.*\n\n💡 _Ejemplo:_ `.generarcodigosb @usuario`',
             },
             { quoted: m }
         );
@@ -21,22 +21,26 @@ let handler = async (m, { conn, args, isOwner }) => {
         // Abrir la base de datos
         db = await openDb();
 
-        // Insertar el nuevo cÃ³digo en la base de datos
+        // Insertar el nuevo código en la base de datos
         await db.run(
             `INSERT INTO codigos (codigo, usuario, creadoEn, expiraEn, expirado) VALUES (?, ?, ?, ?, ?)`,
             [codigo, usuario, new Date().toISOString(), new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), 0]
         );
 
         // Notificar al owner
-        conn.sendMessage(m.chat, { text: `ðŸ“œ *CÃ³digo Generado*\n\nðŸ”‘ CÃ³digo: *${codigo}*\nEste cÃ³digo expira en 30 dÃ­as.` }, { quoted: m });
+        conn.sendMessage(m.chat, { 
+            text: `📬 *Código Generado*\n\n🔑 *Código:* ${codigo}\n🕒 *Este código expira en 30 días.*` 
+        }, { quoted: m });
 
-        // Enviar notificaciÃ³n al usuario
+        // Enviar notificación al usuario
         await conn.sendMessage(usuario, {
-            text: `ðŸ”‘ *Has recibido un cÃ³digo para vincularte como Sub-Bot.*\n\nðŸ“ CÃ³digo: *${codigo}*\n\nUsa este cÃ³digo con el comando *.canjearcodigosb ${codigo}* para obtener tu cÃ³digo de vinculaciÃ³n.`,
+            text: `🔑 *Has recibido un código para vincularte como Sub-Bot.*\n\n📜 *Código:* ${codigo}\n\n✅ _Usa este código con el comando_ *.canjearcodigosb ${codigo}* _para obtener tu código de vinculación._`,
         });
     } catch (error) {
-        console.error('âŒ Error al generar el cÃ³digo:', error);
-        conn.sendMessage(m.chat, { text: 'âŒ Hubo un error al generar el cÃ³digo. Por favor, intenta nuevamente.' }, { quoted: m });
+        console.error('❌ Error al generar el código:', error);
+        conn.sendMessage(m.chat, { 
+            text: '❌ *Hubo un error al generar el código. Por favor, intenta nuevamente.*' 
+        }, { quoted: m });
     } finally {
         // Cerrar la base de datos si fue abierta
         if (db) {
@@ -45,7 +49,7 @@ let handler = async (m, { conn, args, isOwner }) => {
     }
 };
 
-// Generar un cÃ³digo Ãºnico en formato alfanumÃ©rico (xxx-xxx)
+// Generar un código único en formato alfanumérico (xxx-xxx)
 function generarCodigoUnico() {
     const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let codigo = '';
