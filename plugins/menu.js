@@ -58,10 +58,9 @@ En este menú encontrarás una descripción detallada de cada comando disponible
     header: `
 ╭───✦ *%category* ✦───╮`,
     body: `
-➤ %cmd  
-💡 *Descripción*: %description`,
+➤ %cmd`,
     footer: `
-╰──────────────╯  
+╰──────────────╯
 ✨ _Explora más categorías para descubrir todas las funciones._ ✨`,
     after: `
 🌐 **Comunidad TK: Más que un bot, somos un equipo.**  
