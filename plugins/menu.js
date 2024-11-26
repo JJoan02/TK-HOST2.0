@@ -57,14 +57,12 @@ En este menú encontrarás una descripción detallada de cada comando disponible
 `.trimStart(),
     header: `
 ╭───✦ *%category* ✦───╮`,
-    body: `
-➤ %cmd`,
+    body: `➤ %cmd`, // Sin saltos adicionales
     footer: `
-╰──────────────╯
-✨ _Explora más categorías para descubrir todas las funciones._ ✨`,
+╰──────────────╯`,
     after: `
 🌐 **Comunidad TK: Más que un bot, somos un equipo.**  
-👑 *Admin-TK siempre está contigo.*`,
+👑 *Admin-TK está siempre contigo.*`,
 };
 
 const handler = async (m, { conn, usedPrefix: _p }) => {
