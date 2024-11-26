@@ -19,34 +19,48 @@ const estilo = (text, style = 1) => {
 };
 
 const tags = {
-    main: '`Principal`',
-    anonymous: '`Chat Anónimo`',
-    ai: '`Funciones AI`',
-    jadibot: '`Jadibots/Subbots`',
-    confesar: '`Confesiones`',
-    rpg: '`Roleplay`',
-    fun: '`Divertido`',
-    search: '`Búsqueda`',
-    downloader: '`Descargas`',
-    internet: '`Internet`',
-    anime: '`Anime`',
-    nsfw: '`NSFW`',
-    sticker: '`Sticker`',
-    tools: '`Herramientas`',
-    group: '`Grupos`',
-    owner: '`Owner`',
+    main: '`💎 ᴘʀɪɴᴄɪᴘᴀʟ`',
+    anonymous: '`🎭 ᴄʜᴀᴛ ᴀɴóɴɪᴍᴏ`',
+    ai: '`🤖 ғᴜɴᴄɪᴏɴᴇꜱ ᴀɪ`',
+    jadibot: '`⚙️ ᴊᴀᴅɪʙᴏᴛꜱ`',
+    confesar: '`💌 ᴄᴏɴғᴇꜱɪᴏɴᴇꜱ`',
+    rpg: '`🎮 ʀᴏʟᴇᴘʟᴀʏ`',
+    fun: '`🎉 ᴅɪᴠᴇʀᴛɪᴅᴏ`',
+    search: '`🔍 ʙúꜱQᴜᴇᴅᴀ`',
+    downloader: '`⬇️ ᴅᴇꜱᴄᴀʀɢᴀꜱ`',
+    internet: '`🌐 ɪɴᴛᴇʀɴᴇᴛ`',
+    anime: '`🍙 ᴀɴɪᴍᴇ`',
+    nsfw: '`🔞 ɴꜱꜰᴡ`',
+    sticker: '`✨ ꜱᴛɪᴄᴋᴇʀ`',
+    tools: '`🔧 ʜᴇʀʀᴀᴍɪᴇɴᴛᴀꜱ`',
+    group: '`👥 ɢʀᴜᴘᴏꜱ`',
+    owner: '`👑 ᴏᴡɴᴇʀ`',
 };
 
 const defaultMenu = {
     before: `
-👋 %ucapan %names
+╭─────────❀✦❀─────────╮
+        🌸 *Admin-TK* 🌸
+╰─────────❀✦❀─────────╯
+
+👋 *%ucapan*, *%names*!  
+👑 _Bienvenid@ al reino de los comandos_ 👑
+%saludo_loli
+🕒 *Hora*: %time
+🗓️ *Fecha*: %date
+🖥️ *Plataforma*: %platform
+👥 *Usuarios registrados*: %totalreg
 %readmore
-_*\`</${global.namebot}>\`*_
 `.trimStart(),
-    header: '╭─❏ *%category*',
-    body: '┆ ➤ %cmd %islimit %isPremium',
-    footer: '╰───────────────',
-    after: `\n> ©️ Admin-TK Bot 🌟`,
+    header: `
+╭───✦❀ *%category* ❀✦───╮`,
+    body: '┆ ✦ %cmd %islimit %isPremium',
+    footer: '╰───────────────────╯',
+    after: `
+───────✦❀❀✦───────
+✨ _Usa un comando y deja que la magia fluya_ ✨
+🍭 *Comundiad TK* 🍭
+> 🌸 「 Admin-TK 」 🌸`,
 };
 
 const handler = async (m, { conn, usedPrefix: _p }) => {
@@ -59,12 +73,15 @@ const handler = async (m, { conn, usedPrefix: _p }) => {
         const d = new Date(new Date() + 3600000);
         const locale = 'es';
         const time = d.toLocaleTimeString(locale, { hour: 'numeric', minute: 'numeric', second: 'numeric' });
+        const date = d.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
+        const platform = process.platform;
         const uptime = clockString(process.uptime() * 1000);
+        const totalreg = Object.keys(global.db.data.users).length;
 
-        // Saludo dinámico
-        const ucapan = getGreeting(moment.tz('America/Buenos_Aires').hour());
+        // Personalización loli
+        const saludoLoli = getLoliGreeting(moment.tz('America/Buenos_Aires').hour());
 
-        // Filtrar y organizar los plugins habilitados
+        // Crear las secciones del menú dinámicamente
         const help = Object.values(global.plugins).filter(plugins => !plugins.disabled).map(plugins => ({
             help: Array.isArray(plugins.tags) ? plugins.help : [plugins.help],
             tags: Array.isArray(plugins.tags) ? plugins.tags : [plugins.tags],
@@ -73,7 +90,6 @@ const handler = async (m, { conn, usedPrefix: _p }) => {
             premium: plugins.premium,
         }));
 
-        // Crear las secciones del menú dinámicamente
         const menuSections = Object.keys(tags).map(tag => {
             const sectionCommands = help
                 .filter(plugin => plugin.tags.includes(tag) && plugin.help)
@@ -91,10 +107,16 @@ const handler = async (m, { conn, usedPrefix: _p }) => {
             defaultMenu.before,
             menuSections,
             defaultMenu.after
-        ].join('\n').replace(/%ucapan/g, ucapan).replace(/%names/g, names);
+        ].join('\n').replace(/%ucapan/g, getGreeting(moment.tz('America/Buenos_Aires').hour()))
+            .replace(/%names/g, names)
+            .replace(/%time/g, time)
+            .replace(/%date/g, date)
+            .replace(/%platform/g, platform)
+            .replace(/%totalreg/g, totalreg)
+            .replace(/%saludo_loli/g, saludoLoli);
 
-        // Enviar el menú
-        await conn.sendFile(m.chat, "https://pomf2.lain.la/f/molwxb7d.jpg", 'menu.jpg', estilo(text), m);
+        // Enviar el menú con estilo
+        await conn.sendFile(m.chat, "https://i.imgur.com/NFfO7UG.jpg", 'menu.jpg', estilo(text), m);
     } catch (error) {
         console.error(error);
         throw 'Hubo un error generando el menú. Por favor, intenta nuevamente.';
@@ -106,6 +128,12 @@ const getGreeting = (hour) => {
     if (hour >= 5 && hour < 12) return 'Buenos Días ☀️';
     if (hour >= 12 && hour < 19) return 'Buenas Tardes 🌅';
     return 'Buenas Noches 🌙';
+};
+
+const getLoliGreeting = (hour) => {
+    if (hour >= 5 && hour < 12) return '🌸 *¡Despierta, durmiente!* 🌸';
+    if (hour >= 12 && hour < 19) return '🍡 *¡Es hora de jugar!* 🍡';
+    return '🌙 *¡Dulces sueños, amo/a!* 🌙';
 };
 
 const clockString = (ms) => {
