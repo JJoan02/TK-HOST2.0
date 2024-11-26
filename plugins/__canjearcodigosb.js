@@ -8,6 +8,10 @@ let handler = async (m, { conn, args }) => {
 
     let db = await openDb(); // Aquí se llama a la función openDb()
 
+    if (!db) {
+      throw '❌ *Error al abrir la base de datos.*';
+    }
+
     // Crear la tabla `codigos` si no existe
     await db.run(`CREATE TABLE IF NOT EXISTS codigos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
