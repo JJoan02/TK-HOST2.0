@@ -58,12 +58,13 @@ let handler = async (m, { conn, args, isOwner }) => {
         await conn.sendMessage(usuario, {
             text: `🔑 *Has recibido un código para vincularte como Sub-Bot.*\n\n📜 *Código:* ${codigo}\n\n✅ _Usa este código con el comando_ *.canjearcodigosb ${codigo}* _para obtener tu código de vinculación._`,
         });
-    } catch (error) {
-        console.error('❌ Error al generar el código:', error);
-        let errorMessage = error.message || 'Ocurrió un error desconocido';
-        conn.sendMessage(m.chat, { 
-            text: `❌ *Error al generar el código:* ${errorMessage}` 
-        }, { quoted: m });
+    catch (error) {
+    console.error('❌ Error al generar el código:', error);
+    let errorMessage = error.message || error.toString() || 'Ocurrió un error desconocido';
+    conn.sendMessage(m.chat, { 
+        text: `❌ *Error al generar el código:* ${errorMessage}` 
+    }, { quoted: m });
+}
     } finally {
         // No cerrar la base de datos explícitamente
     }
