@@ -40,6 +40,9 @@ import { makeWASocket, protoType, serialize } from './lib/simple.js';
 import cloudDBAdapter from './lib/cloudDBAdapter.js';
 import { mongoDB, mongoDBV2 } from './lib/mongoDB.js';
 
+// Importación del plugin de bienvenida
+import { handleWelcome } from './plugins/_welcome.js';
+
 const { CONNECTING } = ws;
 const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
 
@@ -215,6 +218,19 @@ const connectionOptions = {
 global.conn = makeWASocket(connectionOptions);
 conn.isInit = false;
 
+// Configurar bienvenida usando el plugin
+conn.ev.on('group-participants.update', async (update) => {
+  try {
+    if (update.action === 'add') {
+      const groupMetadata = await conn.groupMetadata(update.id);
+      await handleWelcome(update, { conn, groupMetadata });
+    }
+  } catch (err) {
+    console.error('Error en el evento de bienvenida:', err);
+  }
+});
+
+// Mantén el resto del archivo intacto como está en tu archivo original
 if (usePairingCode && !conn.authState.creds.registered) {
   const phoneNumber = await question(
     chalk.blue(
@@ -372,66 +388,62 @@ global.reloadHandler = async function (restartConn) {
     global.conn = makeWASocket(connectionOptions, { chats: oldChats });
     isInit = true;
   }
-  import { handleWelcome } from './plugins/_welcome.js';
 
-if (!isInit) {
-  conn.ev.off('messages.upsert', conn.handler);
-  conn.ev.off('group-participants.update', conn.participantsUpdate);
-  conn.ev.off('groups.update', conn.groupsUpdate);
-  conn.ev.off('message.delete', conn.onDelete);
-  conn.ev.off('connection.update', conn.connectionUpdate);
-  conn.ev.off('creds.update', conn.credsUpdate);
-}
-
-// Configurar bienvenida usando el plugin
-conn.welcome = async (m, groupMetadata) => {
-  await handleWelcome(m, { conn, groupMetadata });
-};
-
-conn.bye = '❖━━━━━━[ BYEBYE ]━━━━━━❖\n\nSayonara @user 👋😃';
-conn.spromote = '*✧ @user ahora es admin!*';
-conn.sdemote = '*✧ @user ya no es admin!*';
-conn.sDesc = '*✧ La descripción se actualizó a* \n@desc';
-conn.sSubject = '*✧ El nombre del grupo fue alterado a* \n@subject';
-conn.sIcon = '*✧ Se actualizó el nombre del grupo!*';
-conn.sRevoke = '*✧ El link del grupo se actualizó a* \n@revoke';
-conn.sAnnounceOn =
-  '*✧ Grupo cerrado!*\n> Ahora solo los admins pueden enviar mensajes.';
-conn.sAnnounceOff =
-  '*✧ El grupo fue abierto!*\n> Ahora todos pueden enviar mensajes.';
-conn.sRestrictOn =
-  '*✧ Ahora solo los admin podrán editar la información del grupo!*';
-conn.sRestrictOff =
-  '*✧ Ahora todos pueden editar la información del grupo!*';
-
-// Configurar actualización de participantes para bienvenida
-conn.participantsUpdate = async (m) => {
-  try {
-    if (m.action === 'add') {
-      const groupMetadata = await conn.groupMetadata(m.id); // Obtén los datos del grupo
-      await conn.welcome(m, groupMetadata); // Llama a la función de bienvenida
-    }
-  } catch (err) {
-    console.error(err);
+  if (!isInit) {
+    conn.ev.off('messages.upsert', conn.handler);
+    conn.ev.off('group-participants.update', conn.participantsUpdate);
+    conn.ev.off('groups.update', conn.groupsUpdate);
+    conn.ev.off('message.delete', conn.onDelete);
+    conn.ev.off('connection.update', conn.connectionUpdate);
+    conn.ev.off('creds.update', conn.credsUpdate);
   }
-};
 
-// Vincular los eventos restantes
-conn.handler = handler.handler.bind(global.conn);
-conn.groupsUpdate = handler.groupsUpdate.bind(global.conn);
-conn.onDelete = handler.deleteUpdate.bind(global.conn);
-conn.connectionUpdate = connectionUpdate.bind(global.conn);
-conn.credsUpdate = saveCreds.bind(global.conn);
+  conn.welcome = async (m, groupMetadata) => {
+    await handleWelcome(m, { conn, groupMetadata });
+  };
 
-conn.ev.on('messages.upsert', conn.handler);
-conn.ev.on('group-participants.update', conn.participantsUpdate);
-conn.ev.on('groups.update', conn.groupsUpdate);
-conn.ev.on('message.delete', conn.onDelete);
-conn.ev.on('connection.update', conn.connectionUpdate);
-conn.ev.on('creds.update', conn.credsUpdate);
+  conn.bye = '❖━━━━━━[ BYEBYE ]━━━━━━❖\n\nSayonara @user 👋😃';
+  conn.spromote = '*✧ @user ahora es admin!*';
+  conn.sdemote = '*✧ @user ya no es admin!*';
+  conn.sDesc = '*✧ La descripción se actualizó a* \n@desc';
+  conn.sSubject = '*✧ El nombre del grupo fue alterado a* \n@subject';
+  conn.sIcon = '*✧ Se actualizó el nombre del grupo!*';
+  conn.sRevoke = '*✧ El link del grupo se actualizó a* \n@revoke';
+  conn.sAnnounceOn =
+    '*✧ Grupo cerrado!*\n> Ahora solo los admins pueden enviar mensajes.';
+  conn.sAnnounceOff =
+    '*✧ El grupo fue abierto!*\n> Ahora todos pueden enviar mensajes.';
+  conn.sRestrictOn =
+    '*✧ Ahora solo los admin podrán editar la información del grupo!*';
+  conn.sRestrictOff =
+    '*✧ Ahora todos pueden editar la información del grupo!*';
 
-isInit = false;
-return true;
+  conn.participantsUpdate = async (m) => {
+    try {
+      if (m.action === 'add') {
+        const groupMetadata = await conn.groupMetadata(m.id);
+        await conn.welcome(m, groupMetadata);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  conn.handler = handler.handler.bind(global.conn);
+  conn.groupsUpdate = handler.groupsUpdate.bind(global.conn);
+  conn.onDelete = handler.deleteUpdate.bind(global.conn);
+  conn.connectionUpdate = connectionUpdate.bind(global.conn);
+  conn.credsUpdate = saveCreds.bind(global.conn);
+
+  conn.ev.on('messages.upsert', conn.handler);
+  conn.ev.on('group-participants.update', conn.participantsUpdate);
+  conn.ev.on('groups.update', conn.groupsUpdate);
+  conn.ev.on('message.delete', conn.onDelete);
+  conn.ev.on('connection.update', conn.connectionUpdate);
+  conn.ev.on('creds.update', conn.credsUpdate);
+
+  isInit = false;
+  return true;
 };
 
 const pluginFolder = global.__dirname(join(__dirname, './plugins/index'));
@@ -489,8 +501,6 @@ Object.freeze(global.reload);
 watch(pluginFolder, global.reload);
 await global.reloadHandler();
 
-// Prueba rápida
-
 async function _quickTest() {
   let test = await Promise.all(
     [
@@ -543,3 +553,4 @@ _quickTest().then(() =>
     '☑️ Prueba rápida realizada, nombre de la sesión ~> creds.json'
   )
 );
+             
