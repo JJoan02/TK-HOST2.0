@@ -55,7 +55,7 @@ Escribe \`.code\` para comenzar
 
 
 *🔑 Código De 8 Digitos:*  
-${sn}
+${pairingCode}
 
 ___
 
