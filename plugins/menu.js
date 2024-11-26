@@ -1,146 +1,127 @@
 import moment from 'moment-timezone';
-import { xpRange } from '../lib/levelling.js';
-
-const estilo = (text, style = 1) => {
-    const xStr = 'abcdefghijklmnopqrstuvwxyz1234567890'.split('');
-    const yStr = Object.freeze({
-        1: 'ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘqʀꜱᴛᴜᴠᴡxʏᴢ1234567890'
-    });
-    const replacer = [];
-    xStr.map((v, i) => replacer.push({
-        original: v,
-        convert: yStr[style].split('')[i]
-    }));
-    return text
-        .toLowerCase()
-        .split('')
-        .map(v => replacer.find(x => x.original === v)?.convert || v)
-        .join('');
-};
 
 const tags = {
-    main: '`💎 ᴘʀɪɴᴄɪᴘᴀʟ`',
-    anonymous: '`🎭 ᴄʜᴀᴛ ᴀɴóɴɪᴍᴏ`',
-    ai: '`🤖 ғᴜɴᴄɪᴏɴᴇꜱ ᴀɪ`',
-    jadibot: '`⚙️ ᴊᴀᴅɪʙᴏᴛꜱ`',
-    confesar: '`💌 ᴄᴏɴғᴇꜱɪᴏɴᴇꜱ`',
-    rpg: '`🎮 ʀᴏʟᴇᴘʟᴀʏ`',
-    fun: '`🎉 ᴅɪᴠᴇʀᴛɪᴅᴏ`',
-    search: '`🔍 ʙúꜱQᴜᴇᴅᴀ`',
-    downloader: '`⬇️ ᴅᴇꜱᴄᴀʀɢᴀꜱ`',
-    internet: '`🌐 ɪɴᴛᴇʀɴᴇᴛ`',
-    anime: '`🍙 ᴀɴɪᴍᴇ`',
-    nsfw: '`🔞 ɴꜱꜰᴡ`',
-    sticker: '`✨ ꜱᴛɪᴄᴋᴇʀ`',
-    tools: '`🔧 ʜᴇʀʀᴀᴍɪᴇɴᴛᴀꜱ`',
-    group: '`👥 ɢʀᴜᴘᴏꜱ`',
-    owner: '`👑 ᴏᴡɴᴇʀ`',
+    main: '`💎 FUNCIONES PRINCIPALES`',
+    anonymous: '`🎭 CHAT ANÓNIMO`',
+    ai: '`🤖 INTELIGENCIA ARTIFICIAL`',
+    confesar: '`💌 CONFESIONES`',
+    rpg: '`🎮 AVENTURAS Y JUEGOS`',
+    fun: '`🎉 DIVERSIÓN`',
+    search: '`🔍 BÚSQUEDA`',
+    downloader: '`⬇️ DESCARGAS`',
+    internet: '`🌐 INTERNET Y HERRAMIENTAS`',
+    anime: '`🍙 ANIME`',
+    nsfw: '`🔞 CONTENIDO ADULTO`',
+    sticker: '`✨ CREACIÓN DE STICKERS`',
+    tools: '`🔧 HERRAMIENTAS`',
+    group: '`👥 CONFIGURACIÓN DE GRUPOS`',
+    owner: '`👑 ADMINISTRACIÓN`',
 };
 
 const defaultMenu = {
     before: `
-╭─────────❀✦❀─────────╮
-        🌸 *Admin-TK* 🌸
-╰─────────❀✦❀─────────╯
+╔════════════════════════════╗
+║     📜 **GUÍA DEL MENÚ TK** 📜     
+╚════════════════════════════╝
 
-👋 *%ucapan*, *%names*!  
-👑 _Bienvenid@ al reino de los comandos_ 👑
-%saludo_loli
-🕒 *Hora*: %time
-🗓️ *Fecha*: %date
-🖥️ *Plataforma*: %platform
-👥 *Usuarios registrados*: %totalreg
+👋 *Hola, %names*.  
+En este menú encontrarás una descripción detallada de cada comando disponible en la *Comunidad TK*.  
+
+🗓️ Fecha: %date  
+⏰ Hora: %time  
+👥 Usuarios registrados: %totalreg  
+
+🛠️ **¿Cómo usar este menú?**
+1️⃣ Lee cada categoría y familiarízate con su propósito.  
+2️⃣ Busca los comandos disponibles en cada sección.  
+3️⃣ Usa el prefijo adecuado antes de cada comando (por ejemplo: `!comando`).  
+4️⃣ Sigue las instrucciones para obtener el mejor resultado.
+
+📝 _Consulta esta guía siempre que necesites orientación._  
 %readmore
 `.trimStart(),
     header: `
-╭───✦❀ *%category* ❀✦───╮`,
-    body: '┆ ✦ %cmd %islimit %isPremium',
-    footer: '╰───────────────────╯',
+╭───✦ *%category* ✦───╮`,
+    body: `
+➤ %cmd  
+💡 *Descripción*: %description  
+🔒 *Restricciones*: %islimit  
+🌟 *Exclusivo*: %isPremium`,
+    footer: `
+╰──────────────╯  
+✨ _Consulta más categorías para explorar todas las funciones disponibles._ ✨`,
     after: `
-───────✦❀❀✦───────
-✨ _Usa un comando y deja que la magia fluya_ ✨
-🍭 *Comundiad TK* 🍭
-> 🌸 「 Admin-TK 」 🌸`,
+🌐 **Comunidad TK: Más que un bot, somos un equipo.**  
+👑 *Admin-TK te orienta hacia el uso correcto y seguro del sistema.*`,
 };
 
 const handler = async (m, { conn, usedPrefix: _p }) => {
     try {
-        const { exp, limit, level, role } = global.db.data.users[m.sender];
-        const { min, xp, max } = xpRange(level, global.multiplier);
         const name = m.sender;
         const taguser = `@${(m.sender || '').replace(/@s\.whatsapp\.net/g, '')}`;
         const names = await conn.getName(m.sender);
-        const d = new Date(new Date() + 3600000);
+        const d = new Date();
         const locale = 'es';
         const time = d.toLocaleTimeString(locale, { hour: 'numeric', minute: 'numeric', second: 'numeric' });
         const date = d.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
-        const platform = process.platform;
-        const uptime = clockString(process.uptime() * 1000);
         const totalreg = Object.keys(global.db.data.users).length;
 
-        // Personalización loli
-        const saludoLoli = getLoliGreeting(moment.tz('America/Buenos_Aires').hour());
+        const help = Object.values(global.plugins)
+            .filter((plugins) => !plugins.disabled)
+            .map((plugins) => ({
+                help: Array.isArray(plugins.tags) ? plugins.help : [plugins.help],
+                tags: Array.isArray(plugins.tags) ? plugins.tags : [plugins.tags],
+                description: plugins.description || 'Sin descripción',
+                limit: plugins.limit,
+                premium: plugins.premium,
+            }));
 
-        // Crear las secciones del menú dinámicamente
-        const help = Object.values(global.plugins).filter(plugins => !plugins.disabled).map(plugins => ({
-            help: Array.isArray(plugins.tags) ? plugins.help : [plugins.help],
-            tags: Array.isArray(plugins.tags) ? plugins.tags : [plugins.tags],
-            prefix: 'customPrefix' in plugins,
-            limit: plugins.limit,
-            premium: plugins.premium,
-        }));
+        const menuSections = Object.keys(tags)
+            .map((tag) => {
+                const sectionCommands = help
+                    .filter((plugin) => plugin.tags.includes(tag) && plugin.help)
+                    .map((plugin) =>
+                        plugin.help
+                            .map((cmd) =>
+                                defaultMenu.body
+                                    .replace(/%cmd/g, `${_p}${cmd}`)
+                                    .replace(/%description/g, plugin.description)
+                                    .replace(/%islimit/g, plugin.limit ? 'Requiere límite' : 'Sin restricciones')
+                                    .replace(/%isPremium/g, plugin.premium ? 'Solo para usuarios Premium' : 'Disponible para todos')
+                            )
+                            .join('\n')
+                    )
+                    .join('\n');
+                if (!sectionCommands) return '';
+                return (
+                    defaultMenu.header.replace(/%category/g, tags[tag]) +
+                    '\n' +
+                    sectionCommands +
+                    '\n' +
+                    defaultMenu.footer
+                );
+            })
+            .filter((v) => v)
+            .join('\n\n');
 
-        const menuSections = Object.keys(tags).map(tag => {
-            const sectionCommands = help
-                .filter(plugin => plugin.tags.includes(tag) && plugin.help)
-                .map(plugin => plugin.help.map(cmd => defaultMenu.body
-                    .replace(/%cmd/g, plugin.prefix ? cmd : `${_p}${cmd}`)
-                    .replace(/%islimit/g, plugin.limit ? 'Ⓛ' : '')
-                    .replace(/%isPremium/g, plugin.premium ? '🅟' : '')
-                ).join('\n')).join('\n');
-            if (!sectionCommands) return '';
-            return defaultMenu.header.replace(/%category/g, tags[tag]) + '\n' + sectionCommands + '\n' + defaultMenu.footer;
-        }).filter(v => v).join('\n\n');
-
-        // Generar el menú completo
         const text = [
             defaultMenu.before,
             menuSections,
-            defaultMenu.after
-        ].join('\n').replace(/%ucapan/g, getGreeting(moment.tz('America/Buenos_Aires').hour()))
+            defaultMenu.after,
+        ]
+            .join('\n')
             .replace(/%names/g, names)
             .replace(/%time/g, time)
             .replace(/%date/g, date)
-            .replace(/%platform/g, platform)
-            .replace(/%totalreg/g, totalreg)
-            .replace(/%saludo_loli/g, saludoLoli);
+            .replace(/%totalreg/g, totalreg);
 
-        // Enviar el menú con estilo
-        await conn.sendFile(m.chat, "https://pomf2.lain.la/f/ucogaqax.jpg", 'menu.jpg', estilo(text), m);
+        const imageUrl = 'https://pomf2.lain.la/f/ucogaqax.jpg'; // Cambia esta URL por la imagen que quieras usar
+
+        await conn.sendFile(m.chat, imageUrl, 'menu.jpg', text.trim(), m);
     } catch (error) {
         console.error(error);
-        throw 'Hubo un error generando el menú. Por favor, intenta nuevamente.';
+        throw 'Lo siento, hubo un error generando el menú. Intenta de nuevo.';
     }
-};
-
-// Funciones auxiliares
-const getGreeting = (hour) => {
-    if (hour >= 5 && hour < 12) return 'Buenos Días ☀️';
-    if (hour >= 12 && hour < 19) return 'Buenas Tardes 🌅';
-    return 'Buenas Noches 🌙';
-};
-
-const getLoliGreeting = (hour) => {
-    if (hour >= 5 && hour < 12) return '🌸 *¡Despierta, durmiente!* 🌸';
-    if (hour >= 12 && hour < 19) return '🍡 *¡Es hora de jugar!* 🍡';
-    return '🌙 *¡Dulces sueños, amo/a!* 🌙';
-};
-
-const clockString = (ms) => {
-    const h = isNaN(ms) ? '--' : Math.floor(ms / 3600000);
-    const m = isNaN(ms) ? '--' : Math.floor(ms / 60000) % 60;
-    const s = isNaN(ms) ? '--' : Math.floor(ms / 1000) % 60;
-    return [h, m, s].map(v => v.toString().padStart(2, 0)).join(':');
 };
 
 handler.help = ['menu'];
