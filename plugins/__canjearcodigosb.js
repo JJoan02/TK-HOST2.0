@@ -1,6 +1,5 @@
 // plugins/__canjearcodigosb.js
 import { openDb } from '../data/codigos.js';
-import { generarCodigoVinculacion } from '../lib/jadibots.js';
 
 let handler = async (m, { conn, args }) => {
   try {
@@ -8,6 +7,17 @@ let handler = async (m, { conn, args }) => {
     if (!codigoIngresado) throw '❌ *Debes ingresar el código proporcionado.*\n\n💡 _Ejemplo:_ `.canjearcodigosb xxx-xxx`';
 
     let db = await openDb(); // Aquí se llama a la función openDb()
+
+    // Crear la tabla `codigos` si no existe
+    await db.run(`CREATE TABLE IF NOT EXISTS codigos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        codigo TEXT NOT NULL,
+        usuario TEXT NOT NULL,
+        creadoEn TEXT NOT NULL,
+        expiraEn TEXT NOT NULL,
+        expirado INTEGER DEFAULT 0,
+        canjeado INTEGER DEFAULT 0
+    )`);
 
     // Limpiar códigos expirados antes de proceder
     await limpiarCodigosExpirados(db);
@@ -22,8 +32,18 @@ let handler = async (m, { conn, args }) => {
       throw '⏳ *El código ha expirado.* Por favor, solicita uno nuevo al administrador.';
     }
 
+    // Crear la tabla `vinculaciones` si no existe
+    await db.run(`CREATE TABLE IF NOT EXISTS vinculaciones (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        codigoVinculacion TEXT NOT NULL,
+        usuario TEXT NOT NULL,
+        creadoEn TEXT NOT NULL,
+        expiraEn TEXT NOT NULL,
+        expirado INTEGER DEFAULT 0
+    )`);
+
     // Generar código de vinculación
-    let codigoVinculacion = generarCodigoVinculacion();
+    let codigoVinculacion = generarCodigoUnico();
     let expiracion = new Date(Date.now() + 5 * 60 * 1000); // 5 minutos
 
     // Verificar si el usuario ya tiene un código de vinculación activo
@@ -44,8 +64,10 @@ let handler = async (m, { conn, args }) => {
     // Marcar el código original como canjeado
     await db.run('UPDATE codigos SET canjeado = 1 WHERE codigo = ?', [codigoIngresado]);
 
-    // Llamar a la función handleRedemption
-    await handleRedemption(conn, m.chat);
+    // Confirmación de canje exitoso
+    await conn.sendMessage(m.chat, {
+      text: `✅ *¡Código de SubBot canjeado con éxito!* 🎉\n\nPuedes continuar usando las funcionalidades del SubBot.`,
+    });
   } catch (error) {
     await conn.sendMessage(m.chat, {
       text: `❌ *Ha ocurrido un error:* ${error}`,
@@ -55,14 +77,6 @@ let handler = async (m, { conn, args }) => {
 
 async function limpiarCodigosExpirados(db) {
     await db.run('UPDATE codigos SET expirado = 1 WHERE expiraEn < ?', [new Date().toISOString()]);
-}
-
-// Handle code redemption
-// After successful redemption, provide the linking options
-async function handleRedemption(conn, chat) {
-  await conn.sendMessage(chat, {
-    text: `✅ *¡Código de SubBot canjeado con éxito!* 🎉\n\n💬 *Por favor, elige una opción para continuar:*\n\n- _Escribe_ *.vincularqr* _para vincular con un código QR._\n- _Escribe_ *.vincularcode* _para vincular con un código de 8 dígitos._`,
-  });
 }
 
 export default handler;
