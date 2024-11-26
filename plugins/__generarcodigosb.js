@@ -64,10 +64,7 @@ let handler = async (m, { conn, args, isOwner }) => {
             text: `❌ *Error al generar el código:* ${error.message}` 
         }, { quoted: m });
     } finally {
-        // Close the database if it was opened
-        if (db) {
-            await db.close();
-        }
+        // No cerrar la base de datos explícitamente
     }
 };
 
