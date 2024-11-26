@@ -13,7 +13,6 @@ export async function openDb() {
         // Abrir la conexión a la base de datos
         const db = await open({
             filename: './data/bot.db', // Archivo de base de datos
-            driver: sqlite3.Database // Especifica el driver
         });
         return db;
     } catch (error) {
@@ -21,3 +20,4 @@ export async function openDb() {
         throw error; // Propaga el error para que se gestione más arriba
     }
 }
+await openDb();
