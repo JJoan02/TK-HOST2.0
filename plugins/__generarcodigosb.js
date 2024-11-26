@@ -1,4 +1,3 @@
-// plugins/__generarcodigosb.js
 import { openDb } from '../data/codigos.js';
 
 let handler = async (m, { conn, args, isOwner }) => {
@@ -24,8 +23,8 @@ let handler = async (m, { conn, args, isOwner }) => {
 
         // Insertar el nuevo código en la base de datos
         await db.run(
-            `INSERT INTO codigos (codigo, usuario, creadoEn, expiraEn, expirado, canjeado) VALUES (?, ?, ?, ?, ?, ?)`,
-            [codigo, usuario, new Date().toISOString(), new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), 0, 0]
+            `INSERT INTO codigos (codigo, usuario, creadoEn, expiraEn, expirado) VALUES (?, ?, ?, ?, ?)`,
+            [codigo, usuario, new Date().toISOString(), new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), 0]
         );
 
         // Notificar al owner
@@ -72,4 +71,5 @@ handler.command = /^generarcodigosb$/i;
 
 export default handler;
 
-
+// Generate unique SubBot codes
+// Additional logic for code management can be added here
