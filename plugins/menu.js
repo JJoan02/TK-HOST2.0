@@ -116,7 +116,7 @@ const handler = async (m, { conn, usedPrefix: _p }) => {
             .replace(/%saludo_loli/g, saludoLoli);
 
         // Enviar el menú con estilo
-        await conn.sendFile(m.chat, "https://i.imgur.com/NFfO7UG.jpg", 'menu.jpg', estilo(text), m);
+        await conn.sendFile(m.chat, "https://pomf2.lain.la/f/ucogaqax.jpg", 'menu.jpg', estilo(text), m);
     } catch (error) {
         console.error(error);
         throw 'Hubo un error generando el menú. Por favor, intenta nuevamente.';
