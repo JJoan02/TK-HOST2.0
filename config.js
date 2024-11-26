@@ -36,7 +36,7 @@ global.owner = [
     ['51910234457', 'Joan TK', true],
     ['59168683798', 'Angel OFC', true],
     // Espacios en blanco para agregar nuevos propietarios:
-    ['', '', false], // EDITAR
+    ['50557865603', 'WillZek', true], // EDITAR
     ['', '', false], // EDITAR
     ['', '', false], // EDITAR
 ];
