@@ -13,7 +13,6 @@ export async function openDb() {
         // Abrir la conexión a la base de datos
         const db = await open({
             filename: './data/bot.db', // Archivo de base de datos
-            driver: sqlite3.Database // Driver de SQLite
         });
         return db;
     } catch (error) {
