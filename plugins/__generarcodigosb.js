@@ -60,8 +60,9 @@ let handler = async (m, { conn, args, isOwner }) => {
         });
     } catch (error) {
         console.error('❌ Error al generar el código:', error);
+        let errorMessage = error.message || 'Ocurrió un error desconocido';
         conn.sendMessage(m.chat, { 
-            text: `❌ *Error al generar el código:* ${error.message}` 
+            text: `❌ *Error al generar el código:* ${errorMessage}` 
         }, { quoted: m });
     } finally {
         // No cerrar la base de datos explícitamente
