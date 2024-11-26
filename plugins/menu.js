@@ -39,32 +39,27 @@ const tags = {
 const defaultMenu = {
     before: `
 ╔════════════════════════════╗
-║     📜 **GUÍA DEL MENÚ TK** 📜     
+║     📜 *GUÍA DEL MENÚ TK* 📜     
 ╚════════════════════════════╝
 
 👋 *Hola, %names*.  
-En este menú encontrarás una descripción detallada de cada comando disponible en la *Comunidad TK*.  
+En este menú encontrarás una descripción detallada de cada comando disponible.  
 
 🗓️ Fecha: %date  
 ⏰ Hora: %time  
 👥 Usuarios registrados: %totalreg  
 
-🛠️ **¿Cómo usar este menú?**
-1️⃣ Lee cada categoría y familiarízate con su propósito.  
-2️⃣ Busca los comandos disponibles en cada sección.  
-3️⃣ Usa el prefijo adecuado antes de cada comando (por ejemplo: \`!comando\`).  
-4️⃣ Sigue las instrucciones para obtener el mejor resultado.
+🛠️ *¿Cómo usar este menú?*
+1️⃣ Busca los comandos disponibles en cada sección.  
+2️⃣ Usa el prefijo adecuado antes de cada comando (por ejemplo: \`.comando\`).  
 
 🌟 _Consulta esta guía siempre que necesites orientación._  
-%readmore
 `.trimStart(),
     header: `
 ╭───✦ *%category* ✦───╮`,
     body: `
 ➤ %cmd  
-💡 *Descripción*: %description  
-🔒 *Restricciones*: %islimit  
-🌟 *Exclusivo*: %isPremium`,
+💡 *Descripción*: %description`,
     footer: `
 ╰──────────────╯  
 ✨ _Explora más categorías para descubrir todas las funciones._ ✨`,
@@ -98,8 +93,6 @@ const handler = async (m, { conn, usedPrefix: _p }) => {
                 .map(plugin => plugin.help.map(cmd => defaultMenu.body
                     .replace(/%cmd/g, `${_p}${cmd}`)
                     .replace(/%description/g, plugin.description)
-                    .replace(/%islimit/g, plugin.limit ? 'Requiere límite' : 'Sin restricciones')
-                    .replace(/%isPremium/g, plugin.premium ? 'Solo para usuarios Premium' : 'Disponible para todos')
                 ).join('\n')).join('\n');
             if (!sectionCommands) return '';
             return defaultMenu.header.replace(/%category/g, tags[tag]) + '\n' + sectionCommands + '\n' + defaultMenu.footer;
