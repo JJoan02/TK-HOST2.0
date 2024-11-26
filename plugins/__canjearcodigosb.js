@@ -1,9 +1,11 @@
+import { openDb } from '../data/codigos.js';
+
 let handler = async (m, { conn, args }) => {
   try {
     let codigoIngresado = args[0];
     if (!codigoIngresado) throw '❌ *Debes ingresar el código proporcionado.*\n\n💡 _Ejemplo:_ `.canjearcodigosb xxx-xxx`';
 
-    let db = await openDb();
+    let db = await openDb(); // Aquí se llama a la función openDb()
 
     // Limpiar códigos expirados antes de proceder
     await limpiarCodigosExpirados(db);
@@ -56,3 +58,5 @@ async function handleRedemption(conn, chat) {
     text: `✅ *¡Código de SubBot canjeado con éxito!* 🎉\n\n💬 *Por favor, elige una opción para continuar:*\n\n- _Escribe_ *.vincularqr* _para vincular con un código QR._\n- _Escribe_ *.vincularcode* _para vincular con un código de 8 dígitos._`,
   });
 }
+
+export default handler;
