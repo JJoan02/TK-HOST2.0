@@ -1,56 +1,8 @@
 import { openDb } from '../data/codigos.js';
 
-let handler = async (m, { conn, args, isOwner }) => {
-    if (!isOwner) throw '*[❌] Este comando solo puede ser usado por el owner.*';
-
-    if (!m.mentionedJid || m.mentionedJid.length === 0) {
-        return conn.sendMessage(
-            m.chat,
-            {
-                text: '🔔 *Por favor menciona al usuario para el que deseas generar el código de vinculación.*\n\n💡 _Ejemplo:_ `.generarcodigosb @usuario`',
-            },
-            { quoted: m }
-        );
-    }
-
-    let usuario = m.mentionedJid[0];
-    let codigo = generarCodigoUnico();
-
-    let db;
-    try {
-        // Abrir la base de datos
-        db = await openDb();
-
-        // Insertar el nuevo código en la base de datos
-        await db.run(
-            `INSERT INTO codigos (codigo, usuario, creadoEn, expiraEn, expirado) VALUES (?, ?, ?, ?, ?)`,
-            [codigo, usuario, new Date().toISOString(), new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), 0]
-        );
-
-        // Notificar al owner
-        conn.sendMessage(m.chat, { 
-            text: `📬 *Código Generado*\n\n🔑 *Código:* ${codigo}\n🕒 *Este código expira en 30 días.*` 
-        }, { quoted: m });
-
-        // Enviar notificación al usuario
-        await conn.sendMessage(usuario, {
-            text: `🔑 *Has recibido un código para vincularte como Sub-Bot.*\n\n📜 *Código:* ${codigo}\n\n✅ _Usa este código con el comando_ *.canjearcodigosb ${codigo}* _para obtener tu código de vinculación._`,
-        });
-    } catch (error) {
-        console.error('❌ Error al generar el código:', error);
-        conn.sendMessage(m.chat, { 
-            text: '❌ *Hubo un error al generar el código. Por favor, intenta nuevamente.*' 
-        }, { quoted: m });
-    } finally {
-        // Cerrar la base de datos si fue abierta
-        if (db) {
-            await db.close();
-        }
-    }
-};
-
-// Generar un código único en formato alfanumérico (xxx-xxx)
+// Function to generate a unique code
 function generarCodigoUnico() {
+    // Generate a unique code
     const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let codigo = '';
 
@@ -65,11 +17,62 @@ function generarCodigoUnico() {
     return codigo;
 }
 
+// Main handler function
+let handler = async (m, { conn, args, isOwner }) => {
+    try {
+        // Check if the user is the owner
+        if (!isOwner) throw '*[❌] Este comando solo puede ser usado por el owner.*';
+
+        // Check if the user mentioned is valid
+        if (!m.mentionedJid || m.mentionedJid.length === 0) {
+            throw '*[❌] Debes mencionar al usuario para el que deseas generar el código de vinculación.*'
+        }
+
+        // Get the mentioned user
+        let usuario = m.mentionedJid[0];
+
+        // Open the database
+        let db = await openDb();
+
+        // Generate a unique code
+        let codigo = generarCodigoUnico();
+
+        // Check if the code is unique
+        let codigoObj = await db.get(`SELECT * FROM codigos WHERE codigo = ?`, [codigo]);
+        if (codigoObj) {
+            throw '*[❌] El código generado no es único. Por favor, inténtalo de nuevo.*'
+        }
+
+        // Insert the new code into the database
+        await db.run(
+            `INSERT INTO codigos (codigo, usuario, creadoEn, expiraEn, expirado) VALUES (?, ?, ?, ?, ?)`,
+            [codigo, usuario, new Date().toISOString(), new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), 0]
+        );
+
+        // Notify the owner
+        conn.sendMessage(m.chat, { 
+            text: `📬 *Código Generado*\n\n🔑 *Código:* ${codigo}\n🕒 *Este código expira en 30 días.*` 
+        }, { quoted: m });
+
+        // Send notification to the user
+        await conn.sendMessage(usuario, {
+            text: `🔑 *Has recibido un código para vincularte como Sub-Bot.*\n\n📜 *Código:* ${codigo}\n\n✅ _Usa este código con el comando_ *.canjearcodigosb ${codigo}* _para obtener tu código de vinculación._`,
+        });
+    } catch (error) {
+        console.error('❌ Error al generar el código:', error);
+        conn.sendMessage(m.chat, { 
+            text: `❌ *Error al generar el código:* ${error.message}` 
+        }, { quoted: m });
+    } finally {
+        // Close the database if it was opened
+        if (db) {
+            await db.close();
+        }
+    }
+};
+
 handler.help = ['generarcodigosb @usuario'];
 handler.tags = ['owner'];
 handler.command = /^generarcodigosb$/i;
 
 export default handler;
-
-// Generate unique SubBot codes
-// Additional logic for code management can be added here
