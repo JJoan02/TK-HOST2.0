@@ -40,9 +40,6 @@ import { makeWASocket, protoType, serialize } from './lib/simple.js';
 import cloudDBAdapter from './lib/cloudDBAdapter.js';
 import { mongoDB, mongoDBV2 } from './lib/mongoDB.js';
 
-// Importación del plugin de bienvenida
-import { handleWelcome } from './plugins/_welcome.js';
-
 const { CONNECTING } = ws;
 const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
 
@@ -170,7 +167,7 @@ setInterval(() => {
 const connectionOptions = {
   version,
   logger: pino({ level: 'silent' }),
-  printQRInTerminal: false,
+  printQRInTerminal: false, // No imprimir QR
   browser: ['Ubuntu', 'Chrome', '20.0.04'],
   auth: {
     creds: state.creds,
@@ -218,23 +215,22 @@ const connectionOptions = {
 global.conn = makeWASocket(connectionOptions);
 conn.isInit = false;
 
-// Configurar bienvenida usando el plugin
-conn.ev.on('group-participants.update', async (update) => {
-  try {
-    if (update.action === 'add') {
-      const groupMetadata = await conn.groupMetadata(update.id);
-      const chat = global.db.data.chats[update.id];
+if (usePairingCode && !conn.authState.creds.registered) {
+  const phoneNumber = await question(
+    chalk.blue(
+      'Ingresa el número de WhatsApp en el cual estará el Bot (con código de país, sin +): '
+    )
+  );
+  rl.close();
 
-      if (chat?.bienvenida) {
-        await handleWelcome(update, { conn, groupMetadata });
-      } else {
-        console.log(`Bienvenida desactivada para el grupo ${update.id}`);
-      }
-    }
-  } catch (err) {
-    console.error('Error en el evento de bienvenida:', err);
+  if (conn.requestPairingCode) {
+    let code = await conn.requestPairingCode(phoneNumber);
+    code = code?.match(/.{1,4}/g)?.join('-') || code;
+    console.log(chalk.magenta(`Su código de emparejamiento es:`, code));
+  } else {
+    console.error('La función requestPairingCode no está disponible.');
   }
-});
+}
 
 if (!global.opts['test']) {
   (await import('./server.js')).default(PORT);
@@ -376,7 +372,6 @@ global.reloadHandler = async function (restartConn) {
     global.conn = makeWASocket(connectionOptions, { chats: oldChats });
     isInit = true;
   }
-
   if (!isInit) {
     conn.ev.off('messages.upsert', conn.handler);
     conn.ev.off('group-participants.update', conn.participantsUpdate);
@@ -386,10 +381,23 @@ global.reloadHandler = async function (restartConn) {
     conn.ev.off('creds.update', conn.credsUpdate);
   }
 
-  conn.welcome = async (m, groupMetadata) => {
-    await handleWelcome(m, { conn, groupMetadata });
-  };
+  // Mensajes personalizados
+  conn.welcome = `❖━━━━━━[ BIENVENIDO ]━━━━━━❖
 
+┏------━━━━━━━━•
+│☘︎ @subject
+┣━━━━━━━━┅┅┅
+│( 👋 Hola @user)
+├[ ¡Soy *Admin-TK* ]
+├ tu administrador en este grupo! —
+
+│ Por favor, regístrate con el comando:
+│ \`.reg nombre.edad\`
+┗------━━┅┅┅
+
+------┅┅ Descripción ┅┅––––––
+
+@desc`;
   conn.bye = '❖━━━━━━[ BYEBYE ]━━━━━━❖\n\nSayonara @user 👋😃';
   conn.spromote = '*✧ @user ahora es admin!*';
   conn.sdemote = '*✧ @user ya no es admin!*';
@@ -406,18 +414,8 @@ global.reloadHandler = async function (restartConn) {
   conn.sRestrictOff =
     '*✧ Ahora todos pueden editar la información del grupo!*';
 
-  conn.participantsUpdate = async (m) => {
-    try {
-      if (m.action === 'add') {
-        const groupMetadata = await conn.groupMetadata(m.id);
-        await conn.welcome(m, groupMetadata);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
   conn.handler = handler.handler.bind(global.conn);
+  conn.participantsUpdate = handler.participantsUpdate.bind(global.conn);
   conn.groupsUpdate = handler.groupsUpdate.bind(global.conn);
   conn.onDelete = handler.deleteUpdate.bind(global.conn);
   conn.connectionUpdate = connectionUpdate.bind(global.conn);
@@ -429,7 +427,6 @@ global.reloadHandler = async function (restartConn) {
   conn.ev.on('message.delete', conn.onDelete);
   conn.ev.on('connection.update', conn.connectionUpdate);
   conn.ev.on('creds.update', conn.credsUpdate);
-
   isInit = false;
   return true;
 };
@@ -489,6 +486,8 @@ Object.freeze(global.reload);
 watch(pluginFolder, global.reload);
 await global.reloadHandler();
 
+// Prueba rápida
+
 async function _quickTest() {
   let test = await Promise.all(
     [
@@ -541,4 +540,3 @@ _quickTest().then(() =>
     '☑️ Prueba rápida realizada, nombre de la sesión ~> creds.json'
   )
 );
-             
