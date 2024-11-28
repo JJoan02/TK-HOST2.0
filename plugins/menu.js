@@ -1,29 +1,80 @@
-// Plugin 2: Menu por categoría (Mostrar menú específico de cada categoría)
-const handlerCategory = async (m, { conn, usedPrefix: _p, args }) => {
-    try {
-        if (!args.length) {
-            // Mostrar el menú de categorías
-            const categoriesText = Object.keys(tags).map(tag => {
-                return `➤ *${_p}menu${tag}*: ${tags[tag]}`;
-            }).join('\n');
+import moment from 'moment-timezone';
+import { xpRange } from '../lib/levelling.js';
 
-            const text = `
+const estilo = (text, style = 1) => {
+    const xStr = 'abcdefghijklmnopqrstuvwxyz1234567890'.split('');
+    const yStr = Object.freeze({
+        1: 'ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘqʀꜱᴛᴜᴠᴡxʏᴢ1234567890'
+    });
+    const replacer = [];
+    xStr.map((v, i) => replacer.push({
+        original: v,
+        convert: yStr[style].split('')[i]
+    }));
+    return text
+        .toLowerCase()
+        .split('')
+        .map(v => replacer.find(x => x.original === v)?.convert || v)
+        .join('');
+};
+
+const tags = {
+    main: '`💎 FUNCIONES PRINCIPALES`',
+    anonymous: '`🎭 CHAT ANÓNIMO`',
+    ai: '`🤖 INTELIGENCIA ARTIFICIAL`',
+    confesar: '`💌 CONFESIONES`',
+    rpg: '`🎮 AVENTURAS Y JUEGOS`',
+    fun: '`🎉 DIVERSIÓN`',
+    search: '`🔍 BÚSQUEDA`',
+    downloader: '`⬇️ DESCARGAS`',
+    internet: '`🌐 INTERNET Y HERRAMIENTAS`',
+    anime: '`🍙 ANIME`',
+    nsfw: '`🔞 CONTENIDO ADULTO`',
+    sticker: '`✨ CREACIÓN DE STICKERS`',
+    tools: '`🔧 HERRAMIENTAS`',
+    group: '`👥 CONFIGURACIÓN DE GRUPOS`',
+    owner: '`👑 ADMINISTRACIÓN`',
+};
+
+const defaultMenu = {
+    before: `
 ╔════════════════════════════╗
-║      📜 *CATEGORÍAS DEL MENÚ* 📜     
+║     📜 *GUÍA DEL MENÚ TK* 📜     
 ╚════════════════════════════╝
 
-${categoriesText}
+👋 *Hola, %names*.  
+En este menú encontrarás una descripción detallada de cada comando disponible.  
 
-🌟 Usa \`.menu <categoría>\` para ver los comandos de una categoría específica.`;
+🗓️ Fecha: %date  
+⏰ Hora: %time  
+👥 Usuarios registrados: %totalreg  
 
-            await m.reply(text);
-            return;
-        }
+🛠️ *¿Cómo usar este menú?*
+1️⃣ Busca los comandos disponibles en cada sección.  
+2️⃣ Usa el prefijo adecuado antes de cada comando (por ejemplo: \`.comando\`).  
 
-        const category = args[0]?.toLowerCase();
-        if (!tags[category]) {
-            return m.reply(`Categoría no válida. Usa \`.menu\` para ver las categorías disponibles.`);
-        }
+🌟 _Consulta esta guía siempre que necesites orientación._  
+`.trimStart(),
+    header: `
+╭───✦ *%category* ✦───╮`,
+    body: `➤ %cmd`, // Sin saltos adicionales
+    footer: `
+╰──────────────╯`,
+    after: `
+🌐 **Comunidad TK: Más que un bot, somos un equipo.**  
+👑 *Admin-TK está siempre contigo.*`,
+};
+
+const handler = async (m, { conn, usedPrefix: _p }) => {
+    try {
+        const { exp, limit, level } = global.db.data.users[m.sender];
+        const { min, xp, max } = xpRange(level, global.multiplier);
+        const names = await conn.getName(m.sender);
+        const d = new Date();
+        const locale = 'es';
+        const time = d.toLocaleTimeString(locale, { hour: 'numeric', minute: 'numeric', second: 'numeric' });
+        const date = d.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
+        const totalreg = Object.keys(global.db.data.users).length;
 
         const help = Object.values(global.plugins).filter(plugins => !plugins.disabled).map(plugins => ({
             help: Array.isArray(plugins.tags) ? plugins.help : [plugins.help],
@@ -33,30 +84,45 @@ ${categoriesText}
             premium: plugins.premium,
         }));
 
-        const sectionCommands = help
-            .filter(plugin => plugin.tags.includes(category) && plugin.help)
-            .map(plugin => plugin.help.map(cmd => defaultMenu.body
-                .replace(/%cmd/g, `${_p}${cmd}`)
-                .replace(/%description/g, plugin.description)
-            ).join('\n')).join('\n');
-
-        if (!sectionCommands) return m.reply(`No hay comandos disponibles en la categoría \`${tags[category]}\``);
+        const menuSections = Object.keys(tags).map(tag => {
+            const sectionCommands = help
+                .filter(plugin => plugin.tags.includes(tag) && plugin.help)
+                .map(plugin => plugin.help.map(cmd => defaultMenu.body
+                    .replace(/%cmd/g, `${_p}${cmd}`)
+                    .replace(/%description/g, plugin.description)
+                ).join('\n')).join('\n');
+            if (!sectionCommands) return '';
+            return defaultMenu.header.replace(/%category/g, tags[tag]) + '\n' + sectionCommands + '\n' + defaultMenu.footer;
+        }).filter(v => v).join('\n\n');
 
         const text = [
-            defaultMenu.header.replace(/%category/g, tags[category]),
-            sectionCommands,
-            defaultMenu.footer
-        ].join('\n');
+            defaultMenu.before,
+            menuSections,
+            defaultMenu.after
+        ].join('\n')
+            .replace(/%names/g, names)
+            .replace(/%time/g, time)
+            .replace(/%date/g, date)
+            .replace(/%totalreg/g, totalreg);
 
-        await m.reply(text);
+        const imageUrl = 'https://pomf2.lain.la/f/ucogaqax.jpg'; // Cambia esta URL por la imagen que prefieras
+
+        await conn.sendFile(m.chat, imageUrl, 'menu.jpg', estilo(text), m);
     } catch (error) {
         console.error(error);
-        throw 'Hubo un error mostrando el menú de la categoría. Por favor, intenta nuevamente.';
+        throw 'Hubo un error generando el menú. Por favor, intenta nuevamente.';
     }
 };
 
-handlerCategory.help = ['menu'];
-handlerCategory.tags = ['main'];
-handlerCategory.command = ['menu', ...Object.keys(tags).map(tag => `menu${tag}`)];
+// Funciones auxiliares
+const getGreeting = (hour) => {
+    if (hour >= 5 && hour < 12) return 'Buenos Días ☀️';
+    if (hour >= 12 && hour < 19) return 'Buenas Tardes 🌅';
+    return 'Buenas Noches 🌙';
+};
 
-export default handlerCategory;
+handler.help = ['menu'];
+handler.tags = ['main'];
+handler.command = ['menu', 'allmenu'];
+
+export default handler;
