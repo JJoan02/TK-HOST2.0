@@ -4,17 +4,19 @@ import { xpRange } from '../lib/levelling.js';
 const estilo = (text, style = 1) => {
     const xStr = 'abcdefghijklmnopqrstuvwxyz1234567890'.split('');
     const yStr = Object.freeze({
-        1: 'ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘqʀꜱᴛᴜᴠᴡxʏᴢ1234567890'
+        1: 'ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘqʀꜱᴛᴜᴠᴡxʏᴢ1234567890',
     });
     const replacer = [];
-    xStr.map((v, i) => replacer.push({
-        original: v,
-        convert: yStr[style].split('')[i]
-    }));
+    xStr.map((v, i) =>
+        replacer.push({
+            original: v,
+            convert: yStr[style].split('')[i],
+        })
+    );
     return text
         .toLowerCase()
         .split('')
-        .map(v => replacer.find(x => x.original === v)?.convert || v)
+        .map((v) => replacer.find((x) => x.original === v)?.convert || v)
         .join('');
 };
 
@@ -25,7 +27,6 @@ const tags = {
     main: '`💎 FUNCIONES PRINCIPALES`',
     anonymous: '`🎭 CHAT ANÓNIMO`',
     ai: '`🤖 INTELIGENCIA ARTIFICIAL`',
-    confessions: '`💌 CONFESIONES`',
     rpg: '`🎮 AVENTURAS Y JUEGOS`',
     fun: '`🎉 DIVERSIÓN`',
     search: '`🔍 BÚSQUEDA`',
@@ -75,50 +76,85 @@ const handler = async (m, { conn, usedPrefix: _p }) => {
         const d = new Date();
         const locale = 'es';
         const hour = d.getHours();
-        const time = d.toLocaleTimeString(locale, { hour: 'numeric', minute: 'numeric', second: 'numeric' });
-        const date = d.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
+        const time = d.toLocaleTimeString(locale, {
+            hour: 'numeric',
+            minute: 'numeric',
+            second: 'numeric',
+        });
+        const date = d.toLocaleDateString(locale, {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+        });
         const totalreg = Object.keys(global.db.data.users).length;
         const greeting = getGreeting(hour);
 
-        const help = Object.values(global.plugins).filter(plugins => !plugins.disabled).map(plugins => ({
-            help: Array.isArray(plugins.tags) ? plugins.help : [plugins.help],
-            tags: Array.isArray(plugins.tags) ? plugins.tags : [plugins.tags],
-            description: plugins.description || 'Sin descripción disponible.',
-            premium: plugins.premium,
-        }));
+        // Obtén todos los comandos habilitados
+        const help = Object.values(global.plugins)
+            .filter((plugin) => !plugin.disabled)
+            .map((plugin) => ({
+                help: Array.isArray(plugin.help) ? plugin.help : [plugin.help],
+                tags: Array.isArray(plugin.tags) ? plugin.tags : [plugin.tags],
+                description: plugin.description || 'Sin descripción disponible.',
+                premium: plugin.premium,
+            }));
 
-        const menuSections = Object.keys(tags).map(tag => {
-            const sectionCommands = help
-                .filter(plugin => plugin.tags.includes(tag) && plugin.help)
-                .map(plugin => plugin.help.map(cmd => defaultMenu.body
-                    .replace(/%cmd/g, `${_p}${cmd}`)
-                ).join('\n')).join('\n');
-            if (!sectionCommands) return '';
-            return defaultMenu.header.replace(/%category/g, tags[tag]) + '\n' + sectionCommands + '\n' + defaultMenu.footer;
-        }).filter(v => v).join('\n\n');
+        // Genera secciones del menú
+        const menuSections = Object.keys(tags)
+            .map((tag) => {
+                const sectionCommands = help
+                    .filter((plugin) => plugin.tags.includes(tag) && plugin.help)
+                    .map((plugin) =>
+                        plugin.help
+                            .map((cmd) =>
+                                defaultMenu.body.replace(/%cmd/g, `${_p}${cmd}`)
+                            )
+                            .join('\n')
+                    )
+                    .join('\n');
+                if (!sectionCommands) return '';
+                return (
+                    defaultMenu.header.replace(/%category/g, tags[tag]) +
+                    '\n' +
+                    sectionCommands +
+                    '\n' +
+                    defaultMenu.footer
+                );
+            })
+            .filter((v) => v)
+            .join('\n\n');
 
+        // Texto completo del menú
         const text = [
             defaultMenu.before,
             menuSections,
-            defaultMenu.after
-        ].join('\n')
+            defaultMenu.after,
+        ]
+            .join('\n')
             .replace(/%greeting/g, greeting)
             .replace(/%names/g, names)
             .replace(/%time/g, time)
             .replace(/%date/g, date)
             .replace(/%totalreg/g, totalreg);
 
-        await conn.sendMessage(m.chat, estilo(text), 'conversation');
+        // Envía el menú
+        const imageUrl = 'https://example.com/menu-image.jpg'; // URL personalizada
+        await conn.sendMessage(
+            m.chat,
+            { image: { url: imageUrl }, caption: estilo(text) },
+            { quoted: m }
+        );
     } catch (error) {
         console.error(error);
         throw 'Hubo un error generando el menú. Por favor, intenta nuevamente.';
     }
 };
 
+// Genera saludo según la hora del día
 const getGreeting = (hour) => {
-    if (hour >= 5 && hour < 12) return 'Buenos Días ☀️';
-    if (hour >= 12 && hour < 19) return 'Buenas Tardes 🌅';
-    return 'Buenas Noches 🌙';
+    if (hour >= 5 && hour < 12) return 'Buenos días ☀️';
+    if (hour >= 12 && hour < 19) return 'Buenas tardes 🌅';
+    return 'Buenas noches 🌙';
 };
 
 // Configuración del comando
