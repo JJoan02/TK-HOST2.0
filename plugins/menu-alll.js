@@ -1,3 +1,4 @@
+// Plugin 1: Allmenu (Mostrar todo el menú)
 import moment from 'moment-timezone';
 import { xpRange } from '../lib/levelling.js';
 
@@ -114,15 +115,10 @@ const handler = async (m, { conn, usedPrefix: _p }) => {
     }
 };
 
-// Funciones auxiliares
-const getGreeting = (hour) => {
-    if (hour >= 5 && hour < 12) return 'Buenos Días ☀️';
-    if (hour >= 12 && hour < 19) return 'Buenas Tardes 🌅';
-    return 'Buenas Noches 🌙';
-};
-
-handler.help = ['menu'];
+handler.help = ['allmenu'];
 handler.tags = ['main'];
-handler.command = ['menu', 'allmenu'];
+handler.command = ['allmenu'];
 
 export default handler;
+
+
