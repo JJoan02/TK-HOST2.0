@@ -18,11 +18,14 @@ const estilo = (text, style = 1) => {
         .join('');
 };
 
+// Define las categorías del menú
 const tags = {
+    owner: '`👑 ADMINISTRACIÓN`',
+    group: '`👥 CONFIGURACIÓN DE GRUPOS`',
     main: '`💎 FUNCIONES PRINCIPALES`',
     anonymous: '`🎭 CHAT ANÓNIMO`',
     ai: '`🤖 INTELIGENCIA ARTIFICIAL`',
-    confesar: '`💌 CONFESIONES`',
+    confessions: '`💌 CONFESIONES`',
     rpg: '`🎮 AVENTURAS Y JUEGOS`',
     fun: '`🎉 DIVERSIÓN`',
     search: '`🔍 BÚSQUEDA`',
@@ -30,10 +33,9 @@ const tags = {
     internet: '`🌐 INTERNET Y HERRAMIENTAS`',
     anime: '`🍙 ANIME`',
     nsfw: '`🔞 CONTENIDO ADULTO`',
-    sticker: '`✨ CREACIÓN DE STICKERS`',
+    stickers: '`✨ CREACIÓN DE STICKERS`',
     tools: '`🔧 HERRAMIENTAS`',
-    group: '`👥 CONFIGURACIÓN DE GRUPOS`',
-    owner: '`👑 ADMINISTRACIÓN`',
+    utilities: '`⚙️ UTILIDADES`',
 };
 
 const defaultMenu = {
@@ -42,7 +44,7 @@ const defaultMenu = {
 ║     📜 *GUÍA DEL MENÚ TK* 📜     
 ╚════════════════════════════╝
 
-👋 *Hola, %names*.  
+👋 *%greeting*, %names.  
 En este menú encontrarás una descripción detallada de cada comando disponible.  
 
 🗓️ Fecha: %date  
@@ -57,7 +59,7 @@ En este menú encontrarás una descripción detallada de cada comando disponible
 `.trimStart(),
     header: `
 ╭───✦ *%category* ✦───╮`,
-    body: `➤ %cmd`, // Sin saltos adicionales
+    body: `➤ %cmd`,
     footer: `
 ╰──────────────╯`,
     after: `
@@ -67,20 +69,21 @@ En este menú encontrarás una descripción detallada de cada comando disponible
 
 const handler = async (m, { conn, usedPrefix: _p }) => {
     try {
-        const { exp, limit, level } = global.db.data.users[m.sender];
+        const { exp, level } = global.db.data.users[m.sender];
         const { min, xp, max } = xpRange(level, global.multiplier);
         const names = await conn.getName(m.sender);
         const d = new Date();
         const locale = 'es';
+        const hour = d.getHours();
         const time = d.toLocaleTimeString(locale, { hour: 'numeric', minute: 'numeric', second: 'numeric' });
         const date = d.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
         const totalreg = Object.keys(global.db.data.users).length;
+        const greeting = getGreeting(hour);
 
         const help = Object.values(global.plugins).filter(plugins => !plugins.disabled).map(plugins => ({
             help: Array.isArray(plugins.tags) ? plugins.help : [plugins.help],
             tags: Array.isArray(plugins.tags) ? plugins.tags : [plugins.tags],
             description: plugins.description || 'Sin descripción disponible.',
-            limit: plugins.limit,
             premium: plugins.premium,
         }));
 
@@ -89,7 +92,6 @@ const handler = async (m, { conn, usedPrefix: _p }) => {
                 .filter(plugin => plugin.tags.includes(tag) && plugin.help)
                 .map(plugin => plugin.help.map(cmd => defaultMenu.body
                     .replace(/%cmd/g, `${_p}${cmd}`)
-                    .replace(/%description/g, plugin.description)
                 ).join('\n')).join('\n');
             if (!sectionCommands) return '';
             return defaultMenu.header.replace(/%category/g, tags[tag]) + '\n' + sectionCommands + '\n' + defaultMenu.footer;
@@ -100,28 +102,27 @@ const handler = async (m, { conn, usedPrefix: _p }) => {
             menuSections,
             defaultMenu.after
         ].join('\n')
+            .replace(/%greeting/g, greeting)
             .replace(/%names/g, names)
             .replace(/%time/g, time)
             .replace(/%date/g, date)
             .replace(/%totalreg/g, totalreg);
 
-        const imageUrl = 'https://pomf2.lain.la/f/ucogaqax.jpg'; // Cambia esta URL por la imagen que prefieras
-
-        await conn.sendFile(m.chat, imageUrl, 'menu.jpg', estilo(text), m);
+        await conn.sendMessage(m.chat, estilo(text), 'conversation');
     } catch (error) {
         console.error(error);
         throw 'Hubo un error generando el menú. Por favor, intenta nuevamente.';
     }
 };
 
-// Funciones auxiliares
 const getGreeting = (hour) => {
     if (hour >= 5 && hour < 12) return 'Buenos Días ☀️';
     if (hour >= 12 && hour < 19) return 'Buenas Tardes 🌅';
     return 'Buenas Noches 🌙';
 };
 
-handler.help = ['menu'];
+// Configuración del comando
+handler.help = ['menu', 'allmenu'];
 handler.tags = ['main'];
 handler.command = ['menu', 'allmenu'];
 
