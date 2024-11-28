@@ -7,6 +7,19 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isR
   let isAll = false
   let isUser = false
   switch (type) {
+case 'bienvenida':
+if (!m.isGroup) {
+if (!isOwner) {
+global.dfail('group', m, conn)
+throw false
+}
+} else if (!isAdmin) {
+global.dfail('admin', m, conn)
+throw false
+}
+chat.bienvenida = isEnable
+break
+
 case 'jadibot': case 'modojadibot': case 'serbot': case 'modoserbot': 
 isAll = true
 if (!isROwner) {
