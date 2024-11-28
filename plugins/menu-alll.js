@@ -1,23 +1,6 @@
-// Plugin 1: Allmenu (Mostrar todo el menú)
+// Plugin 1: Allmenu (Mostrar menú corto con categorías)
 import moment from 'moment-timezone';
 import { xpRange } from '../lib/levelling.js';
-
-const estilo = (text, style = 1) => {
-    const xStr = 'abcdefghijklmnopqrstuvwxyz1234567890'.split('');
-    const yStr = Object.freeze({
-        1: 'ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘqʀꜱᴛᴜᴠᴡxʏᴢ1234567890'
-    });
-    const replacer = [];
-    xStr.map((v, i) => replacer.push({
-        original: v,
-        convert: yStr[style].split('')[i]
-    }));
-    return text
-        .toLowerCase()
-        .split('')
-        .map(v => replacer.find(x => x.original === v)?.convert || v)
-        .join('');
-};
 
 const tags = {
     main: '`💎 FUNCIONES PRINCIPALES`',
@@ -44,21 +27,20 @@ const defaultMenu = {
 ╚════════════════════════════╝
 
 👋 *Hola, %names*.  
-En este menú encontrarás una descripción detallada de cada comando disponible.  
+En este menú encontrarás una lista de categorías disponibles.  
 
 🗓️ Fecha: %date  
 ⏰ Hora: %time  
 👥 Usuarios registrados: %totalreg  
 
 🛠️ *¿Cómo usar este menú?*
-1️⃣ Busca los comandos disponibles en cada sección.  
-2️⃣ Usa el prefijo adecuado antes de cada comando (por ejemplo: \`.comando\`).  
+1️⃣ Usa el prefijo adecuado antes de cada comando de categoría (por ejemplo: \`.mdescargas\`).  
 
 🌟 _Consulta esta guía siempre que necesites orientación._  
 `.trimStart(),
     header: `
 ╭───✦ *%category* ✦───╮`,
-    body: `➤ %cmd`, // Sin saltos adicionales
+    body: `➤ %cmd`,
     footer: `
 ╰──────────────╯`,
     after: `
@@ -68,8 +50,6 @@ En este menú encontrarás una descripción detallada de cada comando disponible
 
 const handler = async (m, { conn, usedPrefix: _p }) => {
     try {
-        const { exp, limit, level } = global.db.data.users[m.sender];
-        const { min, xp, max } = xpRange(level, global.multiplier);
         const names = await conn.getName(m.sender);
         const d = new Date();
         const locale = 'es';
@@ -77,24 +57,9 @@ const handler = async (m, { conn, usedPrefix: _p }) => {
         const date = d.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
         const totalreg = Object.keys(global.db.data.users).length;
 
-        const help = Object.values(global.plugins).filter(plugins => !plugins.disabled).map(plugins => ({
-            help: Array.isArray(plugins.tags) ? plugins.help : [plugins.help],
-            tags: Array.isArray(plugins.tags) ? plugins.tags : [plugins.tags],
-            description: plugins.description || 'Sin descripción disponible.',
-            limit: plugins.limit,
-            premium: plugins.premium,
-        }));
-
         const menuSections = Object.keys(tags).map(tag => {
-            const sectionCommands = help
-                .filter(plugin => plugin.tags.includes(tag) && plugin.help)
-                .map(plugin => plugin.help.map(cmd => defaultMenu.body
-                    .replace(/%cmd/g, `${_p}${cmd}`)
-                    .replace(/%description/g, plugin.description)
-                ).join('\n')).join('\n');
-            if (!sectionCommands) return '';
-            return defaultMenu.header.replace(/%category/g, tags[tag]) + '\n' + sectionCommands + '\n' + defaultMenu.footer;
-        }).filter(v => v).join('\n\n');
+            return defaultMenu.header.replace(/%category/g, tags[tag]) + '\n' + defaultMenu.footer;
+        }).join('\n\n');
 
         const text = [
             defaultMenu.before,
@@ -108,7 +73,7 @@ const handler = async (m, { conn, usedPrefix: _p }) => {
 
         const imageUrl = 'https://pomf2.lain.la/f/ucogaqax.jpg'; // Cambia esta URL por la imagen que prefieras
 
-        await conn.sendFile(m.chat, imageUrl, 'menu.jpg', estilo(text), m);
+        await conn.sendFile(m.chat, imageUrl, 'menu.jpg', text, m);
     } catch (error) {
         console.error(error);
         throw 'Hubo un error generando el menú. Por favor, intenta nuevamente.';
@@ -122,3 +87,46 @@ handler.command = ['allmenu'];
 export default handler;
 
 
+// Plugin 2: Menu por categoría (Mostrar menú específico de cada categoría)
+const handlerCategory = async (m, { conn, usedPrefix: _p, args }) => {
+    try {
+        const category = args[0]?.toLowerCase();
+        if (!category || !tags[category]) {
+            return m.reply(`Categoría no válida. Usa \`.menu\` para ver las categorías disponibles.`);
+        }
+
+        const help = Object.values(global.plugins).filter(plugins => !plugins.disabled).map(plugins => ({
+            help: Array.isArray(plugins.tags) ? plugins.help : [plugins.help],
+            tags: Array.isArray(plugins.tags) ? plugins.tags : [plugins.tags],
+            description: plugins.description || 'Sin descripción disponible.',
+            limit: plugins.limit,
+            premium: plugins.premium,
+        }));
+
+        const sectionCommands = help
+            .filter(plugin => plugin.tags.includes(category) && plugin.help)
+            .map(plugin => plugin.help.map(cmd => defaultMenu.body
+                .replace(/%cmd/g, `${_p}${cmd}`)
+                .replace(/%description/g, plugin.description)
+            ).join('\n')).join('\n');
+
+        if (!sectionCommands) return m.reply(`No hay comandos disponibles en la categoría \`${tags[category]}\``);
+
+        const text = [
+            defaultMenu.header.replace(/%category/g, tags[category]),
+            sectionCommands,
+            defaultMenu.footer
+        ].join('\n');
+
+        await m.reply(text);
+    } catch (error) {
+        console.error(error);
+        throw 'Hubo un error mostrando el menú de la categoría. Por favor, intenta nuevamente.';
+    }
+};
+
+handlerCategory.help = ['menu'];
+handlerCategory.tags = ['main'];
+handlerCategory.command = ['menu'];
+
+export default handlerCategory;
