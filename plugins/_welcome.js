@@ -1,26 +1,23 @@
-import fetch from 'node-fetch';
+import {WAMessageStubType} from '@whiskeysockets/baileys'
+import fetch from 'node-fetch'
 
-export async function handleWelcome(m, { conn, groupMetadata }) {
-  // Verifica si es un evento válido de bienvenida
-  if (!m.action || m.action !== 'add' || !m.isGroup) return;
+export async function before(m, {conn, participants, groupMetadata}) {
+  if (!m.messageStubType || !m.isGroup) return !0;
+  let pp = await conn.profilePictureUrl(m.messageStubParameters[0], 'image').catch(_ => 'https://iili.io/dsSY144.md.jpg')
+  let img = await (await fetch(`${pp}`)).buffer()
+  let chat = global.db.data.chats[m.chat]
 
-  try {
-    // Obtener imagen de perfil del usuario que se une
-    const pp = await conn.profilePictureUrl(m.participants[0], 'image').catch(
-      () => 'https://pomf2.lain.la/f/b03w5p5.jpg' // Imagen por defecto si falla
-    );
-    const img = await (await fetch(pp)).buffer();
-
-    // Verificar si la funcionalidad de bienvenida está habilitada
-    const chat = global.db.data.chats[m.id];
-    if (!chat?.bienvenida) return;
-
-    // Mensaje de bienvenida personalizado
-    const welcomeMessage = `*⭒─ׄ─ׅ─ׄ─⭒ \`BIENVENIDO\` ⭒─ׄ─ׅ─ׄ─⭒*\n\n╭── ︿︿︿︿︿ *⭒   ⭒   ⭒   ⭒   ⭒   ⭒*\n┊:⁖֟⊱┈֟፝❥ *WELCOME* :: @${m.participants[0].split`@`[0]}\n┊:⁖֟⊱┈֟፝❥  ${groupMetadata.subject}\n╰─── ︶︶︶︶ ✰⃕  ⌇ *⭒ ⭒ ⭒*   ˚̩̥̩̥*̩̩͙✩`;
-
-    // Enviar mensaje de bienvenida al grupo
-    await conn.sendMessage(m.id, { text: welcomeMessage, image: img }, { mentions: [m.participants[0]] });
-  } catch (err) {
-    console.error('Error en handleWelcome:', err);
+  if (chat.welcome && m.messageStubType == 27) {
+    let welcome = `┌─★ 𝐆𝐞𝐧𝐞𝐬𝐢𝐬𝐁𝐨𝐭-𝐌𝐃\n│「 Bienvenido 」\n└┬★ 「 @${m.messageStubParameters[0].split`@`[0]} 」\n   │🤍  Bienvenido a\n   │🤍  ${groupMetadata.subject}\n   └───────────────┈ ⳹`
+await conn.sendMini(m.chat, packname, textbot, welcome, img, img, canal, estilo)
   }
-}
+
+  if (chat.welcome && m.messageStubType == 28) {
+    let bye = `┌─★ 𝐆𝐞𝐧𝐞𝐬𝐢𝐬𝐁𝐨𝐭-𝐌𝐃\n│「 ADIOS 👋 」\n└┬★ 「 @${m.messageStubParameters[0].split`@`[0]} 」\n   │🤍  Se fue\n   │🤍 Jamás te quisimos aquí\n   └───────────────┈ ⳹`
+await conn.sendMini(m.chat, packname, textbot, bye, img, img, canal, estilo)
+  }
+
+  if (chat.welcome && m.messageStubType == 32) {
+    let kick = `┌─★ 𝐆𝐞𝐧𝐞𝐬𝐢𝐬𝐁𝐨𝐭-𝐌𝐃\n│「 ADIOS 👋 」\n└┬★ 「 @${m.messageStubParameters[0].split`@`[0]} 」\n   │🤍  Se fue\n   │🤍 Jamás te quisimos aquí\n   └───────────────┈ ⳹`
+await conn.sendMini(m.chat, packname, textbot, kick, img, img, canal, estilo)
+}}
