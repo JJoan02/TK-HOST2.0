@@ -1,84 +1,128 @@
-const handlerMenu = async (m, { conn, usedPrefix: _p, args }) => {
-    try {
-        const tags = {
-            main: '`💎 FUNCIONES PRINCIPALES`',
-            anonymous: '`🎭 CHAT ANÓNIMO`',
-            ai: '`🤖 INTELIGENCIA ARTIFICIAL`',
-            confesar: '`💌 CONFESIONES`',
-            rpg: '`🎮 AVENTURAS Y JUEGOS`',
-            fun: '`🎉 DIVERSIÓN`',
-            search: '`🔍 BÚSQUEDA`',
-            downloader: '`⬇️ DESCARGAS`',
-            internet: '`🌐 INTERNET Y HERRAMIENTAS`',
-            anime: '`🍙 ANIME`',
-            nsfw: '`🔞 CONTENIDO ADULTO`',
-            sticker: '`✨ CREACIÓN DE STICKERS`',
-            tools: '`🔧 HERRAMIENTAS`',
-            group: '`👥 CONFIGURACIÓN DE GRUPOS`',
-            owner: '`👑 ADMINISTRACIÓN`',
-        };
+import moment from 'moment-timezone';
+import { xpRange } from '../lib/levelling.js';
 
-        const category = args[0]?.toLowerCase();
+const estilo = (text, style = 1) => {
+    const xStr = 'abcdefghijklmnopqrstuvwxyz1234567890'.split('');
+    const yStr = Object.freeze({
+        1: 'ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘqʀꜱᴛᴜᴠᴡxʏᴢ1234567890'
+    });
+    const replacer = [];
+    xStr.map((v, i) => replacer.push({
+        original: v,
+        convert: yStr[style].split('')[i]
+    }));
+    return text
+        .toLowerCase()
+        .split('')
+        .map(v => replacer.find(x => x.original === v)?.convert || v)
+        .join('');
+};
 
-        if (!category) {
-            // Mostrar el menú de categorías si no hay argumento
-            const menuText = `
+const tags = {
+    main: '`💎 FUNCIONES PRINCIPALES`',
+    anonymous: '`🎭 CHAT ANÓNIMO`',
+    ai: '`🤖 INTELIGENCIA ARTIFICIAL`',
+    confesar: '`💌 CONFESIONES`',
+    rpg: '`🎮 AVENTURAS Y JUEGOS`',
+    fun: '`🎉 DIVERSIÓN`',
+    search: '`🔍 BÚSQUEDA`',
+    downloader: '`⬇️ DESCARGAS`',
+    internet: '`🌐 INTERNET Y HERRAMIENTAS`',
+    anime: '`🍙 ANIME`',
+    nsfw: '`🔞 CONTENIDO ADULTO`',
+    sticker: '`✨ CREACIÓN DE STICKERS`',
+    tools: '`🔧 HERRAMIENTAS`',
+    group: '`👥 CONFIGURACIÓN DE GRUPOS`',
+    owner: '`👑 ADMINISTRACIÓN`',
+};
+
+const defaultMenu = {
+    before: `
 ╔════════════════════════════╗
-║     📜 *ɢᴜíᴀ ᴅᴇʟ ᴍᴇɴú ᴛᴋ* 📜     
+║     📜 *GUÍA DEL MENÚ TK* 📜     
 ╚════════════════════════════╝
 
-👋 *ʜᴏʟᴀ, ${m.pushName || 'Usuario'}.*
-ᴇɴ ᴇꜱᴛᴇ ᴍᴇɴú ᴇɴᴄᴏɴᴛʀᴀʀáꜱ ᴜɴᴀ ᴅᴇꜱᴄʀɪᴘᴄɪóɴ ᴅᴇᴛᴀʟʟᴀᴅᴀ ᴅᴇ ᴄᴀᴅᴀ ᴄᴏᴍᴀɴᴅᴏ ᴅɪꜱᴘᴏɴɪʙʟᴇ.  
+👋 *Hola, %names*.  
+En este menú encontrarás una descripción detallada de cada comando disponible.  
 
-🗓️ ꜰᴇᴄʜᴀ: ${new Date().toLocaleDateString()}  
-⏰ ʜᴏʀᴀ: ${new Date().toLocaleTimeString()}  
+🗓️ Fecha: %date  
+⏰ Hora: %time  
+👥 Usuarios registrados: %totalreg  
 
-🛠️ *¿ᴄóᴍᴏ ᴜꜱᴀʀ ᴇꜱᴛᴇ ᴍᴇɴú?*
-1️⃣ ʙᴜꜱᴄᴀ ʟᴀ ᴄᴀᴛᴇɢᴏʀíᴀ ꜱᴇɢúɴ ᴛᴜ ɪɴᴛᴇʀéꜱ.  
-2️⃣ ᴇꜱᴄʀɪʙᴇ \`.categoria\` (ᴘᴏʀ ᴇᴊᴇᴍᴘʟᴏ: \`.main\`) ᴘᴀʀᴀ ᴠᴇʀ ꜱᴜꜱ ᴄᴏᴍᴀɴᴅᴏꜱ.
+🛠️ *¿Cómo usar este menú?*
+1️⃣ Busca los comandos disponibles en cada sección.  
+2️⃣ Usa el prefijo adecuado antes de cada comando (por ejemplo: \`.comando\`).  
 
-📂 *Categorías disponibles:*
-${Object.entries(tags).map(([key, value]) => `- ${value} (\`${_p}${key}\`)`).join('\n')}
+🌟 _Consulta esta guía siempre que necesites orientación._  
+`.trimStart(),
+    header: `
+╭───✦ *%category* ✦───╮`,
+    body: `➤ %cmd`, // Sin saltos adicionales
+    footer: `
+╰──────────────╯`,
+    after: `
+🌐 **Comunidad TK: Más que un bot, somos un equipo.**  
+👑 *Admin-TK está siempre contigo.*`,
+};
 
-> 👑 *ᴀᴅᴍɪɴ-ᴛᴋ ᴇꜱᴛá ꜱɪᴇᴍᴘʀᴇ ᴄᴏɴᴛɪɢᴏ.*
-            `.trim();
+const handler = async (m, { conn, usedPrefix: _p }) => {
+    try {
+        const { exp, limit, level } = global.db.data.users[m.sender];
+        const { min, xp, max } = xpRange(level, global.multiplier);
+        const names = await conn.getName(m.sender);
+        const d = new Date();
+        const locale = 'es';
+        const time = d.toLocaleTimeString(locale, { hour: 'numeric', minute: 'numeric', second: 'numeric' });
+        const date = d.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
+        const totalreg = Object.keys(global.db.data.users).length;
 
-            return m.reply(menuText);
-        }
+        const help = Object.values(global.plugins).filter(plugins => !plugins.disabled).map(plugins => ({
+            help: Array.isArray(plugins.tags) ? plugins.help : [plugins.help],
+            tags: Array.isArray(plugins.tags) ? plugins.tags : [plugins.tags],
+            description: plugins.description || 'Sin descripción disponible.',
+            limit: plugins.limit,
+            premium: plugins.premium,
+        }));
 
-        if (category === 'allmenu') {
-            // Mostrar todos los comandos
-            const help = Object.values(global.plugins).filter(plugin => !plugin.disabled);
-            const allCommands = help.map(plugin => plugin.help.map(cmd => `${_p}${cmd} - ${plugin.description || 'Sin descripción'}`).join('\n')).join('\n');
+        const menuSections = Object.keys(tags).map(tag => {
+            const sectionCommands = help
+                .filter(plugin => plugin.tags.includes(tag) && plugin.help)
+                .map(plugin => plugin.help.map(cmd => defaultMenu.body
+                    .replace(/%cmd/g, `${_p}${cmd}`)
+                    .replace(/%description/g, plugin.description)
+                ).join('\n')).join('\n');
+            if (!sectionCommands) return '';
+            return defaultMenu.header.replace(/%category/g, tags[tag]) + '\n' + sectionCommands + '\n' + defaultMenu.footer;
+        }).filter(v => v).join('\n\n');
 
-            return m.reply(`📜 *TODOS LOS COMANDOS DISPONIBLES* 📜\n\n${allCommands}`);
-        }
+        const text = [
+            defaultMenu.before,
+            menuSections,
+            defaultMenu.after
+        ].join('\n')
+            .replace(/%names/g, names)
+            .replace(/%time/g, time)
+            .replace(/%date/g, date)
+            .replace(/%totalreg/g, totalreg);
 
-        // Mostrar los comandos de una categoría específica
-        if (!tags[category]) return m.reply(`Categoría no válida. Usa \`.menu\` para ver las categorías disponibles.`);
+        const imageUrl = 'https://pomf2.lain.la/f/ucogaqax.jpg'; // Cambia esta URL por la imagen que prefieras
 
-        const help = Object.values(global.plugins)
-            .filter(plugin => !plugin.disabled && plugin.tags && plugin.tags.includes(category))
-            .map(plugin => plugin.help.map(cmd => `${_p}${cmd} - ${plugin.description || 'Sin descripción'}`).join('\n')).join('\n');
-
-        if (!help) return m.reply(`No hay comandos disponibles en la categoría \`${tags[category]}\``);
-
-        const text = `
-📂 *Categoría: ${tags[category]}*
-
-${help}
-        `.trim();
-
-        await m.reply(text);
-
+        await conn.sendFile(m.chat, imageUrl, 'menu.jpg', estilo(text), m);
     } catch (error) {
         console.error(error);
-        throw 'Hubo un error mostrando el menú. Por favor, intenta nuevamente.';
+        throw 'Hubo un error generando el menú. Por favor, intenta nuevamente.';
     }
 };
 
-handlerMenu.help = ['menu', 'allmenu'];
-handlerMenu.tags = ['main'];
-handlerMenu.command = ['menu', 'allmenu', ...Object.keys(tags)];
+// Funciones auxiliares
+const getGreeting = (hour) => {
+    if (hour >= 5 && hour < 12) return 'Buenos Días ☀️';
+    if (hour >= 12 && hour < 19) return 'Buenas Tardes 🌅';
+    return 'Buenas Noches 🌙';
+};
 
-export default handlerMenu;
+handler.help = ['menu'];
+handler.tags = ['main'];
+handler.command = ['menu', 'allmenu'];
+
+export default handler;
