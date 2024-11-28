@@ -1,8 +1,27 @@
 // Plugin 2: Menu por categoría (Mostrar menú específico de cada categoría)
 const handlerCategory = async (m, { conn, usedPrefix: _p, args }) => {
     try {
+        if (!args.length) {
+            // Mostrar el menú de categorías
+            const categoriesText = Object.keys(tags).map(tag => {
+                return `➤ *${_p}menu${tag}*: ${tags[tag]}`;
+            }).join('\n');
+
+            const text = `
+╔════════════════════════════╗
+║      📜 *CATEGORÍAS DEL MENÚ* 📜     
+╚════════════════════════════╝
+
+${categoriesText}
+
+🌟 Usa \`.menu <categoría>\` para ver los comandos de una categoría específica.`;
+
+            await m.reply(text);
+            return;
+        }
+
         const category = args[0]?.toLowerCase();
-        if (!category || !tags[category]) {
+        if (!tags[category]) {
             return m.reply(`Categoría no válida. Usa \`.menu\` para ver las categorías disponibles.`);
         }
 
@@ -38,6 +57,6 @@ const handlerCategory = async (m, { conn, usedPrefix: _p, args }) => {
 
 handlerCategory.help = ['menu'];
 handlerCategory.tags = ['main'];
-handlerCategory.command = ['menu'];
+handlerCategory.command = ['menu', ...Object.keys(tags).map(tag => `menu${tag}`)];
 
 export default handlerCategory;
