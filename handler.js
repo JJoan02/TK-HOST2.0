@@ -97,6 +97,8 @@ global.db.data.chats[m.chat] = {}
 if (chat) {
 if (!('isBanned' in chat))
 chat.isBanned = false
+if (!('bienvenida' in chat))
+chat.bienvenida = true
 if (!('welcome' in chat))
 chat.welcome = true
 if (!('autodl' in chat))
@@ -152,7 +154,8 @@ if (!('antiLinkWaChannel' in chat)) chat.antiLinkWaChannel = true
 } else
 global.db.data.chats[m.chat] = {
 isBanned: false,
-welcome: true,
+bienvenida: true,
+welcome: false,
 antiLinkWaChannel: true,
 antiLinkHttp: true,
 modoadmin: false,
