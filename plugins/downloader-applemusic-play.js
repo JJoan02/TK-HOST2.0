@@ -2,9 +2,9 @@ import axios from 'axios';
 import cheerio from 'cheerio';
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
-  if (!text) throw `Ejemplo de uso: ${usedPrefix + command} <Nombre de la canción>`;
+  if (!text) throw `❌ Uso correcto: ${usedPrefix + command} <Nombre de la canción>. ¡Reproduce con Admin-TK!`;
 
-  const searchAppleMusic = async (query) => {
+  const searchAppleMusicTK = async (query) => {
     const url = `https://music.apple.com/us/search?term=${encodeURIComponent(query)}`;
     try {
       const { data } = await axios.get(url);
@@ -18,16 +18,19 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
       });
       return results[0]?.link;
     } catch (error) {
-      console.error("Error:", error.message);
+      console.error("⚠️ Error TK:", error.message);
       return null;
     }
   };
 
-  const firstResultLink = await searchAppleMusic(text);
+  await conn.sendMessage(m.chat, { react: { text: "🎧", key: m.key } });
 
-  if (!firstResultLink) throw 'No se encontraron resultados.';
+  const firstResultLink = await searchAppleMusicTK(text);
 
-  m.reply(`Reproduciendo: ${firstResultLink}`);
+  if (!firstResultLink) throw '⚠️ Admin-TK no encontró resultados.';
+
+  m.reply(`🎶 **Admin-TK está reproduciendo:** ${firstResultLink}`);
+  await conn.sendMessage(m.chat, { react: { text: "✅", key: m.key } });
 };
 
 handler.help = ['applemusicplay <consulta>'];
