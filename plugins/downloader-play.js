@@ -1,12 +1,14 @@
 import yts from 'yt-search';
 import axios from 'axios';
+import fs from 'fs';
+import os from 'os';
 
 const handler = async (m, { conn, text, usedPrefix, command }) => {
   try {
     if (!text) {
       return await conn.reply(
         m.chat,
-        `🌟 *Admin-TK te pregunta:*\n\n¿Qué deseas descargar? Escribe el título o enlace después del comando:\n\n📌 Ejemplo: *${usedPrefix}${command} Joji - Glimpse of Us*`,
+        `🌟 *Admin-TK te pregunta:*\n\n¿Qué música deseas buscar? Escribe el título o enlace después del comando:\n\n📌 Ejemplo: *${usedPrefix}${command} Joji - Glimpse of Us*`,
         m
       );
     }
@@ -18,35 +20,32 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
 
     const { title, thumbnail, timestamp, views, ago, url } = video;
 
-    // Notificación inicial
+    // Enviar información inicial
     await conn.reply(
       m.chat,
       `🔰 *Admin-TK Downloader*\n\n🎵 *Título:* ${title}\n⏳ *Duración:* ${timestamp}\n👁️ *Vistas:* ${views}\n📅 *Publicado:* ${ago}\n🌐 *Enlace:* ${url}\n\n🕒 *Preparando descarga...*`,
       m
     );
 
-    // Determinar formato
-    const isVideo = /video/i.test(command);
-    const format = isVideo ? 'mp4' : 'mp3';
+    // Descarga de música MP3 utilizando la API de cuka
     const baseUrl = 'https://cuka.rfivecode.com';
-
-    // Descargar archivo
-    const response = await axios.post(`${baseUrl}/download`, { url, format }, {
-      headers: { 'Content-Type': 'application/json' },
-    });
+    const response = await axios.post(
+      `${baseUrl}/download`,
+      { url, format: 'mp3' },
+      {
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
 
     if (!response.data.success) throw `Error: ${response.data.message}`;
 
     const { downloadUrl } = response.data;
-    const mimetype = isVideo ? 'video/mp4' : 'audio/mpeg';
-    const fileType = isVideo ? 'video' : 'audio';
-    const fileName = `${title}.${format}`;
 
-    // Enviar archivo al usuario
+    // Enviar archivo MP3
     await conn.sendMessage(m.chat, {
-      [fileType]: { url: downloadUrl },
-      mimetype,
-      fileName,
+      audio: { url: downloadUrl },
+      mimetype: 'audio/mpeg',
+      fileName: `${title}.mp3`,
       caption: `🎶 *Título:* ${title}\n📅 *Publicado:* ${ago}\n\n*🔰 Servicio proporcionado por Admin-TK*`,
       contextInfo: {
         externalAdReply: {
@@ -67,8 +66,9 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
   }
 };
 
-handler.command = ['play', 'playvideo']; // Comandos soportados
-handler.help = ['play *<consulta>*', 'playvideo *<consulta>*'];
+// Configuración del Handler
+handler.command = ['play']; // Comando para descargar música MP3
+handler.help = ['play *<consulta>*'];
 handler.tags = ['downloader'];
 handler.register = true;
 
