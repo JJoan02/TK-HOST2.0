@@ -30,6 +30,24 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
         throw new Error("⚠️ Error al buscar en Apple Music.");
       }
     },
+
+    detail: async (url) => {
+      try {
+        const { data } = await axios.get(url);
+        const $ = cheerio.load(data);
+        const albumTitle = $('h1[data-testid="non-editable-product-title"]').text().trim();
+        const artistName = $('a[data-testid="click-action"]').first().text().trim();
+        const releaseInfo = $('div.headings__metadata-bottom').text().trim();
+        const description = $('div[data-testid="description"]').text().trim();
+        return { albumTitle, artistName, releaseInfo, description };
+      } catch (error) {
+        console.error("Error en detalles:", error.message);
+        throw new Error("⚠️ Error al obtener los detalles de la música.");
+      }
+    },
+  };
+
+  const appledown = {
     download: async (urls) => {
       const apiURL = `https://aaplmusicdownloader.com/api/applesearch.php?url=${urls}`;
       try {
@@ -63,50 +81,84 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
   };
 
   try {
-    let statusMessage = await conn.sendMessage(m.chat, { text: '🎵 Procesando solicitud...' }, { quoted: m });
-    await conn.sendMessage(m.chat, { react: { text: '⏳', key: m.key } });
+    switch (command) {
+      case "applemusicsearch":
+        const searchMessage = await conn.sendMessage(m.chat, { text: '🔎 Buscando música...' }, { quoted: m });
+        await conn.sendMessage(m.chat, { react: { text: '⏳', key: m.key } });
 
-    const musicData = text.startsWith("http")
-      ? await appleMusic.download(text)
-      : await appleMusic.download((await appleMusic.search(text))[0].link);
+        const searchResults = await appleMusic.search(text);
+        if (!searchResults || searchResults.length === 0) {
+          throw new Error("⚠️ No se encontraron resultados. Intenta con otra descripción.");
+        }
 
-    const { name, artist, albumname, duration, url, thumb } = musicData;
+        const searchText = searchResults
+          .map((v, i) => `${i + 1}. *${v.title}*\n   Link: ${v.link}`)
+          .join('\n\n');
+        await conn.sendMessage(m.chat, {
+          text: `🔰 *Resultados de Búsqueda*\n\n${searchText}`,
+        }, { quoted: m });
+        await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
+        break;
 
-    // Mensaje con los detalles del audio descargado
-    await conn.sendMessage(m.chat, {
-      text: `🔰 *Admin-TK Apple Music Downloader*\n\n🎵 *Título:* ${name}\n🎤 *Artista:* ${artist}\n📀 *Álbum:* ${albumname || 'N/A'}\n⏳ *Duración:* ${duration}\n🔗 *Enlace:* ${url}\n\n✅ *Audio descargado con éxito.*`,
-    }, { quoted: m });
+      case "applemusicdetail":
+        const detailMessage = await conn.sendMessage(m.chat, { text: '🔍 Obteniendo detalles...' }, { quoted: m });
+        await conn.sendMessage(m.chat, { react: { text: '⏳', key: m.key } });
 
-    // Enviar el audio
-    const doc = {
-      audio: { url },
-      mimetype: 'audio/mp4',
-      fileName: `${name}.mp3`,
-      contextInfo: {
-        externalAdReply: {
-          showAdAttribution: true,
-          mediaType: 2,
-          mediaUrl: url,
-          title: name,
-          sourceUrl: url,
-          thumbnail: await (await conn.getFile(thumb)).data,
-        },
-      },
-    };
+        const details = await appleMusic.detail(text);
+        const detailText = `🔰 *Detalles de la Música*\n\n🎵 *Álbum:* ${details.albumTitle}\n🎤 *Artista:* ${details.artistName}\n📅 *Publicado:* ${details.releaseInfo}\n✍️ *Descripción:* ${details.description}`;
+        await conn.sendMessage(m.chat, {
+          text: detailText,
+        }, { quoted: m });
+        await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
+        break;
 
-    await conn.sendMessage(m.chat, doc, { quoted: m });
-    await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
+      case "applemusicplay":
+      case "aplay":
+        const statusMessage = await conn.sendMessage(m.chat, { text: '🎵 Procesando solicitud...' }, { quoted: m });
+        await conn.sendMessage(m.chat, { react: { text: '⏳', key: m.key } });
+
+        const musicData = text.startsWith("http")
+          ? await appledown.download(text)
+          : await appledown.download((await appleMusic.search(text))[0].link);
+
+        const { name, artist, albumname, duration, url, thumb } = musicData;
+
+        await conn.sendMessage(m.chat, {
+          text: `🔰 *Admin-TK Apple Music Downloader*\n\n🎵 *Título:* ${name}\n🎤 *Artista:* ${artist}\n📀 *Álbum:* ${albumname || 'N/A'}\n⏳ *Duración:* ${duration}\n🔗 *Enlace:* ${url}\n\n✅ *Audio descargado con éxito.*`,
+        }, { quoted: m });
+
+        const doc = {
+          audio: { url },
+          mimetype: 'audio/mp4',
+          fileName: `${name}.mp3`,
+          contextInfo: {
+            externalAdReply: {
+              showAdAttribution: true,
+              mediaType: 2,
+              mediaUrl: url,
+              title: name,
+              sourceUrl: url,
+              thumbnail: await (await conn.getFile(thumb)).data,
+            },
+          },
+        };
+
+        await conn.sendMessage(m.chat, doc, { quoted: m });
+        await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
+        break;
+
+      default:
+        throw new Error("⚠️ Comando no reconocido.");
+    }
   } catch (error) {
     console.error("Error:", error.message);
-    await conn.sendMessage(m.chat, {
-      text: error.message || "⚠️ Ocurrió un error inesperado. Intenta nuevamente más tarde.",
-    }, { quoted: m });
+    await conn.sendMessage(m.chat, { text: error.message || "⚠️ Ocurrió un error inesperado." }, { quoted: m });
     await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
   }
 };
 
 handler.help = ['applemusicsearch', 'applemusicdetail', 'applemusicplay', 'aplay'];
-handler.tags = ['downloader'];
-handler.command = /^(aplay|applemusicplay)$/i;
+handler.tags = ['downloader', 'search', 'info'];
+handler.command = /^(applemusicsearch|applemusicdetail|applemusicplay|aplay)$/i;
 
 export default handler;
