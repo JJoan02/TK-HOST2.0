@@ -1,70 +1,84 @@
-import yts from 'yt-search';
 import axios from 'axios';
 
-const handler = async (m, { conn, text, usedPrefix, command }) => {
+const BASE_URL = 'https://youtube-download-api.matheusishiyama.repl.co';
+
+const handler = async (m, { conn, text, command, usedPrefix }) => {
   try {
     if (!text) {
       return await conn.reply(
         m.chat,
-        `🌟 *Admin-TK te pregunta:*\n\n¿Qué deseas descargar? Escribe el título o enlace después del comando:\n\n📌 Ejemplo: *${usedPrefix}${command} Joji - Glimpse of Us*`,
+        `🌟 *Admin-TK te pregunta:*\n\n¿Qué deseas descargar en alta calidad? Escribe el título o enlace después del comando.\n\n📌 Ejemplo: *${usedPrefix}${command} Joji - Glimpse of Us*`,
         m
       );
     }
 
-    // Búsqueda en YouTube
-    const results = await yts(text);
-    const video = results.videos[0];
-    if (!video) throw 'No se encontró el contenido solicitado. Intenta con otro título.';
+    // Reacción: Procesando
+    await conn.sendMessage(m.chat, { react: { text: '🔄', key: m.key } });
 
-    const { title, thumbnail, timestamp, views, ago, url } = video;
+    // Obtener información del video
+    await conn.reply(m.chat, '🔍 *Buscando información del video...*', m);
+    const infoResponse = await axios.get(`${BASE_URL}/info/?url=${encodeURIComponent(text)}`);
+    const videoInfo = infoResponse.data;
 
-    // Enviar información inicial
+    if (!videoInfo || !videoInfo.title) {
+      throw '❌ No se pudo obtener información del video. Verifica el enlace o título.';
+    }
+
+    const { title, thumbnail } = videoInfo;
+
+    // Mostrar información del video
     await conn.reply(
       m.chat,
-      `🔰 *Admin-TK Downloader*\n\n🎵 *Título:* ${title}\n⏳ *Duración:* ${timestamp}\n👁️ *Vistas:* ${views}\n📅 *Publicado:* ${ago}\n🌐 *Enlace:* ${url}\n\n🕒 *Preparando descarga...*`,
+      `🎥 *Título:* ${title}\n🖼️ *Thumbnail:* ${thumbnail}\n\n⏳ *Preparando descargas...*\n`,
       m
     );
 
-    // Descargar archivo con API alternativa
-    const apiUrl = `https://Ikygantengbangetanjay-api.hf.space/yt?query=${encodeURIComponent(url)}`;
-    const response = await axios.get(apiUrl);
+    // Descargar video en calidad 1080p, 720p, 480p o 360p
+    const qualities = ['1080', '720', '480', '360'];
+    let videoUrl;
+    for (const quality of qualities) {
+      try {
+        await conn.reply(m.chat, `📹 *Intentando descargar en calidad ${quality}p...*`, m);
+        videoUrl = `${BASE_URL}/mp4/?url=${encodeURIComponent(text)}&quality=${quality}`;
+        await axios.head(videoUrl); // Verifica si el enlace es válido
+        break;
+      } catch (err) {
+        console.error(`❌ Calidad ${quality}p no disponible.`);
+      }
+    }
 
-    const { result } = response.data;
-    if (!result) throw 'No se pudo obtener los enlaces de descarga.';
-
-    const audioUrl = result.download.audio;
-    const videoUrl = result.download.video;
-
-    if (!audioUrl || !videoUrl) throw 'Error al procesar el contenido.';
-
-    const thumbBuffer = await axios.get(result.thumbnail, { responseType: 'arraybuffer' });
+    if (!videoUrl) throw '❌ No se pudo descargar el video en ninguna calidad.';
 
     // Enviar video
     await conn.sendMessage(m.chat, {
       video: { url: videoUrl },
       mimetype: 'video/mp4',
-      fileName: `${title}.mp4`,
-      jpegThumbnail: thumbBuffer.data,
-      caption: `🎥 *${title}*\n📽 *Enlace*: ${url}\n\n*🔰 Servicio proporcionado por Admin-TK*`,
+      fileName: `${title}_${qualities.join('_')}.mp4`,
+      caption: `🎥 *Título:* ${title}\n📺 *Calidad:* ${qualities.join('p o ')}p\n\n🔰 *Video descargado por Admin-TK*`,
     });
 
-    // Enviar audio
+    // Descargar audio en formato MP3
+    await conn.reply(m.chat, '🎶 *Descargando el audio en formato MP3...*', m);
+    const audioUrl = `${BASE_URL}/mp3/?url=${encodeURIComponent(text)}`;
     await conn.sendMessage(m.chat, {
       audio: { url: audioUrl },
       mimetype: 'audio/mpeg',
       fileName: `${title}.mp3`,
-      jpegThumbnail: thumbBuffer.data,
+      caption: `🎶 *Título:* ${title}\n\n🔰 *Audio descargado por Admin-TK*`,
     });
 
-    await conn.reply(m.chat, `✅ *¡Descarga completada!*\n\n🔰 *Admin-TK siempre a tu servicio.*`, m);
+    // Confirmar finalización
+    await conn.reply(m.chat, `✅ *Descarga completada!*\n\n🔰 *Admin-TK siempre a tu servicio.*`, m);
+    await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
   } catch (error) {
-    console.error(error);
-    await conn.reply(m.chat, `❌ *Error:* ${error.message || error}\n\n🔰 *Por favor, intenta nuevamente.*`, m);
+    console.error('❌ Error en .play2:', error.message || error);
+    await conn.reply(m.chat, `❌ *Error:* ${error.message || 'Ocurrió un problema inesperado.'}`, m);
+    await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
   }
 };
 
-handler.command = ['play2', 'playdoc']; // Comandos alternativos
-handler.help = ['play2 *<consulta>*', 'playdoc *<consulta>*'];
+handler.command = ['play2'];
+handler.help = ['play2 *<título o enlace>*'];
 handler.tags = ['downloader'];
 handler.register = true;
 
