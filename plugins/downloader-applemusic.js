@@ -12,11 +12,9 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
   }
 
   try {
-    // Mensaje inicial para analizar el enlace
     let statusMessage = await conn.sendMessage(m.chat, { text: '🔎 Analizando enlace de Apple Music...' }, { quoted: m });
     await conn.sendMessage(m.chat, { react: { text: '⏳', key: m.key } });
 
-    // Descargar información del enlace
     const musicData = await appledown.download(text);
     if (!musicData || !musicData.download) {
       await conn.sendMessage(m.chat, {
@@ -26,17 +24,13 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
       return;
     }
 
-    // Información de la música
     const { name, albumname, artist, url, thumb, duration, download } = musicData;
     const songInfo = `🔰 *Admin-TK Apple Music Downloader*\n\n🎵 *Título:* ${name}\n🎤 *Artista:* ${artist}\n📀 *Álbum:* ${albumname}\n⏳ *Duración:* ${duration}\n🔗 *Enlace:* ${url}`;
-
-    // Actualizar mensaje con información de la música
     await conn.sendMessage(m.chat, {
       text: `${songInfo}\n\n⬇️ Descargando audio...`,
       edit: statusMessage.key,
     });
 
-    // Descargar y enviar música
     const thumbnailBuffer = await axios.get(thumb, { responseType: 'arraybuffer' }).then(res => res.data);
     await conn.sendMessage(m.chat, {
       audio: { url: download },
@@ -54,7 +48,6 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
       },
     }, { quoted: m });
 
-    // Mensaje final de éxito
     await conn.sendMessage(m.chat, {
       text: `${songInfo}\n\n✅ Audio descargado con éxito.`,
       edit: statusMessage.key,
@@ -69,7 +62,6 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
   }
 };
 
-// Funciones para descargar la música
 const appledown = {
   getData: async (url) => {
     try {
@@ -83,30 +75,6 @@ const appledown = {
       return response.data;
     } catch (error) {
       console.error('Error obteniendo datos:', error.message);
-      return null;
-    }
-  },
-  getAudio: async (trackName, artist, urlMusic, token) => {
-    try {
-      const response = await axios.post(
-        'https://aaplmusicdownloader.com/api/composer/swd.php',
-        qs.stringify({
-          song_name: trackName,
-          artist_name: artist,
-          url: urlMusic,
-          token,
-        }),
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'User-Agent': 'MyApp/1.0',
-            'Referer': 'https://aaplmusicdownloader.com/song.php#',
-          },
-        }
-      );
-      return response.data.dlink;
-    } catch (error) {
-      console.error('Error obteniendo audio:', error.message);
       return null;
     }
   },
