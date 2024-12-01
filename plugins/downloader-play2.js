@@ -2,11 +2,13 @@ import axios from 'axios';
 import yts from 'yt-search';
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
-  if (!text) throw m.reply(`⚠️ No proporcionaste una consulta válida. Uso: *${usedPrefix + command} Joji Ew*`);
+  if (!text) throw m.reply(`⚠️ *Admin-TK:* Necesitas proporcionar una consulta de búsqueda.
+
+*Ejemplo de uso:* *${usedPrefix + command} Joji Ew*`);
 
   let results = await yts(text);
   let tes = results.videos[0];
-  if (!tes) throw m.reply('No se encontraron resultados para tu consulta. Intenta ser más específico.');
+  if (!tes) throw m.reply('⚠️ *Admin-TK:* No se encontraron resultados para tu consulta. Intenta ser más específico.');
 
   // Múltiples APIs para descarga, por si una falla.
   const apiList = [
@@ -38,7 +40,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
 
   const downloadFromApi = async (apiIndex, url, format) => {
     if (apiIndex >= apiList.length) {
-      return { success: false, message: 'Todas las APIs fallaron. Intenta de nuevo más tarde.' };
+      return { success: false, message: '⚠️ *Admin-TK:* Todas las APIs fallaron. Intenta de nuevo más tarde.' };
     }
     const api = apiList[apiIndex];
     try {
@@ -56,7 +58,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
   }
 
   let { title, thumbnail, quality, downloadUrl } = dataos;
-  m.reply(`_Preparando **${title}** (${quality}). Esto podría tomar unos segundos..._`);
+  m.reply(`⚠️ *Admin-TK:* Preparando **${title}** (${quality}). Esto podría tomar unos segundos...`);
 
   const doc = {
     audio: { url: downloadUrl },
@@ -75,10 +77,10 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
   };
   try {
     await conn.sendMessage(m.chat, doc, { quoted: m });
-    m.reply('El archivo ha sido enviado. Si necesitas algo más, realiza otra solicitud.');
+    m.reply('⚠️ *Admin-TK:* El archivo ha sido enviado. Si necesitas algo más, realiza otra solicitud.');
   } catch (error) {
     console.error('Error al enviar el audio:', error);
-    m.reply('Ocurrió un error mientras se intentaba enviar el archivo. Intenta nuevamente.');
+    m.reply('⚠️ *Admin-TK:* Ocurrió un error mientras se intentaba enviar el archivo. Intenta nuevamente.');
   }
 };
 
