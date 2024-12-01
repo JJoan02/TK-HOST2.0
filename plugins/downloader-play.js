@@ -1,147 +1,75 @@
 import yts from 'yt-search';
-import fs from 'fs';
-import os from 'os';
 import axios from 'axios';
 
-const handler = async (m, { conn, command, text, usedPrefix }) => {
+const handler = async (m, { conn, text, usedPrefix, command }) => {
   try {
-    // Validación inicial
     if (!text) {
-      await conn.sendMessage(
+      return await conn.reply(
         m.chat,
-        {
-          text: `🌀 *Admin-TK te pregunta:*\n\n¿Qué música deseas buscar? ¿O quién la canta?\n\n_Escribe el título o artista después del comando:_\n*${usedPrefix}${command} <título o artista>*`,
-        },
-        { quoted: m }
+        `🌟 *Admin-TK te pregunta:*\n\n¿Qué deseas descargar? Escribe el título o enlace después del comando:\n\n📌 Ejemplo: *${usedPrefix}${command} Joji - Glimpse of Us*`,
+        m
       );
-      return;
     }
 
     // Búsqueda en YouTube
-    const search = await yts(text);
-    const vid = search.videos[0];
-    if (!vid) throw 'No se encontró el video, intenta con otro título.';
+    const results = await yts(text);
+    const video = results.videos[0];
+    if (!video) throw 'No se encontró el contenido solicitado. Intenta con otro título.';
 
-    const { title, thumbnail, timestamp, views, ago, url } = vid;
+    const { title, thumbnail, timestamp, views, ago, url } = video;
 
-    // Notificación de inicio
-    await conn.sendMessage(m.chat, {
-      react: { text: '⏳', key: m.key },
-    });
-
-    // Descarga del archivo MP4
-    const videoResponse = await axios.get(
-      `https://api.ryzendesu.vip/api/downloader/ytmp4?url=${encodeURIComponent(url)}`
+    // Notificación inicial
+    await conn.reply(
+      m.chat,
+      `🔰 *Admin-TK Downloader*\n\n🎵 *Título:* ${title}\n⏳ *Duración:* ${timestamp}\n👁️ *Vistas:* ${views}\n📅 *Publicado:* ${ago}\n🌐 *Enlace:* ${url}\n\n🕒 *Preparando descarga...*`,
+      m
     );
-    const videoDownloadUrl = videoResponse.data.url;
 
-    if (!videoDownloadUrl) throw 'No se pudo obtener el archivo MP4.';
+    // Determinar formato
+    const isVideo = /video/i.test(command);
+    const format = isVideo ? 'mp4' : 'mp3';
+    const baseUrl = 'https://cuka.rfivecode.com';
 
-    const tmpDir = os.tmpdir();
-    const mp4Path = `${tmpDir}/${title}.mp4`;
-
-    const videoStream = await axios({
-      method: 'get',
-      url: videoDownloadUrl,
-      responseType: 'stream',
+    // Descargar archivo
+    const response = await axios.post(`${baseUrl}/download`, { url, format }, {
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    const mp4Stream = fs.createWriteStream(mp4Path);
-    videoStream.data.pipe(mp4Stream);
+    if (!response.data.success) throw `Error: ${response.data.message}`;
 
-    mp4Stream.on('finish', async () => {
-      console.log(`✅ Video descargado: ${mp4Path}`);
+    const { downloadUrl } = response.data;
+    const mimetype = isVideo ? 'video/mp4' : 'audio/mpeg';
+    const fileType = isVideo ? 'video' : 'audio';
+    const fileName = `${title}.${format}`;
 
-      // Enviar archivo MP4
-      await conn.sendMessage(m.chat, {
-        video: { url: mp4Path },
-        caption: `🎥 **Título:** ${title}\n⏳ **Duración:** ${timestamp}\n👁️ **Vistas:** ${views}\n🗓️ **Publicado:** ${ago}\n\n*🔰 Servicio proporcionado por Admin-TK*`,
-        contextInfo: {
-          externalAdReply: {
-            showAdAttribution: true,
-            mediaUrl: url,
-            title: title,
-            body: 'Descarga de Video',
-            thumbnail: await (await conn.getFile(thumbnail)).data,
-          },
+    // Enviar archivo al usuario
+    await conn.sendMessage(m.chat, {
+      [fileType]: { url: downloadUrl },
+      mimetype,
+      fileName,
+      caption: `🎶 *Título:* ${title}\n📅 *Publicado:* ${ago}\n\n*🔰 Servicio proporcionado por Admin-TK*`,
+      contextInfo: {
+        externalAdReply: {
+          showAdAttribution: true,
+          mediaType: 2,
+          mediaUrl: url,
+          title: title,
+          sourceUrl: url,
+          thumbnail: await (await conn.getFile(thumbnail)).data,
         },
-      });
-
-      // Descarga del archivo MP3
-      const audioResponse = await axios.get(
-        `https://api.ryzendesu.vip/api/downloader/ytmp3?url=${encodeURIComponent(url)}`
-      );
-      const audioDownloadUrl = audioResponse.data.url;
-
-      if (!audioDownloadUrl) throw 'No se pudo obtener el archivo MP3.';
-
-      const mp3Path = `${tmpDir}/${title}.mp3`;
-
-      const audioStream = await axios({
-        method: 'get',
-        url: audioDownloadUrl,
-        responseType: 'stream',
-      });
-
-      const mp3Stream = fs.createWriteStream(mp3Path);
-      audioStream.data.pipe(mp3Stream);
-
-      mp3Stream.on('finish', async () => {
-        console.log(`✅ Audio descargado: ${mp3Path}`);
-
-        // Enviar archivo MP3
-        await conn.sendMessage(m.chat, {
-          audio: { url: mp3Path },
-          mimetype: 'audio/mpeg',
-          fileName: `${title}.mp3`,
-          caption: `🎵 **Título:** ${title}\n🗓️ **Publicado:** ${ago}\n\n*🔰 Servicio proporcionado por Admin-TK*`,
-          contextInfo: {
-            externalAdReply: {
-              showAdAttribution: true,
-              mediaUrl: url,
-              title: title,
-              body: 'Descarga de Audio',
-              thumbnail: await (await conn.getFile(thumbnail)).data,
-            },
-          },
-        });
-
-        // Eliminar archivos temporales
-        fs.unlink(mp4Path, (err) => {
-          if (err) console.error(`❌ Error eliminando archivo MP4: ${err}`);
-          else console.log(`🗑️ Archivo MP4 eliminado: ${mp4Path}`);
-        });
-
-        fs.unlink(mp3Path, (err) => {
-          if (err) console.error(`❌ Error eliminando archivo MP3: ${err}`);
-          else console.log(`🗑️ Archivo MP3 eliminado: ${mp3Path}`);
-        });
-
-        // Reacción de éxito
-        await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
-      });
-
-      mp3Stream.on('error', (err) => {
-        console.error(`❌ Error escribiendo archivo MP3: ${err}`);
-        throw 'Error al descargar el audio MP3.';
-      });
+      },
     });
 
-    mp4Stream.on('error', (err) => {
-      console.error(`❌ Error escribiendo archivo MP4: ${err}`);
-      throw 'Error al descargar el video MP4.';
-    });
+    await conn.reply(m.chat, `✅ *¡Descarga completada!*\n\n🔰 *Admin-TK siempre a tu servicio.*`, m);
   } catch (error) {
-    console.error('❌ Error general:', error.message);
-    m.reply(`❌ Error: ${error.message}. Verifica el enlace o intenta nuevamente.\n\n*🔰 Servicio proporcionado por Admin-TK*`);
+    console.error(error);
+    await conn.reply(m.chat, `❌ *Error:* ${error.message || error}\n\n🔰 *Por favor, intenta nuevamente.*`, m);
   }
 };
 
-handler.help = ['play'].map((v) => v + ' *<consulta>*');
+handler.command = ['play', 'playvideo']; // Comandos soportados
+handler.help = ['play *<consulta>*', 'playvideo *<consulta>*'];
 handler.tags = ['downloader'];
-handler.command = /^(play)$/i;
-
 handler.register = true;
-handler.disable = false;
 
 export default handler;
