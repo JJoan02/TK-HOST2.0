@@ -6,7 +6,16 @@ import axios from 'axios';
 const handler = async (m, { conn, command, text, usedPrefix }) => {
   try {
     // Validación inicial
-    if (!text) throw `Usa ejemplo: ${usedPrefix}${command} Joji - Ew`;
+    if (!text) {
+      await conn.sendMessage(
+        m.chat,
+        {
+          text: `🌀 *Admin-TK te pregunta:*\n\n¿Qué música deseas buscar? ¿O quién la canta?\n\n_Escribe el título o artista después del comando:_\n*${usedPrefix}${command} <título o artista>*`,
+        },
+        { quoted: m }
+      );
+      return;
+    }
 
     // Búsqueda en YouTube
     const search = await yts(text);
@@ -17,7 +26,7 @@ const handler = async (m, { conn, command, text, usedPrefix }) => {
 
     // Notificación de inicio
     await conn.sendMessage(m.chat, {
-      react: { text: '⏳', key: m.key }
+      react: { text: '⏳', key: m.key },
     });
 
     // Descarga del archivo MP4
@@ -56,7 +65,7 @@ const handler = async (m, { conn, command, text, usedPrefix }) => {
             thumbnail: await (await conn.getFile(thumbnail)).data,
           },
         },
-      }, { quoted: m });
+      });
 
       // Descarga del archivo MP3
       const audioResponse = await axios.get(
@@ -95,7 +104,7 @@ const handler = async (m, { conn, command, text, usedPrefix }) => {
               thumbnail: await (await conn.getFile(thumbnail)).data,
             },
           },
-        }, { quoted: m });
+        });
 
         // Eliminar archivos temporales
         fs.unlink(mp4Path, (err) => {
