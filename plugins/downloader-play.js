@@ -3,6 +3,7 @@ import yts from 'yt-search';
 import fetch from 'node-fetch';
 import ffmpeg from 'fluent-ffmpeg';
 
+// Handler para el comando '.play'
 let handler = async (m, { conn, text, usedPrefix, command }) => {
   if (!text) {
     return await handleMissingQuery(m, conn, usedPrefix, command);
@@ -16,22 +17,12 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     }
 
     await updateVideoInfo(m, conn, initialMessage, videoData);
-
-    if (command === 'play') {
-      const { audioUrl, videoUrl, thumbBuffer } = await downloadMedia(videoData.url, text);
-      if (!audioUrl) {
-        return await handleDownloadError(m, conn, 'No se pudo obtener la URL del audio. Por favor inténtalo de nuevo.');
-      }
-      await updateDownloadStatus(m, conn, initialMessage, videoData, 'Audio descargado...');
-      await sendAudioFile(m, conn, videoData, audioUrl, thumbBuffer);
-    } else if (command === 'playvideo') {
-      const { audioUrl, videoUrl, thumbBuffer } = await downloadMedia(videoData.url, text);
-      if (!videoUrl) {
-        return await handleDownloadError(m, conn, 'No se pudo obtener la URL del video. Por favor inténtalo de nuevo.');
-      }
-      await updateDownloadStatus(m, conn, initialMessage, videoData, 'Video descargado...');
-      await sendVideoFile(m, conn, videoData, videoUrl, thumbBuffer);
+    const { audioUrl, thumbBuffer } = await downloadMedia(videoData.url, text);
+    if (!audioUrl) {
+      return await handleDownloadError(m, conn, 'No se pudo obtener la URL del audio. Por favor inténtalo de nuevo.');
     }
+    await updateDownloadStatus(m, conn, initialMessage, videoData, 'Audio descargado...');
+    await sendAudioFile(m, conn, videoData, audioUrl, thumbBuffer);
   } catch (error) {
     console.error('Error en el proceso:', error);
     await handleUnexpectedError(m, conn);
@@ -101,7 +92,7 @@ async function updateVideoInfo(m, conn, initialMessage, videoData) {
   });
 }
 
-// Descargar audio/video usando la API
+// Descargar audio usando la API
 async function downloadMedia(url, text) {
   try {
     const res = await axios.get(`https://Ikygantengbangetanjay-api.hf.space/yt?query=${encodeURIComponent(text)}`);
@@ -110,11 +101,10 @@ async function downloadMedia(url, text) {
     if (video.duration.seconds >= 3600) throw new Error('El audio es demasiado largo!');
 
     const audioUrl = video.download.audio;
-    const videoUrl = video.download.video;
-    if (!audioUrl || !videoUrl) throw new Error('No se pudo obtener la URL de audio/vídeo. Por favor inténtalo de nuevo.');
+    if (!audioUrl) throw new Error('No se pudo obtener la URL del audio. Por favor inténtalo de nuevo.');
 
     const thumbBuffer = await getBuffer(video.thumbnail);
-    return { audioUrl, videoUrl, thumbBuffer };
+    return { audioUrl, thumbBuffer };
   } catch (error) {
     console.error('Error al descargar el medio:', error.message);
     throw error;
@@ -169,23 +159,8 @@ async function sendAudioFile(m, conn, videoData, downloadUrl, thumbBuffer) {
   await conn.sendMessage(m.chat, { text: '⚠️ *Admin-TK:* El archivo ha sido enviado exitosamente. Si necesitas algo más, no dudes en pedírmelo.', quoted: m });
 }
 
-// Enviar archivo de video descargado
-async function sendVideoFile(m, conn, videoData, videoUrl, thumbBuffer) {
-  const videoDoc = {
-    video: { url: videoUrl },
-    mimetype: 'video/mp4',
-    fileName: `${videoData.title}.mp4`,
-    jpegThumbnail: thumbBuffer,
-    caption: `🎥 *${videoData.title}*
-📽 *Fuente*: ${videoData.url}`
-  };
-  await conn.sendMessage(m.chat, videoDoc, { quoted: m });
-  await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
-  await conn.sendMessage(m.chat, { text: '⚠️ *Admin-TK:* El video ha sido enviado exitosamente. Si necesitas algo más, no dudes en pedírmelo.', quoted: m });
-}
-
 handler.help = ['play *<consulta>*'];
 handler.tags = ['downloader'];
-handler.command = /^(play|playvideo)$/i;
+handler.command = /^(play)$/i;
 
 export default handler;
