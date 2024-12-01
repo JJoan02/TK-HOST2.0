@@ -1,90 +1,84 @@
-import yts from 'yt-search';
-import axios from 'axios';
-import { yta, ytv } from 'api-dylux'; // Herramientas para descargar audio/video
+import yts from 'yt-search'
+import fs from 'fs'
+import os from 'os'
+import axios from 'axios'
 
-const handler = async (m, { conn, text, usedPrefix, command }) => {
+const handler = async (m, { conn, command, text, usedPrefix }) => {
+  if (!text) throw m.reply(`✧ Ejemplo de uso: ${usedPrefix}${command} Joji - Ew`);
+
+  const search = await yts(text);
+  const vid = search.videos[0];
+  if (!vid) throw m.reply('Data no encontrada, intenta con otro titulo');
+
+  const { title, thumbnail, timestamp, views, ago, url } = vid;
+
+await conn.sendMessage(m.chat, { react: { text: '🕒', key: m.key }})
+//  await conn.sendMessage(m.chat, { image: { url: thumbnail }, caption: wait }, { quoted: m });
+
   try {
-    if (!text) {
-      return conn.reply(
-        m.chat,
-        `🌟 *Admin-TK te pregunta:*\n\n¿Qué deseas buscar? Escribe el título o enlace después del comando.\n\n📌 Ejemplo: *${usedPrefix}${command} Joji - Glimpse of Us*`,
-        m
-      );
-    }
+    const response = await axios.get(`https://api.ryzendesu.vip/api/downloader/ytmp3?url=${encodeURIComponent(url)}`);
+    const downloadUrl = response.data.url;
 
-    await m.react("⏳");
+    if (!downloadUrl) throw new Error('Audio URL not found');
 
-    // Realizar la búsqueda en YouTube
-    const res = await yts(text);
-    const video = res.videos[0];
+    const tmpDir = os.tmpdir();
+    const filePath = `${tmpDir}/${title}.mp3`;
 
-    if (!video) {
-      return conn.reply(m.chat, "❌ *No se encontraron resultados para tu búsqueda.*", m);
-    }
+    const audioResponse = await axios({
+      method: 'get',
+      url: downloadUrl,
+      responseType: 'stream',
+    });
 
-    const { title, url, thumbnail, timestamp, views, ago } = video;
+    const writableStream = fs.createWriteStream(filePath);
+    audioResponse.data.pipe(writableStream);
 
-    // Mostrar información del video
-    const infoText = `🔰 *Admin-TK Downloader*\n\n🎥 *Título:* ${title}\n⏳ *Duración:* ${timestamp}\n👁️ *Vistas:* ${views.toLocaleString()}\n📅 *Publicado:* ${ago}\n🌐 *Enlace:* ${url}`;
-    await conn.reply(m.chat, infoText, m);
+    writableStream.on('finish', async () => {
+      await conn.sendMessage(m.chat, {
+        audio: {
+          url: filePath
+        },
+        mimetype: 'audio/mpeg',
+        fileName: `${title}.mp3`,
+        caption: `Titilo: ${title}\nPublicado: ${ago}`,
+        contextInfo: {
+          externalAdReply: {
+            showAdAttribution: true,
+            mediaType: 2,
+            mediaUrl: url,
+            title: title,
+            body: 'Audio Download',
+            sourceUrl: url,
+            thumbnail: await (await conn.getFile(thumbnail)).data,
+          },
+        },
+      }, { quoted: m });
+await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key }})
 
-    // Descargar video en baja calidad
-    try {
-      const videoData = await ytv(url, "360p");
-      const { dl_url: videoUrl, size: videoSize } = videoData;
+      fs.unlink(filePath, (err) => {
+        if (err) {
+          console.error(`Failed to delete audio file: ${err}`);
+        } else {
+          console.log(`Deleted audio file: ${filePath}`);
+        }
+      });
+    });
 
-      if (parseFloat(videoSize.split("MB")[0]) > 500) {
-        return conn.reply(
-          m.chat,
-          `❌ *El archivo MP4 es demasiado grande (${videoSize}). Intenta con otro video.*`,
-          m
-        );
-      }
-
-      await conn.sendMessage(
-        m.chat,
-        { video: { url: videoUrl }, caption: `🎥 *Video descargado con éxito.*\n\n🔰 *Admin-TK*`, fileName: `${title}.mp4` },
-        { quoted: m }
-      );
-    } catch (error) {
-      console.error("Error al descargar el video:", error.message);
-      await conn.reply(m.chat, "❌ *No se pudo descargar el video en baja calidad.*", m);
-    }
-
-    // Descargar audio en MP3
-    try {
-      const audioData = await yta(url, "128kbps");
-      const { dl_url: audioUrl, size: audioSize } = audioData;
-
-      if (parseFloat(audioSize.split("MB")[0]) > 100) {
-        return conn.reply(
-          m.chat,
-          `❌ *El archivo MP3 es demasiado grande (${audioSize}). Intenta con otro video.*`,
-          m
-        );
-      }
-
-      await conn.sendMessage(
-        m.chat,
-        { audio: { url: audioUrl }, mimetype: "audio/mp3", fileName: `${title}.mp3` },
-        { quoted: m }
-      );
-    } catch (error) {
-      console.error("Error al descargar el audio:", error.message);
-      await conn.reply(m.chat, "❌ *No se pudo descargar el audio MP3.*", m);
-    }
-
-    await m.react("✅");
+    writableStream.on('error', (err) => {
+      console.error(`Failed to write audio file: ${err}`);
+      m.reply('Failed to download audio');
+    });
   } catch (error) {
-    console.error(error);
-    await conn.reply(m.chat, `❌ *Error:* ${error.message || "Algo salió mal."}`, m);
-    await m.react("❌");
+    console.error('Error:', error.message);
+    throw `Error: ${error.message}. Please check the URL and try again.`;
   }
 };
 
-handler.help = ["play"].map((v) => v + " <título o enlace>");
-handler.tags = ["downloader"];
-handler.command = ["play"];
-handler.register = true;
+handler.help = ['play'].map((v) => v + ' *<consulta>*');
+handler.tags = ['downloader'];
+handler.command = /^(play)$/i;
 
-export default handler;
+handler.register = true
+handler.disable = false
+
+export default handler
