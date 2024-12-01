@@ -1,85 +1,42 @@
-import axios from 'axios';
+import yts from 'yt-search';
 
-const BASE_URL = 'https://youtube-download-api.matheusishiyama.repl.co';
-
-const handler = async (m, { conn, text, command, usedPrefix }) => {
+const handler = async (m, { conn, usedPrefix, text, command }) => {
   try {
     if (!text) {
-      return await conn.reply(
-        m.chat,
-        `🌟 *Admin-TK te pregunta:*\n\n¿Qué deseas descargar? Escribe el título o enlace después del comando.\n\n📌 Ejemplo: *${usedPrefix}${command} Joji - Glimpse of Us*`,
-        m
-      );
+      throw `🌟 *Admin-TK te pregunta:*\n\n¿Qué deseas buscar? Escribe el título después del comando.\n\n📌 Ejemplo: *${usedPrefix}${command} Joji - Glimpse of Us*`;
     }
 
-    // Reacción: Procesando
+    // Reacción de inicio
     await conn.sendMessage(m.chat, { react: { text: '🔄', key: m.key } });
 
-    // Obtener información del video
-    await conn.reply(m.chat, '🔍 *Buscando información del video...*', m);
-    const infoResponse = await axios.get(`${BASE_URL}/info/?url=${encodeURIComponent(text)}`);
-    const videoInfo = infoResponse.data;
-
-    if (!videoInfo || !videoInfo.title) {
-      throw '❌ No se pudo obtener información del video. Verifica el enlace o título.';
+    // Realizar búsqueda en YouTube
+    const res = await yts(text);
+    const vid = res.videos[0];
+    if (!vid) {
+      throw '❌ No se encontraron resultados. Intenta con otro término.';
     }
 
-    const { title, thumbnail } = videoInfo;
+    const { title, thumbnail, timestamp, views, ago, url } = vid;
 
     // Mostrar información del video
-    await conn.reply(
-      m.chat,
-      `🎥 *Título:* ${title}\n🖼️ *Thumbnail:* ${thumbnail}\n\n⏳ *Preparando descargas...*\n`,
-      m
-    );
+    const videoInfo = `🔰 *Admin-TK Downloader*\n\n🎵 *Título:* ${title}\n⏳ *Duración:* ${timestamp}\n👁️ *Vistas:* ${views.toLocaleString()}\n📅 *Publicado:* ${ago}\n🌐 *Enlace:* ${url}\n\n🕒 *Selecciona una opción de descarga:*`;
 
-    // Descargar video en calidad 480p o 360p
-    const qualities = ['480', '360'];
-    let videoUrl;
-    for (const quality of qualities) {
-      try {
-        await conn.reply(m.chat, `📹 *Intentando descargar en calidad ${quality}p...*`, m);
-        videoUrl = `${BASE_URL}/mp4/?url=${encodeURIComponent(text)}&quality=${quality}`;
-        await axios.head(videoUrl); // Verifica si el enlace es válido
-        break;
-      } catch (err) {
-        console.error(`❌ Calidad ${quality}p no disponible.`);
-      }
-    }
-
-    if (!videoUrl) throw '❌ No se pudo descargar el video en ninguna calidad.';
-
-    // Enviar video
-    await conn.sendMessage(m.chat, {
-      video: { url: videoUrl },
-      mimetype: 'video/mp4',
-      fileName: `${title}_480p_or_360p.mp4`,
-      caption: `🎥 *Título:* ${title}\n📺 *Calidad:* 480p o 360p\n\n🔰 *Video descargado por Admin-TK*`,
-    });
-
-    // Descargar audio en formato MP3
-    await conn.reply(m.chat, '🎶 *Descargando el audio en formato MP3...*', m);
-    const audioUrl = `${BASE_URL}/mp3/?url=${encodeURIComponent(text)}`;
-    await conn.sendMessage(m.chat, {
-      audio: { url: audioUrl },
-      mimetype: 'audio/mpeg',
-      fileName: `${title}.mp3`,
-      caption: `🎶 *Título:* ${title}\n\n🔰 *Audio descargado por Admin-TK*`,
-    });
-
-    // Confirmar finalización
-    await conn.reply(m.chat, `✅ *Descarga completada!*\n\n🔰 *Admin-TK siempre a tu servicio.*`, m);
-    await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
+    await conn.sendButton(m.chat, videoInfo, '🔰 Admin-TK', thumbnail, [
+      ['💿 Descargar MP3', `${usedPrefix}fgmp3 ${url}`],
+      ['📀 Descargar MP4', `${usedPrefix}fgmp4 ${url}`],
+      ['📁 MP3 Documento', `${usedPrefix}ytmp3doc ${url}`],
+      ['📁 MP4 Documento', `${usedPrefix}ytmp4doc ${url}`]
+    ], null, [['🐈‍⬛ Canal Oficial', `${usedPrefix}canal`]], m);
   } catch (error) {
-    console.error('❌ Error en .play:', error.message || error);
-    await conn.reply(m.chat, `❌ *Error:* ${error.message || 'Ocurrió un problema inesperado.'}`, m);
+    console.error(error.message || error);
+    await conn.reply(m.chat, `❌ *Error:* ${error.message || 'Algo salió mal.'}`, m);
     await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
   }
 };
 
-handler.command = ['play'];
-handler.help = ['play *<título o enlace>*'];
+handler.help = ['play'];
 handler.tags = ['downloader'];
-handler.register = true;
+handler.command = ['play', 'playvid'];
+handler.disabled = false;
 
 export default handler;
