@@ -1,23 +1,6 @@
 import moment from 'moment-timezone';
 import { xpRange } from '../lib/levelling.js';
 
-const estilo = (text, style = 1) => {
-    const xStr = 'abcdefghijklmnopqrstuvwxyz1234567890'.split('');
-    const yStr = Object.freeze({
-        1: 'ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘqʀꜱᴛᴜᴠᴡxʏᴢ1234567890'
-    });
-    const replacer = [];
-    xStr.map((v, i) => replacer.push({
-        original: v,
-        convert: yStr[style].split('')[i]
-    }));
-    return text
-        .toLowerCase()
-        .split('')
-        .map(v => replacer.find(x => x.original === v)?.convert || v)
-        .join('');
-};
-
 const tags = {
     main: '`💎 FUNCIONES PRINCIPALES`',
     group: '`👥 CONFIGURACIÓN DE GRUPOS`',
@@ -39,24 +22,24 @@ const tags = {
 const defaultMenu = {
     before: `
 ╔════════════════════════════╗
-║     📜 *${estilo('guía del menú tk')}* 📜     
+║     📜 GUÍA DEL MENÚ TK 📜     
 ╚════════════════════════════╝
 
-👋 *${estilo('hola, xd')}*.  
-${estilo('en este menú encontrarás una descripción detallada de cada comando disponible.')}
+👋 Hola, %names.  
+En este menú encontrarás una descripción detallada de cada comando disponible.  
 
-🗓️ ${estilo('fecha')}: %date  
-⏰ ${estilo('hora')}: %time  
-👥 ${estilo('usuarios registrados')}: %totalreg  
+🗓️ Fecha: %date  
+⏰ Hora: %time  
+👥 Usuarios registrados: %totalreg  
 
-🛠️ *${estilo('¿cómo usar este menú?')}*
-1️⃣ ${estilo('busca los comandos disponibles en cada sección.')}.  
-2️⃣ ${estilo('usa el prefijo adecuado antes de cada comando (por ejemplo: `.comando`).')}.  
+🛠️ ¿Cómo usar este menú?
+1️⃣ Busca los comandos disponibles en cada sección.  
+2️⃣ Usa el prefijo adecuado antes de cada comando (por ejemplo: \`.comando\`).  
 
-🌟 _${estilo('consulta esta guía siempre que necesites orientación.')}_  
+🌟 Consulta esta guía siempre que necesites orientación.  
 `.trimStart(),
     header: `
-╭───✦ *%category* ✦───╮`,
+╭───✦ %category ✦───╮`,
     body: `➤ %cmd`,
     footer: `
 ╰──────────────╯`,
@@ -67,21 +50,21 @@ ${estilo('en este menú encontrarás una descripción detallada de cada comando 
 
 const shortMenu = `
 ╔════════════════════════════╗
-║     📜 *${estilo('guía del menú tk')}* 📜     
+║     📜 GUÍA DEL MENÚ TK 📜     
 ╚════════════════════════════╝
 
-👋 *${estilo('hola, xd')}*.  
-${estilo('en este menú encontrarás una descripción detallada de cada comando disponible.')}
+👋 Hola, %names.  
+En este menú encontrarás una descripción detallada de cada comando disponible.
 
-🗓️ ${estilo('fecha')}: %date  
-⏰ ${estilo('hora')}: %time  
-👥 ${estilo('usuarios registrados')}: %totalreg  
+🗓️ Fecha: %date  
+⏰ Hora: %time  
+👥 Usuarios registrados: %totalreg  
 
-🛠️ *${estilo('¿cómo usar este menú?')}*
-1️⃣ ${estilo('busca los comandos disponibles en cada sección.')}.  
-2️⃣ ${estilo('usa el prefijo adecuado antes de cada comando (por ejemplo: `.comando`).')}.  
+🛠️ ¿Cómo usar este menú?
+1️⃣ Busca los comandos disponibles en cada sección.  
+2️⃣ Usa el prefijo adecuado antes de cada comando (por ejemplo: \`.comando\`).  
 
-🌟 _${estilo('consulta esta guía siempre que necesites orientación.')}_  
+🌟 Consulta esta guía siempre que necesites orientación.
 
 > Ver más...
 `.trimStart();
@@ -99,11 +82,14 @@ const handler = async (m, { conn, usedPrefix: _p }) => {
 
         if (!m.text.includes('ver más')) {
             // Enviar versión reducida del menú
-            await conn.sendMessage(m.chat, estilo(shortMenu)
-                .replace(/%names/g, names)
-                .replace(/%time/g, time)
-                .replace(/%date/g, date)
-                .replace(/%totalreg/g, totalreg), { quoted: m });
+            await conn.sendMessage(m.chat, {
+                text: shortMenu
+                    .replace(/%names/g, names)
+                    .replace(/%time/g, time)
+                    .replace(/%date/g, date)
+                    .replace(/%totalreg/g, totalreg),
+                quoted: m
+            });
         } else {
             // Enviar menú completo
             const help = Object.values(global.plugins).filter(plugins => !plugins.disabled).map(plugins => ({
@@ -135,21 +121,15 @@ const handler = async (m, { conn, usedPrefix: _p }) => {
                 .replace(/%date/g, date)
                 .replace(/%totalreg/g, totalreg);
 
-            const imageUrl = 'https://pomf2.lain.la/f/ucogaqax.jpg'; // Cambia esta URL por la imagen que prefieras
-
-            await conn.sendFile(m.chat, imageUrl, 'menu.jpg', estilo(text), m);
+            await conn.sendMessage(m.chat, {
+                text: text,
+                quoted: m
+            });
         }
     } catch (error) {
         console.error(error);
         throw 'Hubo un error generando el menú. Por favor, intenta nuevamente.';
     }
-};
-
-// Funciones auxiliares
-const getGreeting = (hour) => {
-    if (hour >= 5 && hour < 12) return 'Buenos Días ☀️';
-    if (hour >= 12 && hour < 19) return 'Buenas Tardes 🌅';
-    return 'Buenas Noches 🌙';
 };
 
 handler.help = ['menu'];
