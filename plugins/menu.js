@@ -20,20 +20,20 @@ const estilo = (text, style = 1) => {
 
 const tags = {
     main: '`💎 FUNCIONES PRINCIPALES`',
+    group: '`👥 CONFIGURACIÓN DE GRUPOS`',
+    search: '`🔍 BÚSQUEDA`',
+    downloader: '`⬇️ DESCARGAS`',
+    nsfw: '`🔞 CONTENIDO ADULTO`',
+    internet: '`🌐 INTERNET Y HERRAMIENTAS`',
+    anime: '`🍙 ANIME`',
     anonymous: '`🎭 CHAT ANÓNIMO`',
     ai: '`🤖 INTELIGENCIA ARTIFICIAL`',
     confesar: '`💌 CONFESIONES`',
     rpg: '`🎮 AVENTURAS Y JUEGOS`',
     fun: '`🎉 DIVERSIÓN`',
-    search: '`🔍 BÚSQUEDA`',
-    downloader: '`⬇️ DESCARGAS`',
-    internet: '`🌐 INTERNET Y HERRAMIENTAS`',
-    anime: '`🍙 ANIME`',
-    nsfw: '`🔞 CONTENIDO ADULTO`',
     sticker: '`✨ CREACIÓN DE STICKERS`',
     tools: '`🔧 HERRAMIENTAS`',
-    group: '`👥 CONFIGURACIÓN DE GRUPOS`',
-    owner: '`👑 ADMINISTRACIÓN`',
+    owner: '`👑 ADMINISTRACIÓN`'
 };
 
 const defaultMenu = {
