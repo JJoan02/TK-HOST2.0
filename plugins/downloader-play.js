@@ -1,7 +1,5 @@
 import yts from 'yt-search';
 import axios from 'axios';
-import fs from 'fs';
-import os from 'os';
 
 const handler = async (m, { conn, text, usedPrefix, command }) => {
   try {
@@ -13,21 +11,26 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
       );
     }
 
-    // Búsqueda en YouTube
+    // Realizar búsqueda en YouTube
     const results = await yts(text);
     const video = results.videos[0];
     if (!video) throw 'No se encontró el contenido solicitado. Intenta con otro título.';
 
     const { title, thumbnail, timestamp, views, ago, url } = video;
 
-    // Enviar información inicial
+    // Validar que los valores necesarios estén definidos
+    if (!title || !url) {
+      throw 'Error en la búsqueda: no se encontraron datos válidos del video.';
+    }
+
+    // Enviar información inicial al usuario
     await conn.reply(
       m.chat,
-      `🔰 *Admin-TK Downloader*\n\n🎵 *Título:* ${title}\n⏳ *Duración:* ${timestamp}\n👁️ *Vistas:* ${views}\n📅 *Publicado:* ${ago}\n🌐 *Enlace:* ${url}\n\n🕒 *Preparando descarga...*`,
+      `🔰 *Admin-TK Downloader*\n\n🎵 *Título:* ${title}\n⏳ *Duración:* ${timestamp || 'Desconocida'}\n👁️ *Vistas:* ${views || 'Desconocidas'}\n📅 *Publicado:* ${ago || 'Desconocido'}\n🌐 *Enlace:* ${url}\n\n🕒 *Preparando descarga...*`,
       m
     );
 
-    // Descarga de música MP3 utilizando la API de cuka
+    // Descargar música MP3 utilizando la API de cuka
     const baseUrl = 'https://cuka.rfivecode.com';
     const response = await axios.post(
       `${baseUrl}/download`,
@@ -37,16 +40,23 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
       }
     );
 
-    if (!response.data.success) throw `Error: ${response.data.message}`;
+    if (!response.data.success) {
+      throw `Error en la descarga: ${response.data.message}`;
+    }
 
     const { downloadUrl } = response.data;
+
+    // Validar que la URL de descarga esté definida
+    if (!downloadUrl) {
+      throw 'Error al obtener la URL de descarga del MP3.';
+    }
 
     // Enviar archivo MP3
     await conn.sendMessage(m.chat, {
       audio: { url: downloadUrl },
       mimetype: 'audio/mpeg',
       fileName: `${title}.mp3`,
-      caption: `🎶 *Título:* ${title}\n📅 *Publicado:* ${ago}\n\n*🔰 Servicio proporcionado por Admin-TK*`,
+      caption: `🎶 *Título:* ${title}\n📅 *Publicado:* ${ago || 'Desconocido'}\n\n*🔰 Servicio proporcionado por Admin-TK*`,
       contextInfo: {
         externalAdReply: {
           showAdAttribution: true,
@@ -61,8 +71,12 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
 
     await conn.reply(m.chat, `✅ *¡Descarga completada!*\n\n🔰 *Admin-TK siempre a tu servicio.*`, m);
   } catch (error) {
-    console.error(error);
-    await conn.reply(m.chat, `❌ *Error:* ${error.message || error}\n\n🔰 *Por favor, intenta nuevamente.*`, m);
+    console.error('❌ Error en .play:', error);
+    await conn.reply(
+      m.chat,
+      `❌ *Error:* ${error.message || error}\n\n🔰 *Por favor, intenta nuevamente.*`,
+      m
+    );
   }
 };
 
