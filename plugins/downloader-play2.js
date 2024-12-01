@@ -24,12 +24,12 @@ const handler = async (m, { conn, text, command, usedPrefix }) => {
       throw '❌ No se pudo obtener información del video. Verifica el enlace o título.';
     }
 
-    const { title, thumbnail } = videoInfo;
+    const { title, thumbnail, duration, views, uploaded } = videoInfo;
 
-    // Mostrar información del video
+    // Mostrar información del video antes de descargar
     await conn.reply(
       m.chat,
-      `🎥 *Título:* ${title}\n🖼️ *Thumbnail:* ${thumbnail}\n\n⏳ *Preparando descargas...*\n`,
+      `🔰 *Admin-TK Downloader*\n\n🎵 *Título:* ${title}\n⏳ *Duración:* ${duration}\n👁️ *Vistas:* ${views}\n📅 *Publicado:* ${uploaded}\n🌐 *Enlace:* ${text}\n\n🕒 *Preparando descarga...*`,
       m
     );
 
