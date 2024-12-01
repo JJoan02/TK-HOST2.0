@@ -137,8 +137,75 @@ Necesitas proporcionar una consulta de búsqueda.
   }
 };
 
+// Handler para el comando '.playvideo'
+let playVideoHandler = async (m, { conn, text, usedPrefix, command }) => {
+  if (!text) {
+    await conn.sendMessage(m.chat, {
+      text: `⚠️ *Admin-TK:*
+Necesitas proporcionar una consulta de búsqueda.
+
+*Ejemplo de uso:* *.playvideo Rosa pastel Belanova*`
+    }, { quoted: m });
+    await conn.sendMessage(m.chat, { react: { text: '❗', key: m.key } });
+    return;
+  }
+
+  // Enviar mensaje inicial indicando que se está procesando
+  let initialMessage = await conn.sendMessage(m.chat, {
+    text: '✧ Espere un momento...'
+  }, { quoted: m });
+  await conn.sendMessage(m.chat, { react: { text: '⏳', key: m.key } });
+
+  let results = await yts(text);
+  let tes = results.videos[0];
+  if (!tes) {
+    await conn.sendMessage(m.chat, {
+      text: '⚠️ *Admin-TK:* No se encontraron resultados para tu consulta. Por favor intenta ser un poco más específico.'
+    }, { quoted: m });
+    await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
+    return;
+  }
+
+  // Editar el mensaje inicial con la información detallada del video
+  await conn.sendMessage(m.chat, {
+    text: `🔰 *Admin-TK Downloader*
+
+🎵 *Título:* ${tes.title}
+⏳ *Duración:* ${tes.duration.timestamp}
+👁️ *Vistas:* ${tes.views}
+📅 *Publicado:* ${tes.ago}
+🌐 *Enlace:* ${tes.url}
+
+🕒 *Preparando descarga del video...*`,
+    edit: initialMessage.key
+  });
+
+  // Luego enviar el archivo de video
+  const videoDoc = {
+    video: { url: tes.url },
+    mimetype: 'video/mp4',
+    fileName: `${tes.title}.mp4`,
+    caption: `🎥 *${tes.title}*
+📽 *Fuente*: ${tes.url}`
+  };
+  try {
+    await conn.sendMessage(m.chat, videoDoc, { quoted: m });
+    m.reply('⚠️ *Admin-TK:* El video ha sido enviado exitosamente. Si necesitas algo más, no dudes en pedírmelo.');
+    await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
+  } catch (error) {
+    console.error('Error al enviar el video:', error);
+    m.reply('⚠️ *Admin-TK:* Hubo un error mientras intentaba enviar el archivo de video. Por favor, inténtalo nuevamente.');
+    await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
+  }
+};
+
 handler.help = ['play *<consulta>*'];
 handler.tags = ['downloader'];
 handler.command = /^(play)$/i;
 
+playVideoHandler.help = ['playvideo *<consulta>*'];
+playVideoHandler.tags = ['downloader'];
+playVideoHandler.command = /^(playvideo)$/i;
+
 export default handler;
+export { playVideoHandler };
