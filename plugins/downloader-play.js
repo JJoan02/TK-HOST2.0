@@ -1,162 +1,97 @@
 import axios from 'axios';
 import yts from 'yt-search';
-import fetch from 'node-fetch';
-import ffmpeg from 'fluent-ffmpeg';
 
 // Handler para el comando '.play'
 let handler = async (m, { conn, text, usedPrefix, command }) => {
   if (!text) {
-    return await handleMissingQuery(m, conn, usedPrefix, command);
+    await conn.sendMessage(m.chat, {
+      text: `⚠️ Necesitas proporcionar una consulta de búsqueda.\n\nEjemplo: *${usedPrefix}${command} Rosa pastel*`,
+    }, { quoted: m });
+    await conn.sendMessage(m.chat, { react: { text: '❗', key: m.key } });
+    return;
   }
 
   try {
-    const initialMessage = await sendInitialMessage(m, conn);
-    const videoData = await searchVideo(text);
+    // Mensaje inicial para el proceso
+    let statusMessage = await conn.sendMessage(m.chat, { text: '🔎 Buscando música...' }, { quoted: m });
+    await conn.sendMessage(m.chat, { react: { text: '⏳', key: m.key } });
+
+    // Buscar música en YouTube
+    let videoData = await searchVideo(text);
     if (!videoData) {
-      return await handleNoResults(m, conn);
+      await conn.sendMessage(m.chat, {
+        text: '⚠️ No se encontraron resultados. Intenta con una búsqueda más específica.',
+      }, { quoted: m });
+      await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
+      return;
     }
 
-    await updateVideoInfo(m, conn, initialMessage, videoData);
-    const { audioUrl, thumbBuffer } = await downloadMedia(videoData.url, text);
+    // Actualizar mensaje con detalles del audio
+    await updateStatusMessage(conn, statusMessage, videoData, '🎵 Música encontrada. Preparando descarga...');
+
+    // Descargar audio
+    const { audioUrl } = await downloadMedia(videoData.url, text);
     if (!audioUrl) {
-      return await handleDownloadError(m, conn, 'No se pudo obtener la URL del audio. Por favor inténtalo de nuevo.');
+      await conn.sendMessage(m.chat, {
+        text: '⚠️ No se pudo descargar el audio. Por favor inténtalo de nuevo.',
+      }, { quoted: m });
+      await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
+      return;
     }
-    await updateDownloadStatus(m, conn, initialMessage, videoData, 'Audio descargado...');
-    await sendAudioFile(m, conn, videoData, audioUrl, thumbBuffer);
+
+    // Descargar y enviar audio
+    await updateStatusMessage(conn, statusMessage, videoData, '⬇️ Descargando audio...');
+    await sendAudioFile(conn, m, videoData, audioUrl);
+
+    // Finalizar proceso
+    await updateStatusMessage(conn, statusMessage, videoData, '✅ Música descargada con éxito.');
+    await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
   } catch (error) {
-    console.error('Error en el proceso:', error);
-    await handleUnexpectedError(m, conn);
+    console.error('Error:', error);
+    await conn.sendMessage(m.chat, {
+      text: '⚠️ Ocurrió un error inesperado. Intenta de nuevo más tarde.',
+    }, { quoted: m });
+    await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
   }
 };
 
-// Handlers de errores comunes y manejo de mensajes
-async function handleMissingQuery(m, conn, usedPrefix, command) {
-  await conn.sendMessage(m.chat, {
-    text: `⚠️ *Admin-TK:*
-Necesitas proporcionar una consulta de búsqueda.
-
-*Ejemplo de uso:* *.${command} Rosa pastel Belanova*`
-  }, { quoted: m });
-  await conn.sendMessage(m.chat, { react: { text: '❗', key: m.key } });
-}
-
-async function handleNoResults(m, conn) {
-  await conn.sendMessage(m.chat, {
-    text: '⚠️ *Admin-TK:* No se encontraron resultados para tu consulta. Por favor intenta ser un poco más específico.'
-  }, { quoted: m });
-  await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
-}
-
-async function handleDownloadError(m, conn, message) {
-  await conn.sendMessage(m.chat, {
-    text: message
-  }, { quoted: m });
-  await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
-}
-
-async function handleUnexpectedError(m, conn) {
-  await conn.sendMessage(m.chat, {
-    text: '⚠️ *Admin-TK:* Ha ocurrido un error inesperado. Por favor intenta nuevamente más tarde.'
-  }, { quoted: m });
-  await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
-}
-
-// Enviar mensaje inicial indicando que se está procesando
-async function sendInitialMessage(m, conn) {
-  let initialMessage = await conn.sendMessage(m.chat, {
-    text: '✧ Espere un momento...'
-  }, { quoted: m });
-  await conn.sendMessage(m.chat, { react: { text: '⏳', key: m.key } });
-  return initialMessage;
-}
-
-// Buscar el video en YouTube
+// Buscar video en YouTube
 async function searchVideo(query) {
   let results = await yts(query);
-  return results.videos[0];
+  return results.videos.length ? results.videos[0] : null;
 }
 
-// Editar mensaje con la información del video
-async function updateVideoInfo(m, conn, initialMessage, videoData) {
-  await conn.sendMessage(m.chat, {
-    text: `🔰 *Admin-TK Downloader*
-
-🎵 *Título:* ${videoData.title}
-⏳ *Duración:* ${videoData.duration.timestamp}
-👁️ *Vistas:* ${videoData.views}
-📅 *Publicado:* ${videoData.ago}
-🌐 *Enlace:* ${videoData.url}
-
-🕒 *Preparando descarga...*`,
-    edit: initialMessage.key
+// Actualizar estado del mensaje
+async function updateStatusMessage(conn, message, videoData, status) {
+  await conn.sendMessage(message.key.remoteJid, {
+    text: `🔰 *Admin-TK Music Downloader*\n\n🎵 *Título:* ${videoData.title}\n⏳ *Duración:* ${videoData.duration.timestamp}\n👁️ *Vistas:* ${videoData.views}\n📅 *Publicado:* ${videoData.ago}\n🌐 *Enlace:* ${videoData.url}\n\n🕒 *${status}*`,
+    edit: message.key,
   });
 }
 
 // Descargar audio usando la API
 async function downloadMedia(url, text) {
   try {
-    const res = await axios.get(`https://Ikygantengbangetanjay-api.hf.space/yt?query=${encodeURIComponent(text)}`);
-    const video = res.data.result;
-    if (!video) throw new Error('Video/Audio no encontrado');
-    if (video.duration.seconds >= 3600) throw new Error('El audio es demasiado largo!');
-
-    const audioUrl = video.download.audio;
-    if (!audioUrl) throw new Error('No se pudo obtener la URL del audio. Por favor inténtalo de nuevo.');
-
-    const thumbBuffer = await getBuffer(video.thumbnail);
-    return { audioUrl, thumbBuffer };
+    const response = await axios.get(`https://Ikygantengbangetanjay-api.hf.space/yt?query=${encodeURIComponent(text)}`);
+    const result = response.data.result;
+    if (!result) throw new Error('No media found.');
+    if (result.duration.seconds > 3600) throw new Error('El audio es demasiado largo.');
+    return {
+      audioUrl: result.download.audio,
+    };
   } catch (error) {
-    console.error('Error al descargar el medio:', error.message);
+    console.error('Error al descargar audio:', error.message);
     throw error;
   }
 }
 
-async function getBuffer(url) {
-  const res = await axios({
-    method: 'get',
-    url,
-    responseType: 'arraybuffer'
-  });
-  return res.data;
-}
-
-// Editar mensaje indicando que el medio ha sido descargado
-async function updateDownloadStatus(m, conn, initialMessage, videoData, status) {
-  await conn.sendMessage(m.chat, {
-    text: `🔰 *Admin-TK Downloader*
-
-🎵 *Título:* ${videoData.title}
-⏳ *Duración:* ${videoData.duration.timestamp}
-👁️ *Vistas:* ${videoData.views}
-📅 *Publicado:* ${videoData.ago}
-🌐 *Enlace:* ${videoData.url}
-
-🕒 *${status}*`,
-    edit: initialMessage.key
-  });
-  await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
-}
-
 // Enviar el archivo de audio descargado
-async function sendAudioFile(m, conn, videoData, downloadUrl, thumbBuffer) {
-  const doc = {
-    audio: { url: downloadUrl },
+async function sendAudioFile(conn, m, videoData, audioUrl) {
+  await conn.sendMessage(m.chat, {
+    audio: { url: audioUrl },
     mimetype: 'audio/mpeg',
     fileName: `${videoData.title}.mp3`,
-    jpegThumbnail: thumbBuffer,
-    contextInfo: {
-      externalAdReply: {
-        showAdAttribution: true,
-        mediaType: 2,
-        mediaUrl: videoData.url,
-        title: videoData.title,
-        sourceUrl: videoData.url,
-        thumbnail: thumbBuffer
-      }
-    }
-  };
-  await conn.sendMessage(m.chat, doc, { quoted: m });
-  await conn.sendMessage(m.chat, { text: '⚠️ *Admin-TK:* El archivo ha sido enviado exitosamente. Si necesitas algo más, no dudes en pedírmelo.', quoted: m });
+  }, { quoted: m });
 }
 
 handler.help = ['play *<consulta>*'];
