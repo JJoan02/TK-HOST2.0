@@ -1,138 +1,131 @@
-import axios from "axios";
-import yts from "yt-search";
+import axios from 'axios';
+import yts from 'yt-search';
 
-let activeDownloads = {}; // Para controlar solicitudes activas por usuario
-let downloadQueue = []; // Cola de descargas pendientes
-
-// Handler principal
-let handler = async (m, { conn, args, usedPrefix, command, text }) => {
-  if (!text || text.trim() === "") {
-    return m.reply(`Ejemplo: ${usedPrefix + command} Belanova Rosa Pastel`);
+let handler = async (m, { conn, text, usedPrefix, command }) => {
+  if (!text) {
+    return await handleMissingQuery(m, conn, usedPrefix, command);
   }
-
-  const userId = m.sender;
-
-  // Verificar si ya hay una solicitud activa del mismo usuario
-  if (activeDownloads[userId]) {
-    return notifyUserActiveRequest(m, conn);
-  }
-
-  // Si hay descargas en proceso, agregar a la cola
-  if (Object.keys(activeDownloads).length > 0) {
-    downloadQueue.push({ userId, conn, text, m, command });
-    return notifyUserAddedToQueue(m, conn);
-  }
-
-  // Iniciar la descarga
-  await processDownloadRequest({ userId, conn, text, m, command });
-};
-
-// Procesar la solicitud de descarga
-async function processDownloadRequest({ userId, conn, text, m, command }) {
-  activeDownloads[userId] = true; // Marcar al usuario como activo
 
   try {
-    m.reply("⏳ Procesando tu solicitud, espera un momento...");
-
-    // Buscar el video
-    const searchResult = await yts(text);
-    const video = searchResult.videos[0];
-    if (!video) {
-      delete activeDownloads[userId];
-      return m.reply("❌ No se encontraron resultados para tu consulta.");
+    const initialMessage = await sendInitialMessage(m, conn);
+    const videoData = await searchVideo(text);
+    if (!videoData || videoData.duration.seconds === 0) {
+      return await handleNoResultsOrInvalidVideo(m, conn, initialMessage);
     }
 
-    // Validar duración
-    if (video.duration.seconds >= 3600) {
-      delete activeDownloads[userId];
-      return m.reply("❌ El video es demasiado largo. Máximo permitido: 1 hora.");
+    await updateMessage(m, conn, initialMessage, `🎬 *Buscando video...*\n🔰 *Título:* ${videoData.title}\n⏳ *Duración:* ${videoData.duration.timestamp}\n👁️ *Vistas:* ${videoData.views}\n📅 *Publicado:* ${videoData.ago}`);
+
+    const { videoUrl, audioUrl, thumbBuffer } = await downloadMediaWithQualityControl(videoData.url, text);
+    if (!videoUrl) {
+      return await handleDownloadError(m, conn, initialMessage, 'No se pudo obtener la URL del video. Por favor inténtalo de nuevo.');
     }
 
-    // Obtener URLs de descarga
-    const res = await axios.get(`https://Ikygantengbangetanjay-api.hf.space/yt?query=${encodeURIComponent(text)}`);
-    const videoData = res.data.result;
-    if (!videoData || !videoData.download.video || !videoData.download.audio) {
-      delete activeDownloads[userId];
-      return m.reply("❌ No se pudo obtener las URLs del video/audio.");
+    // Descargar y enviar el video
+    await updateMessage(m, conn, initialMessage, '🎥 *Descargando video...*');
+    await sendVideoFile(m, conn, videoData, videoUrl, thumbBuffer);
+    await updateMessage(m, conn, initialMessage, '✅ *Video descargado con éxito...*');
+
+    // Descargar y enviar el audio
+    if (!audioUrl) {
+      return await handleDownloadError(m, conn, initialMessage, 'No se pudo obtener la URL del audio. Por favor inténtalo de nuevo.');
     }
 
-    const videoUrl = videoData.download.video;
-    const audioUrl = videoData.download.audio;
-
-    // Obtener miniatura
-    const thumbBuffer = await getBuffer(video.thumbnail);
-
-    // Enviar el video
-    m.reply("🎥 Descargando video...");
-    await conn.sendMessage(
-      m.chat,
-      {
-        video: { url: videoUrl },
-        mimetype: "video/mp4",
-        fileName: `${video.title}.mp4`,
-        jpegThumbnail: thumbBuffer,
-        caption: `🎥 *Título:* ${video.title}\n📽 *Fuente:* ${video.url}\n⏳ *Duración:* ${video.timestamp}`,
-      },
-      { quoted: m }
-    );
-    m.reply("✅ Video descargado con éxito.");
-
-    // Enviar el audio
-    m.reply("🎶 Descargando audio...");
-    await conn.sendMessage(
-      m.chat,
-      {
-        audio: { url: audioUrl },
-        mimetype: "audio/mpeg",
-        fileName: `${video.title}.mp3`,
-        jpegThumbnail: thumbBuffer,
-      },
-      { quoted: m }
-    );
-    m.reply("✅ Audio descargado con éxito.");
-  } catch (e) {
-    console.error("Error en el proceso:", e);
-    m.reply(`❌ Error al procesar tu solicitud: ${e.message}`);
-  } finally {
-    delete activeDownloads[userId]; // Liberar al usuario activo
-    processNextInQueue(); // Procesar la siguiente solicitud en la cola
+    await updateMessage(m, conn, initialMessage, '🎶 *Descargando audio...*');
+    await sendAudioFile(m, conn, videoData, audioUrl, thumbBuffer);
+    await updateMessage(m, conn, initialMessage, '✅ *Audio descargado con éxito...*');
+  } catch (error) {
+    console.error('Error en el proceso:', error);
+    await handleUnexpectedError(m, conn, initialMessage);
   }
+};
+
+// Manejo de errores comunes
+async function handleMissingQuery(m, conn, usedPrefix, command) {
+  await conn.sendMessage(m.chat, {
+    text: `⚠️ Necesitas proporcionar una consulta de búsqueda.\n\nEjemplo: *${usedPrefix}${command} Rosa pastel Belanova*`,
+  }, { quoted: m });
 }
 
-// Procesar la siguiente solicitud en la cola
-function processNextInQueue() {
-  if (downloadQueue.length > 0) {
-    const nextRequest = downloadQueue.shift();
-    processDownloadRequest(nextRequest);
+async function handleNoResultsOrInvalidVideo(m, conn, initialMessage) {
+  await updateMessage(m, conn, initialMessage, '❌ No se encontraron resultados o el video es inválido. Por favor intenta con otra consulta.');
+}
+
+async function handleDownloadError(m, conn, initialMessage, message) {
+  await updateMessage(m, conn, initialMessage, `❌ ${message}`);
+}
+
+async function handleUnexpectedError(m, conn, initialMessage) {
+  await updateMessage(m, conn, initialMessage, '⚠️ Ha ocurrido un error inesperado. Por favor intenta nuevamente más tarde.');
+}
+
+// Enviar mensaje inicial
+async function sendInitialMessage(m, conn) {
+  const initialMessage = await conn.sendMessage(m.chat, { text: '✧ *Espere un momento...*' }, { quoted: m });
+  return initialMessage;
+}
+
+// Actualizar mensaje existente
+async function updateMessage(m, conn, initialMessage, newText) {
+  await conn.sendMessage(m.chat, { text: newText, edit: initialMessage.key });
+}
+
+// Buscar video en YouTube
+async function searchVideo(query) {
+  const results = await yts(query);
+  return results.videos[0];
+}
+
+// Descargar video y audio
+async function downloadMediaWithQualityControl(url, text) {
+  const qualities = ['1080p', '720p', '480p', '360p', '240p', '144p'];
+  for (let quality of qualities) {
+    try {
+      const res = await axios.get(`https://example-api.com/yt?query=${encodeURIComponent(text)}&quality=${quality}`);
+      const video = res.data.result;
+      if (!video || video.duration.seconds === 0) throw new Error('Video inválido');
+
+      const audioUrl = video.download.audio;
+      const videoUrl = video.download.video;
+      const thumbBuffer = await getBuffer(video.thumbnail);
+      return { audioUrl, videoUrl, thumbBuffer };
+    } catch (error) {
+      console.error(`Error al intentar descargar en calidad ${quality}:`, error.message);
+    }
   }
+  throw new Error('No se pudo descargar el video en ninguna calidad disponible.');
 }
 
-// Notificar al usuario que tiene una solicitud activa
-async function notifyUserActiveRequest(m, conn) {
-  await conn.sendMessage(
-    m.chat,
-    { text: "⚠️ Ya tienes una solicitud en proceso. Por favor espera a que termine." },
-    { quoted: m }
-  );
-}
-
-// Notificar al usuario que fue añadido a la cola
-async function notifyUserAddedToQueue(m, conn) {
-  await conn.sendMessage(
-    m.chat,
-    { text: "📥 Tu solicitud ha sido añadida a la cola. Se procesará pronto." },
-    { quoted: m }
-  );
-}
-
-// Obtener buffer de imágenes
+// Obtener buffer de miniatura
 async function getBuffer(url) {
-  const res = await axios.get(url, { responseType: "arraybuffer" });
+  const res = await axios.get(url, { responseType: 'arraybuffer' });
   return res.data;
 }
 
-handler.help = ["playvid *<consulta>*"];
-handler.tags = ["downloader"];
-handler.command = /^(playvid|playvideo)$/i;
+// Enviar archivo de video
+async function sendVideoFile(m, conn, videoData, videoUrl, thumbBuffer) {
+  const videoDoc = {
+    video: { url: videoUrl },
+    mimetype: 'video/mp4',
+    fileName: `${videoData.title}.mp4`,
+    jpegThumbnail: thumbBuffer,
+    caption: `🎥 *${videoData.title}*\n📽 *Fuente:* ${videoData.url}`,
+  };
+  await conn.sendMessage(m.chat, videoDoc, { quoted: m });
+}
+
+// Enviar archivo de audio
+async function sendAudioFile(m, conn, videoData, audioUrl, thumbBuffer) {
+  const audioDoc = {
+    audio: { url: audioUrl },
+    mimetype: 'audio/mpeg',
+    fileName: `${videoData.title}.mp3`,
+    jpegThumbnail: thumbBuffer,
+  };
+  await conn.sendMessage(m.chat, audioDoc, { quoted: m });
+}
+
+handler.help = ['play2 *<consulta>*', 'playvideo *<consulta>*'];
+handler.tags = ['downloader'];
+handler.command = /^(play2|playvideo)$/i;
 
 export default handler;
