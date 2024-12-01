@@ -16,23 +16,25 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
       return await handleNoResults(m, conn);
     }
 
-    await updateVideoInfo(m, conn, initialMessage, videoData);
+    await updateVideoInfo(m, conn, initialMessage, videoData, '🕒 *Preparando descarga del video...*');
     const { videoUrl, audioUrl, thumbBuffer } = await downloadMediaWithQualityControl(videoData.url, text);
     if (!videoUrl) {
       return await handleDownloadError(m, conn, 'No se pudo obtener la URL del video. Por favor inténtalo de nuevo.');
     }
 
     // Enviar el video primero
-    await updateDownloadStatus(m, conn, initialMessage, videoData, 'Video descargado...');
     await sendVideoFile(m, conn, videoData, videoUrl, thumbBuffer);
+    await updateVideoInfo(m, conn, initialMessage, videoData, '🎬 *Video descargado...*
+🎶 *Preparando descarga de audio*');
 
     if (!audioUrl) {
       return await handleDownloadError(m, conn, 'No se pudo obtener la URL del audio. Por favor inténtalo de nuevo.');
     }
 
     // Enviar el audio después
-    await updateDownloadStatus(m, conn, initialMessage, videoData, 'Audio descargado...');
     await sendAudioFile(m, conn, videoData, audioUrl, thumbBuffer);
+    await updateVideoInfo(m, conn, initialMessage, videoData, '🎬 *Video descargado...*
+🎶 *Audio descargado...*');
   } catch (error) {
     console.error('Error en el proceso:', error);
     await handleUnexpectedError(m, conn);
@@ -74,7 +76,7 @@ async function handleUnexpectedError(m, conn) {
 // Enviar mensaje inicial indicando que se está procesando
 async function sendInitialMessage(m, conn) {
   let initialMessage = await conn.sendMessage(m.chat, {
-    text: '✧ Espere un momento...'
+    text: '✧ Procesando solicitud un momento...'
   }, { quoted: m });
   await conn.sendMessage(m.chat, { react: { text: '⏳', key: m.key } });
   return initialMessage;
@@ -87,7 +89,7 @@ async function searchVideo(query) {
 }
 
 // Editar mensaje con la información del video
-async function updateVideoInfo(m, conn, initialMessage, videoData) {
+async function updateVideoInfo(m, conn, initialMessage, videoData, status) {
   await conn.sendMessage(m.chat, {
     text: `🔰 *Admin-TK Downloader*
 
@@ -97,7 +99,7 @@ async function updateVideoInfo(m, conn, initialMessage, videoData) {
 📅 *Publicado:* ${videoData.ago}
 🌐 *Enlace:* ${videoData.url}
 
-🕒 *Preparando descarga...*`,
+${status}`,
     edit: initialMessage.key
   });
 }
@@ -134,23 +136,6 @@ async function getBuffer(url) {
   return res.data;
 }
 
-// Editar mensaje indicando que el medio ha sido descargado
-async function updateDownloadStatus(m, conn, initialMessage, videoData, status) {
-  await conn.sendMessage(m.chat, {
-    text: `🔰 *Admin-TK Downloader*
-
-🎵 *Título:* ${videoData.title}
-⏳ *Duración:* ${videoData.duration.timestamp}
-👁️ *Vistas:* ${videoData.views}
-📅 *Publicado:* ${videoData.ago}
-🌐 *Enlace:* ${videoData.url}
-
-🕒 *${status}*`,
-    edit: initialMessage.key
-  });
-  await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
-}
-
 // Enviar el archivo de audio descargado
 async function sendAudioFile(m, conn, videoData, downloadUrl, thumbBuffer) {
   const doc = {
@@ -170,7 +155,6 @@ async function sendAudioFile(m, conn, videoData, downloadUrl, thumbBuffer) {
     }
   };
   await conn.sendMessage(m.chat, doc, { quoted: m });
-  await conn.sendMessage(m.chat, { text: '⚠️ *Admin-TK:* El archivo ha sido enviado exitosamente. Si necesitas algo más, no dudes en pedírmelo.', quoted: m });
 }
 
 // Enviar archivo de video descargado
@@ -184,8 +168,6 @@ async function sendVideoFile(m, conn, videoData, videoUrl, thumbBuffer) {
 📽 *Fuente*: ${videoData.url}`
   };
   await conn.sendMessage(m.chat, videoDoc, { quoted: m });
-  await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
-  await conn.sendMessage(m.chat, { text: '⚠️ *Admin-TK:* El video ha sido enviado exitosamente. Si necesitas algo más, no dudes en pedírmelo.', quoted: m });
 }
 
 handler.help = ['play2 *<consulta>*', 'playvideo *<consulta>*'];
@@ -193,3 +175,4 @@ handler.tags = ['downloader'];
 handler.command = /^(play2|playvideo)$/i;
 
 export default handler;
+        
