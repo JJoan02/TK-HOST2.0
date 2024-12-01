@@ -19,37 +19,33 @@ const estilo = (text, style = 1) => {
 };
 
 const tags = {
-    main: '`💎 FUNCIONES PRINCIPALES`',
-    group: '`👥 CONFIGURACIÓN DE GRUPOS`',
-    search: '`🔍 BÚSQUEDA`',
-    downloader: '`⬇️ DESCARGAS`',
-    nsfw: '`🔞 CONTENIDO ADULTO`',
-    tools: '`🔧 HERRAMIENTAS`'
+    general: '`💎 ꜰᴜɴᴄɪᴏɴᴇꜱ Generales`',
+    group: '`👥 ᴄᴏɴꜰɪɢᴜʀᴀᴄɪóɴ ᴅᴇ ɢʀᴜᴘᴏꜱ`',
+    search: '`🔍 ʙúꜱqᴜᴇᴅᴀ`',
+    downloader: '`⬇️ ᴅᴇꜱᴄᴀʀɢᴀꜱ`',
+    nsfw: '`🔞 ᴄᴏɴᴛᴇɴɪᴅᴏ ᴀᴅᴜʟᴛᴏ`',
+    tools: '`🔧 ʜᴇʀʀᴀᴍɪᴇɴᴛᴀꜱ`'
 };
 
 const defaultMenu = {
     before: `
 ╔════════════════════════════╗
-║     📜 *GUÍA DEL MENÚ TK* 📜     
+║     📜 *ɢᴜíᴀ ᴅᴇʟ ᴍᴇɴú ᴛᴋ* 📜     
 ╚════════════════════════════╝
 
-👋 *Hola, %names*.  
-En este menú encontrarás las categorías disponibles.  
+👋 *ʜᴏʟᴀ, %names*.  
+ᴇɴ ᴇꜱᴛᴇ ᴍᴇɴú ᴇɴᴄᴏɴᴛʀᴀʀáꜱ ʟᴀꜱ ᴄᴀᴛᴇɢᴏʀíᴀꜱ ᴅɪꜱᴘᴏɴɪʙʟᴇꜱ.  
 
-🗓️ Fecha: %date  
-⏰ Hora: %time  
-👥 Usuarios registrados: %totalreg  
+🗓️ ꜰᴇᴄʜᴀ: %date  
+⏰ ʜᴏʀᴀ: %time  
+👥 ᴜꜱᴜᴀʀɪᴏꜱ ʀᴇɢɪꜱᴛʀᴀᴅᴏꜱ: %totalreg  
 
-🛠️ *¿Cómo usar este menú?*
-1️⃣ Busca la categoría deseada.  
-2️⃣ Usa el comando correspondiente para entrar al submenú.  
-
-🌟 _Consulta esta guía siempre que necesites orientación._  
+🌟 _ᴄᴏɴꜱᴜʟᴛᴀ ᴇꜱᴛᴀ ɢᴜíᴀ ꜱɪᴇᴍᴘʀᴇ qᴜᴇ ɴᴇᴄᴇꜱɪᴛᴇꜱ ᴏʀɪᴇɴᴛᴀᴄɪóɴ._  
 `.trimStart(),
-    body: `➤ %cmd - %description`,
+    body: `➤   %description\n> .         %cmd`,
     after: `
-🌐 **Comunidad TK: Más que un bot, somos un equipo.**  
-👑 *Admin-TK está siempre contigo.*`,
+
+> 👑 *Admin-TK / Comunidad TK*`,
 };
 
 const handler = async (m, { conn, usedPrefix: _p }) => {
@@ -102,10 +98,49 @@ const subMenuHandler = async (m, { conn, usedPrefix: _p, command }) => {
         let subMenuText = '';
 
         switch (command) {
+            case 'menugeneral':
+                subMenuText = `
+╔════════════════════════════╗
+║     💎 *ᴍᴇɴú ꜰᴜɴᴄɪᴏɴᴇꜱ ɢᴇɴᴇʀᴀʟᴇꜱ* 💎     
+╚════════════════════════════╝
+
+📋 *Instrucciones:*
+- Usa los comandos a continuación para acceder a las funciones generales.
+
+➤ \`.generalcmd1\` - Descripción del comando 1.
+➤ \`.generalcmd2\` - Descripción del comando 2.
+`;
+                break;
+            case 'menugrupo':
+                subMenuText = `
+╔════════════════════════════╗
+║     👥 *ᴍᴇɴú ᴄᴏɴꜰɪɢᴜʀᴀᴄɪóɴ ᴅᴇ ɢʀᴜᴘᴏꜱ* 👥     
+╚════════════════════════════╝
+
+📋 *Instrucciones:*
+- Usa los comandos a continuación para configurar los grupos.
+
+➤ \`.grupocmd1\` - Descripción del comando 1.
+➤ \`.grupocmd2\` - Descripción del comando 2.
+`;
+                break;
+            case 'menusearch':
+                subMenuText = `
+╔════════════════════════════╗
+║     🔍 *ᴍᴇɴú ʙúꜱqᴜᴇᴅᴀ* 🔍     
+╚════════════════════════════╝
+
+📋 *Instrucciones:*
+- Usa los comandos a continuación para realizar búsquedas.
+
+➤ \`.searchcmd1\` - Descripción del comando 1.
+➤ \`.searchcmd2\` - Descripción del comando 2.
+`;
+                break;
             case 'menudescargas':
                 subMenuText = `
 ╔════════════════════════════╗
-║     ⬇️ *MENÚ DESCARGAS* ⬇️     
+║     ⬇️ *ᴍᴇɴú ᴅᴇꜱᴄᴀʀɢᴀꜱ* ⬇️     
 ╚════════════════════════════╝
 
 📋 *Instrucciones:*
@@ -119,7 +154,7 @@ const subMenuHandler = async (m, { conn, usedPrefix: _p, command }) => {
             case 'menunsfw':
                 subMenuText = `
 ╔════════════════════════════╗
-║     🔞 *MENÚ NSFW* 🔞     
+║     🔞 *ᴍᴇɴú ᴄᴏɴᴛᴇɴɪᴅᴏ ᴀᴅᴜʟᴛᴏ* 🔞     
 ╚════════════════════════════╝
 
 📋 *Instrucciones:*
@@ -133,7 +168,7 @@ const subMenuHandler = async (m, { conn, usedPrefix: _p, command }) => {
             case 'menutools':
                 subMenuText = `
 ╔════════════════════════════╗
-║     🔧 *MENÚ HERRAMIENTAS* 🔧     
+║     🔧 *ᴍᴇɴú ʜᴇʀʀᴀᴍɪᴇɴᴛᴀꜱ* 🔧     
 ╚════════════════════════════╝
 
 📋 *Instrucciones:*
@@ -149,9 +184,9 @@ const subMenuHandler = async (m, { conn, usedPrefix: _p, command }) => {
 
         const text = `
 ${subMenuText}
-🗓️ Fecha: ${date}  
-⏰ Hora: ${time}  
-👥 Usuarios registrados: ${totalreg}
+🗓️ ꜰᴇᴄʜᴀ: ${date}  
+⏰ ʜᴏʀᴀ: ${time}  
+👥 ᴜꜱᴜᴀʀɪᴏꜱ ʀᴇɢɪꜱᴛʀᴀᴅᴏꜱ: ${totalreg}
 `;
 
         await conn.sendMessage(m.chat, estilo(text), m);
@@ -166,9 +201,9 @@ handler.tags = ['main'];
 handler.command = ['menu', 'allmenu'];
 
 export const subMenuHandlerExport = {
-    help: ['menudescargas', 'menunsfw', 'menutools'],
+    help: ['menugeneral', 'menugrupo', 'menusearch', 'menudescargas', 'menunsfw', 'menutools'],
     tags: ['main'],
-    command: ['menudescargas', 'menunsfw', 'menutools'],
+    command: ['menugeneral', 'menugrupo', 'menusearch', 'menudescargas', 'menunsfw', 'menutools'],
     handler: subMenuHandler,
 };
 
