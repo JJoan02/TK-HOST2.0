@@ -1,97 +1,116 @@
-import axios from 'axios';
 import yts from 'yt-search';
+import axios from 'axios';
+import { yta, ytv } from 'api-dylux'; // Herramientas para descargar audio/video
 
-let handler = async (m, { conn, text, usedPrefix, command }) => {
-  if (!text) {
-    await m.react('❌');
-    throw m.reply(`⚠️ *Admin-TK:* Necesitas proporcionar una consulta de búsqueda.
-
-*Ejemplo de uso:* ${usedPrefix + command} Joji Ew`);
-  }
-
+const handler = async (m, { conn, text, usedPrefix, command }) => {
   try {
-    await m.react('🔍');
-    let results = await yts(text);
-    if (!results || results.videos.length === 0) {
-      await m.react('❌');
-      throw m.reply(`⚠️ *Admin-TK:* No se encontraron resultados para "${text}".`);
+    if (!text) {
+      return conn.reply(
+        m.chat,
+        `🌟 *Admin-TK te pregunta:*
+
+¿Qué deseas buscar? Escribe el título o enlace después del comando.
+
+📌 Ejemplo: *${usedPrefix}${command} Joji - Glimpse of Us*`,
+        m
+      );
     }
 
-    let tes = results.videos[0];
-    if (!tes || !tes.url) {
-      await m.react('❌');
-      throw m.reply(`⚠️ *Admin-TK:* No se pudo obtener la URL del video.`);
+    await m.react("⏳");
+
+    // Realizar la búsqueda en YouTube
+    const res = await yts(text);
+    const video = res.videos[0];
+
+    if (!video) {
+      return conn.reply(m.chat, "❌ *No se encontraron resultados para tu búsqueda.*", m);
     }
 
-    await m.react('⏳');
-    const baseUrl = 'https://cuka.rfivecode.com';
-    const cukaDownloader = {
-      youtube: async (url, exct) => {
-        const format = ['mp3', 'mp4'];
+    const { title, url, thumbnail, timestamp, views, ago } = video;
+
+    // Mostrar información del video
+    const infoText = `🔰 *Admin-TK Downloader*
+
+🎥 *Título:* ${title}
+⏳ *Duración:* ${timestamp}
+👁️ *Vistas:* ${views.toLocaleString()}
+📅 *Publicado:* ${ago}
+🌐 *Enlace:* ${url}`;
+    await conn.reply(m.chat, infoText, m);
+
+    // Descargar video en máxima calidad
+    try {
+      let videoData;
+      const qualities = ["1080p", "720p", "480p", "360p"];
+      for (const quality of qualities) {
         try {
-          const response = await fetch(`${baseUrl}/download`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ url, format: exct }),
-          });
-
-          const data = await response.json();
-          if (!data || !data.downloadUrl) {
-            throw new Error('No se pudo obtener el enlace de descarga.');
-          }
-          return data;
-        } catch (error) {
-          console.error('Error:', error);
-          return { success: false, message: error.message };
+          videoData = await ytv(url, quality);
+          if (videoData) break;
+        } catch (e) {
+          continue;
         }
-      },
-    };
+      }
 
-    let dataos = await cukaDownloader.youtube(tes.url, 'mp3');
-    if (!dataos || !dataos.downloadUrl) {
-      await m.react('❌');
-      throw m.reply(`⚠️ *Admin-TK:* Hubo un problema al intentar descargar el audio. ${dataos.message || ''}`);
+      if (!videoData) {
+        throw new Error("No se encontró una calidad disponible.");
+      }
+
+      const { dl_url: videoUrl, size: videoSize } = videoData;
+
+      if (parseFloat(videoSize.split("MB")[0]) > 1000) {
+        return conn.reply(
+          m.chat,
+          `❌ *El archivo MP4 es demasiado grande (${videoSize}). Intenta con otro video.*`,
+          m
+        );
+      }
+
+      await conn.sendMessage(
+        m.chat,
+        { video: { url: videoUrl }, caption: `🎥 *Video descargado con éxito.*
+
+🔰 *Admin-TK*`, fileName: `${title}.mp4` },
+        { quoted: m }
+      );
+    } catch (error) {
+      console.error("Error al descargar el video:", error.message);
+      await conn.reply(m.chat, "❌ *No se pudo descargar el video en alta calidad.*", m);
     }
 
-    let { title, thumbnail, quality, downloadUrl } = dataos;
-    if (!title || !thumbnail || !downloadUrl) {
-      await m.react('❌');
-      throw m.reply(`⚠️ *Admin-TK:* Faltan datos necesarios para enviar el archivo.`);
+    // Descargar audio en MP3
+    try {
+      const audioData = await yta(url, "128kbps");
+      const { dl_url: audioUrl, size: audioSize } = audioData;
+
+      if (parseFloat(audioSize.split("MB")[0]) > 100) {
+        return conn.reply(
+          m.chat,
+          `❌ *El archivo MP3 es demasiado grande (${audioSize}). Intenta con otro video.*`,
+          m
+        );
+      }
+
+      await conn.sendMessage(
+        m.chat,
+        { audio: { url: audioUrl }, mimetype: "audio/mp3", fileName: `${title}.mp3` },
+        { quoted: m }
+      );
+    } catch (error) {
+      console.error("Error al descargar el audio:", error.message);
+      await conn.reply(m.chat, "❌ *No se pudo descargar el audio MP3.*", m);
     }
 
-    await m.react('✅');
-    m.reply(`✨ *Admin-TK:* Enviando "${title}" (${quality})
-
-🔗 *Link:* ${tes.url}`);
-
-    const doc = {
-      audio: { url: downloadUrl },
-      mimetype: 'audio/mp4',
-      fileName: `${title}.mp3`,
-      contextInfo: {
-        externalAdReply: {
-          showAdAttribution: true,
-          mediaType: 2,
-          mediaUrl: tes.url,
-          title: title,
-          sourceUrl: tes.url,
-          thumbnail: await (await conn.getFile(thumbnail)).data,
-        },
-      },
-    };
-
-    await conn.sendMessage(m.chat, doc, { quoted: m });
-  } catch (e) {
-    await m.react('❌');
-    console.error(e);
-    m.reply(`⚠️ *Admin-TK:* Ocurrió un error inesperado. Por favor, intenta nuevamente.`);
+    await m.react("✅");
+  } catch (error) {
+    console.error(error);
+    await conn.reply(m.chat, `❌ *Error:* ${error.message || "Algo salió mal."}`, m);
+    await m.react("❌");
   }
 };
 
-handler.help = ['play2 *<consulta>*'];
-handler.tags = ['downloader'];
-handler.command = /^(play2)$/i;
+handler.help = ["play2"].map((v) => v + " <título o enlace>");
+handler.tags = ["downloader"];
+handler.command = ["play2"];
+handler.register = true;
 
 export default handler;
