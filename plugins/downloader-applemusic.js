@@ -30,14 +30,14 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     const { name, albumname, artist, url, thumb, duration, download } = musicData;
     const songInfo = `🔰 *Admin-TK Apple Music Downloader*\n\n🎵 *Título:* ${name}\n🎤 *Artista:* ${artist}\n📀 *Álbum:* ${albumname}\n⏳ *Duración:* ${duration}\n🔗 *Enlace:* ${url}`;
 
-    // Actualizar mensaje con información del audio
+    // Actualizar mensaje con información de la música
     await conn.sendMessage(m.chat, {
       text: `${songInfo}\n\n⬇️ Descargando audio...`,
       edit: statusMessage.key,
     });
 
     // Descargar y enviar música
-    const thumbnailBuffer = await fetch(thumb).then(res => res.buffer());
+    const thumbnailBuffer = await axios.get(thumb, { responseType: 'arraybuffer' }).then(res => res.data);
     await conn.sendMessage(m.chat, {
       audio: { url: download },
       mimetype: 'audio/mp4',
@@ -61,7 +61,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     });
     await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error:', error.message);
     await conn.sendMessage(m.chat, {
       text: '⚠️ Ocurrió un error inesperado. Por favor inténtalo nuevamente más tarde.',
     }, { quoted: m });
