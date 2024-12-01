@@ -1,44 +1,71 @@
 import axios from 'axios';
-import qs from 'qs';
+import m3u8 from 'm3u8-parser';
+import fs from 'fs';
+import path from 'path';
+import { exec } from 'child_process';
 
-let handler = async (m, { conn, text, usedPrefix, command }) => {
-  if (!text) throw `❌ Uso correcto: ${usedPrefix + command} <link de Apple Music>. ¡Descarga estilo Admin-TK!`;
+// Función principal para manejar descargas
+const downloadAppleMusic = async (url) => {
+  try {
+    const response = await axios.get(`https://music.apple.com/us/api?url=${url}`);
+    const data = response.data;
 
-  const downloadAppleMusicTK = async (url) => {
-    try {
-      const apiUrl = `https://aaplmusicdownloader.com/api/applesearch.php?url=${url}`;
-      const { data } = await axios.get(apiUrl);
-      return data;
-    } catch (error) {
-      console.error("⚠️ Error TK:", error.message);
-      return null;
+    if (!data.streams || data.streams.length === 0) {
+      throw new Error('No se encontraron streams para descargar.');
     }
-  };
 
-  await conn.sendMessage(m.chat, { react: { text: "⏬", key: m.key } });
+    const stream = data.streams[0]; // Usamos el primer stream disponible
+    const playlistUrl = stream.uri;
 
-  const trackData = await downloadAppleMusicTK(text);
+    const parser = new m3u8.Parser();
+    const playlist = await axios.get(playlistUrl);
+    parser.push(playlist.data);
+    parser.end();
 
-  if (!trackData) throw '⚠️ Admin-TK no pudo descargar la canción. Inténtalo de nuevo.';
+    const segments = parser.manifest.segments.map((segment) => segment.uri);
 
-  const doc = {
-    audio: { url: trackData.dlink },
-    mimetype: 'audio/mp4',
-    fileName: `TK-${trackData.name}.mp3`,
-    contextInfo: {
-      externalAdReply: {
-        showAdAttribution: true,
-        mediaType: 2,
-        mediaUrl: text,
-        title: `🎵 ${trackData.name}`,
-        sourceUrl: text,
-        thumbnail: await (await conn.getFile(trackData.thumb)).data,
-      },
-    },
-  };
+    const fileName = `${data.id}.mp4`;
+    const filePath = path.resolve(__dirname, 'downloads', fileName);
 
-  await conn.sendMessage(m.chat, doc, { quoted: m });
-  await conn.sendMessage(m.chat, { react: { text: "✅", key: m.key } });
+    if (!fs.existsSync(path.dirname(filePath))) {
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    }
+
+    for (const segment of segments) {
+      const segmentData = await axios.get(segment, { responseType: 'arraybuffer' });
+      fs.appendFileSync(filePath, segmentData.data);
+    }
+
+    console.log(`✅ Descarga completa: ${filePath}`);
+    return filePath;
+  } catch (error) {
+    console.error(`❌ Error durante la descarga: ${error.message}`);
+    throw error;
+  }
+};
+
+// Handler principal
+let handler = async (m, { conn, text, usedPrefix, command }) => {
+  if (!text) {
+    throw `❌ Uso correcto: ${usedPrefix + command} <link de Apple Music>`;
+  }
+
+  try {
+    conn.sendMessage(m.chat, { react: { text: '⏬', key: m.key } });
+
+    const downloadedFile = await downloadAppleMusic(text);
+
+    await conn.sendMessage(m.chat, {
+      document: { url: downloadedFile },
+      fileName: path.basename(downloadedFile),
+      mimetype: 'audio/mp4',
+      quoted: m,
+    });
+
+    conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
+  } catch (error) {
+    m.reply(`❌ Error al descargar: ${error.message}`);
+  }
 };
 
 handler.help = ['applemusic <link>'];
