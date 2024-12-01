@@ -1,95 +1,71 @@
-import axios from 'axios';
 import yts from 'yt-search';
+import axios from 'axios';
 
-let handler = async (m, { conn, text, usedPrefix, command }) => {
-
-  if (!text) throw m.reply(`Ejemplo de uso: ${usedPrefix + command} Joji Ew`);
-  
-    let results = await yts(text);
-    let tes = results.videos[0]
-    
-const baseUrl = 'https://cuka.rfivecode.com';
-const cukaDownloader = {
-  youtube: async (url, exct) => {
-    const format = [ 'mp3', 'mp4' ];
-    try {
-      const response = await fetch(`${baseUrl}/download`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-          body: JSON.stringify({ url, format: exct })
-      });
-
-      const data = await response.json();
-      return data;
-      console.log('Data:' + data);
-    } catch (error) {
-      return { success: false, message: error.message };
-      console.error('Error:', error);
+const handler = async (m, { conn, text, usedPrefix, command }) => {
+  try {
+    if (!text) {
+      return await conn.reply(
+        m.chat,
+        `🌟 *Admin-TK te pregunta:*\n\n¿Qué deseas descargar? Escribe el título o enlace después del comando:\n\n📌 Ejemplo: *${usedPrefix}${command} Joji - Glimpse of Us*`,
+        m
+      );
     }
-  },
-  tiktok: async (url) => {
-    try {
-      const response = await fetch(`${baseUrl}/tiktok/download`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-          body: JSON.stringify({ url })
-      });
 
-      const data = await response.json();
-      return data;
-      console.log('Data:' + data);
-    } catch (error) {
-      return { success: false, message: error.message };
-      console.error('Error:', error);
-    }
-  },
-  spotify: async (url) => {
-    try {
-      const response = await fetch(`${baseUrl}/spotify/download`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-          body: JSON.stringify({ url })
-      });
+    // Búsqueda en YouTube
+    const results = await yts(text);
+    const video = results.videos[0];
+    if (!video) throw 'No se encontró el contenido solicitado. Intenta con otro título.';
 
-      const data = await response.json();
-      return data;
-      console.log('Data:' + data);
-    } catch (error) {
-      return { success: false, message: error.message };
-      console.error('Error:', error);
-    }
-  }
-}
+    const { title, thumbnail, timestamp, views, ago, url } = video;
 
-let dataos = await cukaDownloader.youtube(tes.url, "mp3")
-console.log(dataos)
-let { title, thumbnail, quality, downloadUrl } = dataos
-  m.reply(`_✧ Enviando ${title} (${quality})_\n\n> ${tes.url}`)
-      const doc = {
-      audio: { url: downloadUrl },
-      mimetype: 'audio/mp4',
+    // Enviar información inicial
+    await conn.reply(
+      m.chat,
+      `🔰 *Admin-TK Downloader*\n\n🎵 *Título:* ${title}\n⏳ *Duración:* ${timestamp}\n👁️ *Vistas:* ${views}\n📅 *Publicado:* ${ago}\n🌐 *Enlace:* ${url}\n\n🕒 *Preparando descarga...*`,
+      m
+    );
+
+    // Descargar archivo con API alternativa
+    const apiUrl = `https://Ikygantengbangetanjay-api.hf.space/yt?query=${encodeURIComponent(url)}`;
+    const response = await axios.get(apiUrl);
+
+    const { result } = response.data;
+    if (!result) throw 'No se pudo obtener los enlaces de descarga.';
+
+    const audioUrl = result.download.audio;
+    const videoUrl = result.download.video;
+
+    if (!audioUrl || !videoUrl) throw 'Error al procesar el contenido.';
+
+    const thumbBuffer = await axios.get(result.thumbnail, { responseType: 'arraybuffer' });
+
+    // Enviar video
+    await conn.sendMessage(m.chat, {
+      video: { url: videoUrl },
+      mimetype: 'video/mp4',
+      fileName: `${title}.mp4`,
+      jpegThumbnail: thumbBuffer.data,
+      caption: `🎥 *${title}*\n📽 *Enlace*: ${url}\n\n*🔰 Servicio proporcionado por Admin-TK*`,
+    });
+
+    // Enviar audio
+    await conn.sendMessage(m.chat, {
+      audio: { url: audioUrl },
+      mimetype: 'audio/mpeg',
       fileName: `${title}.mp3`,
-      contextInfo: {
-        externalAdReply: {
-          showAdAttribution: true,
-          mediaType: 2,
-          mediaUrl: tes.url,
-          title: title,
-          sourceUrl: tes.url,
-          thumbnail: await (await conn.getFile(thumbnail)).data
-        }
-      }
-    };
-    await conn.sendMessage(m.chat, doc, { quoted: m });
-}
-handler.help = ['play2 *<consulta>*'];
+      jpegThumbnail: thumbBuffer.data,
+    });
+
+    await conn.reply(m.chat, `✅ *¡Descarga completada!*\n\n🔰 *Admin-TK siempre a tu servicio.*`, m);
+  } catch (error) {
+    console.error(error);
+    await conn.reply(m.chat, `❌ *Error:* ${error.message || error}\n\n🔰 *Por favor, intenta nuevamente.*`, m);
+  }
+};
+
+handler.command = ['play2', 'playdoc']; // Comandos alternativos
+handler.help = ['play2 *<consulta>*', 'playdoc *<consulta>*'];
 handler.tags = ['downloader'];
-handler.command = /^(play2)$/i;
+handler.register = true;
 
 export default handler;
