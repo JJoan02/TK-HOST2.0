@@ -1,88 +1,82 @@
-import yts from 'yt-search';
 import axios from 'axios';
+
+const BASE_URL = 'https://youtube-download-api.matheusishiyama.repl.co';
 
 const handler = async (m, { conn, text, usedPrefix, command }) => {
   try {
     if (!text) {
       return await conn.reply(
         m.chat,
-        `🌟 *Admin-TK te pregunta:*\n\n¿Qué música deseas buscar? Escribe el título o enlace después del comando:\n\n📌 Ejemplo: *${usedPrefix}${command} Joji - Glimpse of Us*`,
+        `🌟 *Admin-TK te pregunta:*\n\n¿Qué deseas descargar en MP3 o video en baja calidad? Escribe el enlace de YouTube después del comando.\n\n📌 Ejemplo: *${usedPrefix}${command} https://youtu.be/abc123*`,
         m
       );
     }
 
-    // Realizar búsqueda en YouTube
-    const results = await yts(text);
-    const video = results.videos[0];
-    if (!video) throw 'No se encontró el contenido solicitado. Intenta con otro título.';
+    // Obtener información del video
+    const infoResponse = await axios.get(`${BASE_URL}/info/?url=${encodeURIComponent(text)}`);
+    const { title, thumbnail } = infoResponse.data;
 
-    const { title, thumbnail, timestamp, views, ago, url } = video;
+    if (!title || !thumbnail) throw 'No se pudo obtener la información del video. Verifica el enlace.';
 
-    // Validar que los valores necesarios estén definidos
-    if (!title || !url) {
-      throw 'Error en la búsqueda: no se encontraron datos válidos del video.';
-    }
-
-    // Enviar información inicial al usuario
+    // Notificación inicial
     await conn.reply(
       m.chat,
-      `🔰 *Admin-TK Downloader*\n\n🎵 *Título:* ${title}\n⏳ *Duración:* ${timestamp || 'Desconocida'}\n👁️ *Vistas:* ${views || 'Desconocidas'}\n📅 *Publicado:* ${ago || 'Desconocido'}\n🌐 *Enlace:* ${url}\n\n🕒 *Preparando descarga...*`,
+      `🔰 *Admin-TK Downloader*\n\n🎵 *Título:* ${title}\n🕒 *Preparando descarga...*`,
       m
     );
 
-    // Descargar música MP3 utilizando la API de cuka
-    const baseUrl = 'https://cuka.rfivecode.com';
-    const response = await axios.post(
-      `${baseUrl}/download`,
-      { url, format: 'mp3' },
-      {
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
-
-    if (!response.data.success) {
-      throw `Error en la descarga: ${response.data.message}`;
-    }
-
-    const { downloadUrl } = response.data;
-
-    // Validar que la URL de descarga esté definida
-    if (!downloadUrl) {
-      throw 'Error al obtener la URL de descarga del MP3.';
-    }
-
-    // Enviar archivo MP3
-    await conn.sendMessage(m.chat, {
-      audio: { url: downloadUrl },
-      mimetype: 'audio/mpeg',
-      fileName: `${title}.mp3`,
-      caption: `🎶 *Título:* ${title}\n📅 *Publicado:* ${ago || 'Desconocido'}\n\n*🔰 Servicio proporcionado por Admin-TK*`,
-      contextInfo: {
-        externalAdReply: {
-          showAdAttribution: true,
-          mediaType: 2,
-          mediaUrl: url,
-          title: title,
-          sourceUrl: url,
-          thumbnail: await (await conn.getFile(thumbnail)).data,
+    // Descargar MP3
+    if (command === 'play') {
+      const mp3Url = `${BASE_URL}/mp3/?url=${encodeURIComponent(text)}`;
+      await conn.sendMessage(m.chat, {
+        audio: { url: mp3Url },
+        mimetype: 'audio/mpeg',
+        fileName: `${title}.mp3`,
+        caption: `🎶 *Título:* ${title}\n\n*🔰 Servicio proporcionado por Admin-TK*`,
+        contextInfo: {
+          externalAdReply: {
+            showAdAttribution: true,
+            mediaType: 2,
+            mediaUrl: text,
+            title: title,
+            sourceUrl: text,
+            thumbnail: await (await conn.getFile(thumbnail)).data,
+          },
         },
-      },
-    });
+      });
+    }
+
+    // Descargar video en baja calidad
+    if (command === 'playvideo') {
+      const mp4Url = `${BASE_URL}/mp4/?url=${encodeURIComponent(text)}`;
+      await conn.sendMessage(m.chat, {
+        video: { url: mp4Url },
+        mimetype: 'video/mp4',
+        fileName: `${title}.mp4`,
+        caption: `🎥 *Título:* ${title}\n\n*🔰 Servicio proporcionado por Admin-TK*`,
+        contextInfo: {
+          externalAdReply: {
+            showAdAttribution: true,
+            mediaType: 2,
+            mediaUrl: text,
+            title: title,
+            sourceUrl: text,
+            thumbnail: await (await conn.getFile(thumbnail)).data,
+          },
+        },
+      });
+    }
 
     await conn.reply(m.chat, `✅ *¡Descarga completada!*\n\n🔰 *Admin-TK siempre a tu servicio.*`, m);
   } catch (error) {
-    console.error('❌ Error en .play:', error);
-    await conn.reply(
-      m.chat,
-      `❌ *Error:* ${error.message || error}\n\n🔰 *Por favor, intenta nuevamente.*`,
-      m
-    );
+    console.error('❌ Error en .play:', error.message || error);
+    await conn.reply(m.chat, `❌ *Error:* ${error.message || 'Ocurrió un problema'}\n\n🔰 *Por favor, intenta nuevamente.*`, m);
   }
 };
 
 // Configuración del Handler
-handler.command = ['play']; // Comando para descargar música MP3
-handler.help = ['play *<consulta>*'];
+handler.command = ['play', 'playvideo']; // Comandos soportados
+handler.help = ['play *<enlace>*', 'playvideo *<enlace>*'];
 handler.tags = ['downloader'];
 handler.register = true;
 
