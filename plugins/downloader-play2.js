@@ -1,6 +1,11 @@
 import yts from 'yt-search';
 import axios from 'axios';
 import { yta, ytv } from 'api-dylux'; // Herramientas para descargar audio/video
+import { Flask, request, jsonify } from 'flask';
+import { YouTube } from 'pytube';
+import re;
+
+const app = Flask(__name__);
 
 const handler = async (m, { conn, text, usedPrefix, command }) => {
   try {
@@ -8,6 +13,7 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
       return conn.reply(
         m.chat,
         `⚠️ *Admin-TK:*
+
 Necesitas proporcionar una consulta de búsqueda.
 
 *Ejemplo de uso:* ${usedPrefix}${command} Joji Ew`,
@@ -111,5 +117,78 @@ handler.help = ["play2"].map((v) => v + " <título o enlace>");
 handler.tags = ["downloader"];
 handler.command = ["play2"];
 handler.register = true;
+
+// Flask API code
+function download_video(url, resolution) {
+  try {
+    const yt = new YouTube(url);
+    const stream = yt.streams.filter(stream => stream.progressive && stream.file_extension === 'mp4' && stream.resolution === resolution).first();
+    if (stream) {
+      stream.download();
+      return [true, null];
+    } else {
+      return [false, "Video with the specified resolution not found."];
+    }
+  } catch (e) {
+    return [false, e.message];
+  }
+}
+
+function get_video_info(url) {
+  try {
+    const yt = new YouTube(url);
+    const stream = yt.streams.first();
+    const video_info = {
+      "title": yt.title,
+      "author": yt.author,
+      "length": yt.length,
+      "views": yt.views,
+      "description": yt.description,
+      "publish_date": yt.publish_date,
+    };
+    return [video_info, null];
+  } catch (e) {
+    return [null, e.message];
+  }
+}
+
+function is_valid_youtube_url(url) {
+  const pattern = /^(https?:\/\/)?(www\.)?youtube\.com\/watch\?v=[\w-]+(&\S*)?$/;
+  return pattern.test(url);
+}
+
+app.route('/download/<resolution>', { methods: ['POST'] }, function download_by_resolution(resolution) {
+  const data = request.get_json();
+  const url = data.url;
+  if (!url) {
+    return jsonify({ "error": "Missing 'url' parameter in the request body." }), 400;
+  }
+  if (!is_valid_youtube_url(url)) {
+    return jsonify({ "error": "Invalid YouTube URL." }), 400;
+  }
+  const [success, error_message] = download_video(url, resolution);
+  if (success) {
+    return jsonify({ "message": `Video with resolution ${resolution} downloaded successfully.` }), 200;
+  } else {
+    return jsonify({ "error": error_message }), 500;
+  }
+});
+
+app.route('/video_info', { methods: ['POST'] }, function video_info() {
+  const data = request.get_json();
+  const url = data.url;
+  if (!url) {
+    return jsonify({ "error": "Missing 'url' parameter in the request body." }), 400;
+  }
+  if (!is_valid_youtube_url(url)) {
+    return jsonify({ "error": "Invalid YouTube URL." }), 400;
+  }
+  const [video_info, error_message] = get_video_info(url);
+  if (video_info) {
+    return jsonify(video_info), 200;
+  } else {
+    return jsonify({ "error": error_message }), 500;
+  }
+});
 
 export default handler;
