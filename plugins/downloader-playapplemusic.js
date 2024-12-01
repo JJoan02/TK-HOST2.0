@@ -5,7 +5,7 @@ import qs from 'qs';
 let handler = async (m, { conn, text, usedPrefix, command }) => {
   if (!text) {
     await conn.sendMessage(m.chat, {
-      text: `⚠️ Necesitas proporcionar un término de búsqueda.\n\n*Ejemplo:* ${usedPrefix + command} rosa pastel`,
+      text: `⚠️ Necesitas proporcionar un término de búsqueda.\n\n*Ejemplo:* ${usedPrefix + command} rosa pastel - belanova`,
     }, { quoted: m });
     await conn.sendMessage(m.chat, { react: { text: '❗', key: m.key } });
     return;
