@@ -12,7 +12,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
   }
 
   try {
-    // Mensaje inicial para el proceso
+    // Mensaje inicial para analizar el enlace
     let statusMessage = await conn.sendMessage(m.chat, { text: '🔎 Analizando enlace de Apple Music...' }, { quoted: m });
     await conn.sendMessage(m.chat, { react: { text: '⏳', key: m.key } });
 
@@ -28,11 +28,11 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
 
     // Información de la música
     const { name, albumname, artist, url, thumb, duration, download } = musicData;
-    const songInfo = `🎵 *Título:* ${name}\n🎤 *Artista:* ${artist}\n📀 *Álbum:* ${albumname}\n⏳ *Duración:* ${duration}\n🔗 *Enlace:* ${url}`;
+    const songInfo = `🔰 *Admin-TK Apple Music Downloader*\n\n🎵 *Título:* ${name}\n🎤 *Artista:* ${artist}\n📀 *Álbum:* ${albumname}\n⏳ *Duración:* ${duration}\n🔗 *Enlace:* ${url}`;
 
-    // Actualizar mensaje con información de la música
+    // Actualizar mensaje con información del audio
     await conn.sendMessage(m.chat, {
-      text: `${songInfo}\n\n⬇️ Descargando música...`,
+      text: `${songInfo}\n\n⬇️ Descargando audio...`,
       edit: statusMessage.key,
     });
 
@@ -56,7 +56,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
 
     // Mensaje final de éxito
     await conn.sendMessage(m.chat, {
-      text: `${songInfo}\n\n✅ Música descargada con éxito.`,
+      text: `${songInfo}\n\n✅ Audio descargado con éxito.`,
       edit: statusMessage.key,
     });
     await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
