@@ -1,59 +1,85 @@
-import yts from 'yt-search';
+import axios from 'axios';
 
-const handler = async (m, { conn, usedPrefix, text, command }) => {
+const BASE_URL = 'https://youtube-download-api.matheusishiyama.repl.co';
+
+const handler = async (m, { conn, text, command, usedPrefix }) => {
   try {
     if (!text) {
-      throw `🌟 *Admin-TK te pregunta:*\n\n¿Qué deseas buscar? Escribe el título después del comando.\n\n📌 Ejemplo: *${usedPrefix}${command} Joji - Glimpse of Us*`;
+      return await conn.reply(
+        m.chat,
+        `🌟 *Admin-TK te pregunta:*\n\n¿Qué deseas descargar en alta calidad? Escribe el título o enlace después del comando.\n\n📌 Ejemplo: *${usedPrefix}${command} Joji - Glimpse of Us*`,
+        m
+      );
     }
 
-    // Reacción de inicio
+    // Reacción: Procesando
     await conn.sendMessage(m.chat, { react: { text: '🔄', key: m.key } });
 
-    // Realizar búsqueda en YouTube
-    const result = await yts(text);
-    const ytres = result.videos;
+    // Obtener información del video
+    await conn.reply(m.chat, '🔍 *Buscando información del video...*', m);
+    const infoResponse = await axios.get(`${BASE_URL}/info/?url=${encodeURIComponent(text)}`);
+    const videoInfo = infoResponse.data;
 
-    if (!ytres || ytres.length === 0) {
-      throw '❌ No se encontraron resultados. Intenta con otro término.';
+    if (!videoInfo || !videoInfo.title) {
+      throw '❌ No se pudo obtener información del video. Verifica el enlace o título.';
     }
 
-    // Generar lista de resultados
-    const listSections = ytres.map((v, index) => ({
-      title: `${index + 1}┃ ${v.title}`,
-      rows: [
-        {
-          title: '💿 Descargar MP3',
-          description: `🎵 Título: ${v.title}\n⏳ Duración: ${v.timestamp}\n👁️ Vistas: ${v.views.toLocaleString()}`,
-          rowId: `${usedPrefix}fgmp3 ${v.url}`,
-        },
-        {
-          title: '📀 Descargar MP4',
-          description: `🎥 Título: ${v.title}\n⏳ Duración: ${v.timestamp}\n👁️ Vistas: ${v.views.toLocaleString()}`,
-          rowId: `${usedPrefix}fgmp4 ${v.url}`,
-        },
-      ],
-    }));
+    const { title, thumbnail, duration, views, uploaded } = videoInfo;
 
-    // Enviar lista interactiva
-    await conn.sendList(
+    // Mostrar información del video antes de descargar
+    await conn.reply(
       m.chat,
-      '🔰 Admin-TK Downloader',
-      `🎥 *Resultados para:* ${text}\n\nSelecciona una opción para continuar.`,
-      'Opciones de Descarga',
-      listSections,
+      `🔰 *Admin-TK Downloader*\n\n🎵 *Título:* ${title}\n⏳ *Duración:* ${duration}\n👁️ *Vistas:* ${views}\n📅 *Publicado:* ${uploaded}\n🌐 *Enlace:* ${text}\n\n🕒 *Preparando descarga...*`,
       m
     );
+
+    // Descargar video en calidad 1080p, 720p, 480p o 360p
+    const qualities = ['1080', '720', '480', '360'];
+    let videoUrl;
+    for (const quality of qualities) {
+      try {
+        await conn.reply(m.chat, `📹 *Intentando descargar en calidad ${quality}p...*`, m);
+        videoUrl = `${BASE_URL}/mp4/?url=${encodeURIComponent(text)}&quality=${quality}`;
+        await axios.head(videoUrl); // Verifica si el enlace es válido
+        break;
+      } catch (err) {
+        console.error(`❌ Calidad ${quality}p no disponible.`);
+      }
+    }
+
+    if (!videoUrl) throw '❌ No se pudo descargar el video en ninguna calidad.';
+
+    // Enviar video
+    await conn.sendMessage(m.chat, {
+      video: { url: videoUrl },
+      mimetype: 'video/mp4',
+      fileName: `${title}_${qualities.join('_')}.mp4`,
+      caption: `🎥 *Título:* ${title}\n📺 *Calidad:* ${qualities.join('p o ')}p\n\n🔰 *Video descargado por Admin-TK*`,
+    });
+
+    // Descargar audio en formato MP3
+    await conn.reply(m.chat, '🎶 *Descargando el audio en formato MP3...*', m);
+    const audioUrl = `${BASE_URL}/mp3/?url=${encodeURIComponent(text)}`;
+    await conn.sendMessage(m.chat, {
+      audio: { url: audioUrl },
+      mimetype: 'audio/mpeg',
+      fileName: `${title}.mp3`,
+      caption: `🎶 *Título:* ${title}\n\n🔰 *Audio descargado por Admin-TK*`,
+    });
+
+    // Confirmar finalización
+    await conn.reply(m.chat, `✅ *Descarga completada!*\n\n🔰 *Admin-TK siempre a tu servicio.*`, m);
+    await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
   } catch (error) {
-    console.error(error.message || error);
-    await conn.reply(m.chat, `❌ *Error:* ${error.message || 'Algo salió mal.'}`, m);
+    console.error('❌ Error en .play2:', error.message || error);
+    await conn.reply(m.chat, `❌ *Error:* ${error.message || 'Ocurrió un problema inesperado.'}`, m);
     await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
   }
 };
 
-handler.help = ['play2'];
+handler.command = ['play2'];
+handler.help = ['play2 *<título o enlace>*'];
 handler.tags = ['downloader'];
-handler.command = ['play2', 'playvid2', 'playlist', 'playlista'];
-handler.disabled = false;
+handler.register = true;
 
 export default handler;
-          
