@@ -39,31 +39,52 @@ const tags = {
 const defaultMenu = {
     before: `
 ╔════════════════════════════╗
-║     📜 *GUÍA DEL MENÚ TK* 📜     
+║     📜 *${estilo('guía del menú tk')}* 📜     
 ╚════════════════════════════╝
 
-👋 *Hola, %names*.  
-En este menú encontrarás una descripción detallada de cada comando disponible.  
+👋 *${estilo('hola, xd')}*.  
+${estilo('en este menú encontrarás una descripción detallada de cada comando disponible.')}
 
-🗓️ Fecha: %date  
-⏰ Hora: %time  
-👥 Usuarios registrados: %totalreg  
+🗓️ ${estilo('fecha')}: %date  
+⏰ ${estilo('hora')}: %time  
+👥 ${estilo('usuarios registrados')}: %totalreg  
 
-🛠️ *¿Cómo usar este menú?*
-1️⃣ Busca los comandos disponibles en cada sección.  
-2️⃣ Usa el prefijo adecuado antes de cada comando (por ejemplo: \`.comando\`).  
+🛠️ *${estilo('¿cómo usar este menú?')}*
+1️⃣ ${estilo('busca los comandos disponibles en cada sección.')}.  
+2️⃣ ${estilo('usa el prefijo adecuado antes de cada comando (por ejemplo: `.comando`).')}.  
 
-🌟 _Consulta esta guía siempre que necesites orientación._  
+🌟 _${estilo('consulta esta guía siempre que necesites orientación.')}_  
 `.trimStart(),
     header: `
 ╭───✦ *%category* ✦───╮`,
-    body: `➤ %cmd`, // Sin saltos adicionales
+    body: `➤ %cmd`,
     footer: `
 ╰──────────────╯`,
     after: `
 🌐 **Comunidad TK: Más que un bot, somos un equipo.**  
 👑 *Admin-TK está siempre contigo.*`,
 };
+
+const shortMenu = `
+╔════════════════════════════╗
+║     📜 *${estilo('guía del menú tk')}* 📜     
+╚════════════════════════════╝
+
+👋 *${estilo('hola, xd')}*.  
+${estilo('en este menú encontrarás una descripción detallada de cada comando disponible.')}
+
+🗓️ ${estilo('fecha')}: %date  
+⏰ ${estilo('hora')}: %time  
+👥 ${estilo('usuarios registrados')}: %totalreg  
+
+🛠️ *${estilo('¿cómo usar este menú?')}*
+1️⃣ ${estilo('busca los comandos disponibles en cada sección.')}.  
+2️⃣ ${estilo('usa el prefijo adecuado antes de cada comando (por ejemplo: `.comando`).')}.  
+
+🌟 _${estilo('consulta esta guía siempre que necesites orientación.')}_  
+
+> Ver más...
+`.trimStart();
 
 const handler = async (m, { conn, usedPrefix: _p }) => {
     try {
@@ -76,38 +97,48 @@ const handler = async (m, { conn, usedPrefix: _p }) => {
         const date = d.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
         const totalreg = Object.keys(global.db.data.users).length;
 
-        const help = Object.values(global.plugins).filter(plugins => !plugins.disabled).map(plugins => ({
-            help: Array.isArray(plugins.tags) ? plugins.help : [plugins.help],
-            tags: Array.isArray(plugins.tags) ? plugins.tags : [plugins.tags],
-            description: plugins.description || 'Sin descripción disponible.',
-            limit: plugins.limit,
-            premium: plugins.premium,
-        }));
+        if (!m.text.includes('ver más')) {
+            // Enviar versión reducida del menú
+            await conn.sendMessage(m.chat, estilo(shortMenu)
+                .replace(/%names/g, names)
+                .replace(/%time/g, time)
+                .replace(/%date/g, date)
+                .replace(/%totalreg/g, totalreg), { quoted: m });
+        } else {
+            // Enviar menú completo
+            const help = Object.values(global.plugins).filter(plugins => !plugins.disabled).map(plugins => ({
+                help: Array.isArray(plugins.tags) ? plugins.help : [plugins.help],
+                tags: Array.isArray(plugins.tags) ? plugins.tags : [plugins.tags],
+                description: plugins.description || 'Sin descripción disponible.',
+                limit: plugins.limit,
+                premium: plugins.premium,
+            }));
 
-        const menuSections = Object.keys(tags).map(tag => {
-            const sectionCommands = help
-                .filter(plugin => plugin.tags.includes(tag) && plugin.help)
-                .map(plugin => plugin.help.map(cmd => defaultMenu.body
-                    .replace(/%cmd/g, `${_p}${cmd}`)
-                    .replace(/%description/g, plugin.description)
-                ).join('\n')).join('\n');
-            if (!sectionCommands) return '';
-            return defaultMenu.header.replace(/%category/g, tags[tag]) + '\n' + sectionCommands + '\n' + defaultMenu.footer;
-        }).filter(v => v).join('\n\n');
+            const menuSections = Object.keys(tags).map(tag => {
+                const sectionCommands = help
+                    .filter(plugin => plugin.tags.includes(tag) && plugin.help)
+                    .map(plugin => plugin.help.map(cmd => defaultMenu.body
+                        .replace(/%cmd/g, `${_p}${cmd}`)
+                        .replace(/%description/g, plugin.description)
+                    ).join('\n')).join('\n');
+                if (!sectionCommands) return '';
+                return defaultMenu.header.replace(/%category/g, tags[tag]) + '\n' + sectionCommands + '\n' + defaultMenu.footer;
+            }).filter(v => v).join('\n\n');
 
-        const text = [
-            defaultMenu.before,
-            menuSections,
-            defaultMenu.after
-        ].join('\n')
-            .replace(/%names/g, names)
-            .replace(/%time/g, time)
-            .replace(/%date/g, date)
-            .replace(/%totalreg/g, totalreg);
+            const text = [
+                defaultMenu.before,
+                menuSections,
+                defaultMenu.after
+            ].join('\n')
+                .replace(/%names/g, names)
+                .replace(/%time/g, time)
+                .replace(/%date/g, date)
+                .replace(/%totalreg/g, totalreg);
 
-        const imageUrl = 'https://pomf2.lain.la/f/ucogaqax.jpg'; // Cambia esta URL por la imagen que prefieras
+            const imageUrl = 'https://pomf2.lain.la/f/ucogaqax.jpg'; // Cambia esta URL por la imagen que prefieras
 
-        await conn.sendFile(m.chat, imageUrl, 'menu.jpg', estilo(text), m);
+            await conn.sendFile(m.chat, imageUrl, 'menu.jpg', estilo(text), m);
+        }
     } catch (error) {
         console.error(error);
         throw 'Hubo un error generando el menú. Por favor, intenta nuevamente.';
@@ -123,6 +154,6 @@ const getGreeting = (hour) => {
 
 handler.help = ['menu'];
 handler.tags = ['main'];
-handler.command = ['menu', 'allmenu'];
+handler.command = ['menu', 'allmenu', 'ver más'];
 
 export default handler;
