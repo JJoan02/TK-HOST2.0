@@ -2,9 +2,9 @@ import axios from 'axios';
 import cheerio from 'cheerio';
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
-  if (!text) throw `Ejemplo de uso: ${usedPrefix + command} <link de Apple Music>`;
+  if (!text) throw `❌ Uso correcto: ${usedPrefix + command} <link de Apple Music>. ¡Consulta rápida estilo Admin-TK!`;
 
-  const getAlbumDetails = async (url) => {
+  const getAlbumDetailsTK = async (url) => {
     try {
       const { data } = await axios.get(url);
       const $ = cheerio.load(data);
@@ -16,23 +16,27 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
         description: $('div[data-testid="description"]').text().trim(),
       };
     } catch (error) {
-      console.error("Error:", error.message);
+      console.error("⚠️ Error TK:", error.message);
       return null;
     }
   };
 
-  const albumDetails = await getAlbumDetails(text);
+  await conn.sendMessage(m.chat, { react: { text: "🔍", key: m.key } });
 
-  if (!albumDetails) throw 'No se pudieron obtener los detalles del álbum.';
+  const albumDetails = await getAlbumDetailsTK(text);
+
+  if (!albumDetails) throw '⚠️ ¡Oh no! Admin-TK no pudo obtener los detalles del álbum.';
 
   const responseText = `
-✦ **APPLE MUSIC DETAILS** ✧
-- Album: ${albumDetails.albumTitle}
-- Artista: ${albumDetails.artistName}
-- Publicado: ${albumDetails.releaseInfo}
-- Descripción: ${albumDetails.description}
+✨ **ADMIN-TK: DETALLES DEL ÁLBUM** ✨
+🎵 **Álbum:** ${albumDetails.albumTitle}
+🎤 **Artista:** ${albumDetails.artistName}
+📅 **Publicado:** ${albumDetails.releaseInfo}
+📝 **Descripción:** ${albumDetails.description}
   `;
+
   m.reply(responseText);
+  await conn.sendMessage(m.chat, { react: { text: "✅", key: m.key } });
 };
 
 handler.help = ['applemusicdetail <link>'];
