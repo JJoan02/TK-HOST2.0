@@ -1,85 +1,59 @@
-import yts from 'yt-search';
-import axios from 'axios';
+import yts from 'yt-search' 
+const handler = async (m, { conn, text, usedPrefix, command }) => {
+try {
+    if (!text) { return conn.reply(m.chat, `*💥 Hace falta el título o enlace del video de YouTube.*\n\n*𔔢 𝗘𝗷𝗲𝗺𝗽𝗹𝗼: _${usedPrefix + command} JAWNY - Honeypie Animation*`,m ,rcanal)
+}
+    const randomReduction = Math.floor(Math.random() * 5) + 1;
+    let search = await yts(text);
+    let isVideo = /play2$/.test(command);
+    let urls = search.all[0].url;
+    let body = `*𖹭.╭╭ִ╼࣪━ִﮩ٨ـﮩ♡̫𝗆𝖾𝗀֟፝𝗎꯭𝗆𝗂꯭𝗇♡ִ̫ﮩ٨ـﮩ━ִ╾࣪╮╮.𖹭*\n> ♡ *Título:* ${search.all[0].title}\n> ♡ *Vistas:* ${search.all[0].views}\n> ♡ *Duración:* ${search.all[0].timestamp}\n> ♡ *Subido:* ${search.all[0].ago}\n> ♡ *Url:* ${urls}\n*⏝ּׅ︣︢ۛ۫۫۫۫۫۫ۜ⏝ּׅ︣︢ۛ۫۫۫۫۫۫ۜ⏝ּׅ︣︢ۛ۫۫۫۫۫۫ۜ⏝ּׅ︣︢ۛ۫۫۫۫۫۫ۜ⏝ּׅ︢︣ۛ۫۫۫۫۫۫ۜ⏝ּׅ︢︣ۛ۫۫۫۫۫۫ۜ⏝ּׅ︢︣ۛ۫۫۫۫۫۫ۜ⏝ּׅ︣︢ۛ۫۫۫۫۫۫ۜ⏝ּׅ︢︣ׄۛ۫۫۫۫۫۫ۜ*\n🕒 *Su ${isVideo ? 'Video' : 'Audio'} se está enviando, espere un momento...*`;
+    
+let sentMessage = await conn.sendMessage(m.chat, { 
+        image: { url: search.all[0].thumbnail }, 
+        caption: body,
+        contextInfo: { externalAdReply: { title: '♡  ͜ ۬︵࣪᷼⏜݊᷼𝘿𝙚𝙨𝙘𝙖𝙧𝙜𝙖𝙨⏜࣪᷼︵۬ ͜ ', body: '<(✿◠‿◠)> 𝙈𝙚𝙜𝙪𝙢𝙞𝙣🔥', sourceUrl: cn, thumbnail: logo7 }}, quoted: estilo, rcanal});
+    m.react('💥')
 
-const BASE_URL = 'https://youtube-download-api.matheusishiyama.repl.co';
+    let res = await dl_vid(urls)
+    let type = isVideo ? 'video' : 'audio';
+    let video = res.data.mp4;
+    let audio = res.data.mp3;
+    conn.sendMessage(m.chat, { 
+        [type]: { url: isVideo ? video : audio }, 
+        gifPlayback: false, 
+        mimetype: isVideo ? "video/mp4" : "audio/mpeg" 
+    }, { quoted: m });
+  // await conn.sendMessage(m.chat, { delete: sentMessage.key });
+    } catch(error) {
+    conn.reply(m.chat, `Hubo un error en la descarga.\nDetalles: ${error}.`, m, rcanal)
+    return
+        }
+}
 
-const handler = async (m, { conn, usedPrefix, text, command }) => {
-  try {
-    // Verificar si el texto está vacío
-    if (!text) {
-      return await conn.reply(
-        m.chat,
-        `🌟 *Admin-TK te pregunta:*\n\n¿Qué deseas descargar? Escribe el título o enlace después del comando.\n\n📌 Ejemplo: *${usedPrefix}${command} Joji - Glimpse of Us*`,
-        m
-      );
-    }
-
-    // Reacción de inicio
-    await conn.sendMessage(m.chat, { react: { text: '🔄', key: m.key } });
-
-    // Realizar búsqueda en YouTube
-    const res = await yts(text);
-    const vid = res.videos[0];
-    if (!vid) {
-      throw '❌ No se encontraron resultados. Intenta con otro término.';
-    }
-
-    const { title, thumbnail, timestamp, views, ago, url } = vid;
-
-    // Mostrar información del video
-    await conn.reply(
-      m.chat,
-      `🔰 *Admin-TK Downloader*\n\n🎵 *Título:* ${title}\n⏳ *Duración:* ${timestamp}\n👁️ *Vistas:* ${views.toLocaleString()}\n📅 *Publicado:* ${ago}\n🌐 *Enlace:* ${url}\n\n🕒 *Preparando descarga...*`,
-      m
-    );
-
-    // Descargar video en calidad 480p o 360p
-    const qualities = ['480', '360'];
-    let videoUrl;
-    for (const quality of qualities) {
-      try {
-        await conn.reply(m.chat, `📹 *Intentando descargar el video en calidad ${quality}p...*`, m);
-        videoUrl = `${BASE_URL}/mp4/?url=${encodeURIComponent(url)}&quality=${quality}`;
-        await axios.head(videoUrl); // Verifica si el enlace es válido
-        break;
-      } catch (err) {
-        console.error(`❌ Calidad ${quality}p no disponible.`);
-      }
-    }
-
-    if (!videoUrl) throw '❌ No se pudo descargar el video en ninguna calidad disponible.';
-
-    // Enviar video
-    await conn.sendMessage(m.chat, {
-      video: { url: videoUrl },
-      mimetype: 'video/mp4',
-      fileName: `${title}_480p_or_360p.mp4`,
-      caption: `🎥 *Título:* ${title}\n📺 *Calidad:* 480p o 360p\n\n🔰 *Video descargado por Admin-TK*`,
-    });
-
-    // Descargar audio en formato MP3
-    await conn.reply(m.chat, '🎶 *Descargando el audio en formato MP3...*', m);
-    const audioUrl = `${BASE_URL}/mp3/?url=${encodeURIComponent(url)}`;
-    await conn.sendMessage(m.chat, {
-      audio: { url: audioUrl },
-      mimetype: 'audio/mpeg',
-      fileName: `${title}.mp3`,
-      caption: `🎶 *Título:* ${title}\n\n🔰 *Audio descargado por Admin-TK*`,
-    });
-
-    // Confirmar finalización
-    await conn.reply(m.chat, `✅ *Descarga completada!*\n\n🔰 *Admin-TK siempre a tu servicio.*`, m);
-    await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
-  } catch (error) {
-    console.error('❌ Error en .play:', error.message || error);
-    await conn.reply(m.chat, `❌ *Error:* ${error.message || 'Algo salió mal.'}`, m);
-    await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
-  }
-};
-
-handler.command = ['play'];
-handler.help = ['play *<título o enlace>*'];
-handler.tags = ['downloader'];
-handler.register = true;
-
+handler.command = ['play', 'play2'];
+handler.help = ['play', 'play2'];
+handler.tags = ['descargas'];
+handler.group = true
 export default handler;
+
+async function dl_vid(url) {
+    const response = await fetch('https://shinoa.us.kg/api/download/ytdl', {
+        method: 'POST',
+        headers: {
+            'accept': '*/*',
+            'api_key': 'free',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            text: url,
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+}
