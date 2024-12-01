@@ -2,9 +2,9 @@ import axios from 'axios';
 import cheerio from 'cheerio';
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
-  if (!text) throw `Ejemplo de uso: ${usedPrefix + command} <Nombre de la canción>`;
+  if (!text) throw `❌ Uso correcto: ${usedPrefix + command} <Nombre de la canción>. ¡Busca canciones al estilo Admin-TK!`;
 
-  const searchAppleMusic = async (query) => {
+  const searchAppleMusicTK = async (query) => {
     const url = `https://music.apple.com/us/search?term=${encodeURIComponent(query)}`;
     try {
       const { data } = await axios.get(url);
@@ -18,17 +18,20 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
       });
       return results;
     } catch (error) {
-      console.error("Error:", error.message);
+      console.error("⚠️ Error TK:", error.message);
       return [];
     }
   };
 
-  const searchResults = await searchAppleMusic(text);
+  await conn.sendMessage(m.chat, { react: { text: "🔎", key: m.key } });
 
-  if (searchResults.length === 0) throw 'No se encontraron resultados para tu búsqueda.';
+  const searchResults = await searchAppleMusicTK(text);
 
-  const responseText = searchResults.map((v, i) => `${i + 1}. ${v.title}\nLink: ${v.link}`).join('\n\n');
+  if (searchResults.length === 0) throw '⚠️ Admin-TK no encontró resultados para tu búsqueda.';
+
+  const responseText = searchResults.map((v, i) => `${i + 1}. 🎶 **${v.title}**\n🔗 Link: ${v.link}`).join('\n\n');
   m.reply(responseText);
+  await conn.sendMessage(m.chat, { react: { text: "✅", key: m.key } });
 };
 
 handler.help = ['applemusicsearch <consulta>'];
