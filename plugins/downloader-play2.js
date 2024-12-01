@@ -1,38 +1,40 @@
 import axios from 'axios';
 import yts from 'yt-search';
 
-let activeDownloads = {}; // Almacena el estado de solicitudes activas
+let activeDownloads = {}; // Para controlar solicitudes activas por usuario
 let downloadQueue = []; // Cola de descargas pendientes
 
-let handler = async (m, { conn, text, usedPrefix, command }) => {
+// Handler principal para los comandos
+let handler = async (m, { conn, text, command }) => {
   if (!text) {
-    return await handleMissingQuery(m, conn, usedPrefix, command);
+    return await handleMissingQuery(m, conn, command);
   }
 
   const userId = m.sender;
-  
+
   // Verificar si ya hay una solicitud activa del mismo usuario
   if (activeDownloads[userId]) {
     return await notifyUserActiveRequest(m, conn);
   }
 
-  // Agregar solicitud a la cola si hay descargas en curso
+  // Si hay descargas en proceso, agregar a la cola
   if (Object.keys(activeDownloads).length > 0) {
-    downloadQueue.push({ userId, conn, text, m, usedPrefix, command });
+    downloadQueue.push({ userId, conn, text, m, command });
     return await notifyUserAddedToQueue(m, conn);
   }
 
   // Iniciar proceso de descarga
-  await processDownloadRequest({ userId, conn, text, m, usedPrefix, command });
+  await processDownloadRequest({ userId, conn, text, m, command });
 };
 
 // Proceso principal de descarga
-async function processDownloadRequest({ userId, conn, text, m, usedPrefix, command }) {
+async function processDownloadRequest({ userId, conn, text, m, command }) {
   activeDownloads[userId] = true; // Marcar al usuario como activo
 
   try {
     const initialMessage = await sendInitialMessage(m, conn);
     const videoData = await searchVideo(text);
+
     if (!videoData || videoData.duration.seconds === 0) {
       delete activeDownloads[userId];
       return await handleNoResultsOrInvalidVideo(m, conn);
@@ -51,12 +53,12 @@ async function processDownloadRequest({ userId, conn, text, m, usedPrefix, comma
     await sendVideoFile(m, conn, videoData, videoUrl, thumbBuffer);
     await updateDownloadStatus(m, conn, initialMessage, videoData, 'Video descargado con éxito...');
 
-    // Descargar y enviar el audio
     if (!audioUrl) {
       delete activeDownloads[userId];
       return await handleDownloadError(m, conn, 'No se pudo obtener la URL del audio. Por favor inténtalo de nuevo.');
     }
 
+    // Descargar y enviar el audio
     await updateDownloadStatus(m, conn, initialMessage, videoData, 'Descargando audio...');
     await sendAudioFile(m, conn, videoData, audioUrl, thumbBuffer);
     await updateDownloadStatus(m, conn, initialMessage, videoData, 'Audio descargado con éxito...');
@@ -64,7 +66,7 @@ async function processDownloadRequest({ userId, conn, text, m, usedPrefix, comma
     console.error('Error en el proceso:', error);
     await handleUnexpectedError(m, conn);
   } finally {
-    delete activeDownloads[userId]; // Liberar al usuario activo
+    delete activeDownloads[userId]; // Liberar al usuario
     processNextInQueue(); // Procesar la siguiente solicitud en la cola
   }
 }
@@ -91,15 +93,39 @@ async function notifyUserAddedToQueue(m, conn) {
   }, { quoted: m });
 }
 
-// Las funciones auxiliares (handleMissingQuery, handleNoResultsOrInvalidVideo, etc.) siguen igual que en el código anterior.
+// Notificar cuando falta el texto de búsqueda
+async function handleMissingQuery(m, conn, command) {
+  await conn.sendMessage(m.chat, {
+    text: `⚠️ Necesitas proporcionar una consulta de búsqueda.\n\nEjemplo: *.${command} Despacito*`,
+  }, { quoted: m });
+}
 
-// Enviar mensaje inicial indicando que se está procesando
+// Manejar cuando no hay resultados o el video es inválido
+async function handleNoResultsOrInvalidVideo(m, conn) {
+  await conn.sendMessage(m.chat, {
+    text: '⚠️ No se encontraron resultados o el video es inválido. Por favor intenta con otra consulta.',
+  }, { quoted: m });
+}
+
+// Manejar errores de descarga
+async function handleDownloadError(m, conn, message) {
+  await conn.sendMessage(m.chat, { text: message }, { quoted: m });
+}
+
+// Manejar errores inesperados
+async function handleUnexpectedError(m, conn) {
+  await conn.sendMessage(m.chat, {
+    text: '⚠️ Ha ocurrido un error inesperado. Por favor intenta nuevamente más tarde.',
+  }, { quoted: m });
+}
+
+// Enviar mensaje inicial
 async function sendInitialMessage(m, conn) {
   let initialMessage = await conn.sendMessage(m.chat, { text: '✧ Espere un momento...' }, { quoted: m });
   return initialMessage;
 }
 
-// Buscar el video
+// Buscar video en YouTube
 async function searchVideo(query) {
   let results = await yts(query);
   return results.videos[0];
@@ -113,7 +139,7 @@ async function updateVideoInfo(m, conn, initialMessage, videoData) {
   });
 }
 
-// Descargar y procesar video/audio
+// Descargar video y audio
 async function downloadMediaWithQualityControl(url, text) {
   const qualities = ['1080p', '720p', '480p', '360p', '240p', '144p'];
   for (let quality of qualities) {
