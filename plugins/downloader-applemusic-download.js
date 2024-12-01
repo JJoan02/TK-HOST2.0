@@ -2,33 +2,35 @@ import axios from 'axios';
 import qs from 'qs';
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
-  if (!text) throw `Ejemplo de uso: ${usedPrefix + command} <link de Apple Music>`;
+  if (!text) throw `❌ Uso correcto: ${usedPrefix + command} <link de Apple Music>. ¡Descarga estilo Admin-TK!`;
 
-  const downloadAppleMusic = async (url) => {
+  const downloadAppleMusicTK = async (url) => {
     try {
       const apiUrl = `https://aaplmusicdownloader.com/api/applesearch.php?url=${url}`;
       const { data } = await axios.get(apiUrl);
       return data;
     } catch (error) {
-      console.error("Error:", error.message);
+      console.error("⚠️ Error TK:", error.message);
       return null;
     }
   };
 
-  const trackData = await downloadAppleMusic(text);
+  await conn.sendMessage(m.chat, { react: { text: "⏬", key: m.key } });
 
-  if (!trackData) throw 'No se pudo descargar la canción.';
+  const trackData = await downloadAppleMusicTK(text);
+
+  if (!trackData) throw '⚠️ Admin-TK no pudo descargar la canción. Inténtalo de nuevo.';
 
   const doc = {
     audio: { url: trackData.dlink },
     mimetype: 'audio/mp4',
-    fileName: `${trackData.name}.mp3`,
+    fileName: `TK-${trackData.name}.mp3`,
     contextInfo: {
       externalAdReply: {
         showAdAttribution: true,
         mediaType: 2,
         mediaUrl: text,
-        title: trackData.name,
+        title: `🎵 ${trackData.name}`,
         sourceUrl: text,
         thumbnail: await (await conn.getFile(trackData.thumb)).data,
       },
@@ -36,6 +38,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
   };
 
   await conn.sendMessage(m.chat, doc, { quoted: m });
+  await conn.sendMessage(m.chat, { react: { text: "✅", key: m.key } });
 };
 
 handler.help = ['applemusic <link>'];
