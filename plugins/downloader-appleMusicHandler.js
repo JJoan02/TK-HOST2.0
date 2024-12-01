@@ -83,7 +83,8 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
   try {
     switch (command) {
       case "applemusicsearch":
-        const searchMessage = await conn.sendMessage(m.chat, { text: '🔎 Buscando música...' }, { quoted: m });
+      case "asearch":
+        let searchMessage = await conn.sendMessage(m.chat, { text: '🔎 Buscando música en Apple Music...' }, { quoted: m });
         await conn.sendMessage(m.chat, { react: { text: '⏳', key: m.key } });
 
         const searchResults = await appleMusic.search(text);
@@ -96,51 +97,45 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
           .join('\n\n');
         await conn.sendMessage(m.chat, {
           text: `🔰 *Resultados de Búsqueda*\n\n${searchText}`,
-        }, { quoted: m });
+          edit: searchMessage.key,
+        });
         await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
         break;
 
       case "applemusicdetail":
-        const detailMessage = await conn.sendMessage(m.chat, { text: '🔍 Obteniendo detalles...' }, { quoted: m });
+      case "adetail":
+        let detailMessage = await conn.sendMessage(m.chat, { text: '🔍 Obteniendo detalles de Apple Music...' }, { quoted: m });
         await conn.sendMessage(m.chat, { react: { text: '⏳', key: m.key } });
 
         const details = await appleMusic.detail(text);
-        const detailText = `🔰 *Detalles de la Música*\n\n🎵 *Álbum:* ${details.albumTitle}\n🎤 *Artista:* ${details.artistName}\n📅 *Publicado:* ${details.releaseInfo}\n✍️ *Descripción:* ${details.description}`;
+        const detailText = `🔰 *Detalles de la Música*\n\n🎵 *Álbum:* ${details.albumTitle || 'N/A'}\n🎤 *Artista:* ${details.artistName || 'N/A'}\n📅 *Publicado:* ${details.releaseInfo || 'N/A'}\n✍️ *Descripción:* ${details.description || 'N/A'}`;
         await conn.sendMessage(m.chat, {
           text: detailText,
-        }, { quoted: m });
+          edit: detailMessage.key,
+        });
         await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
         break;
 
       case "applemusicplay":
       case "aplay":
-        const statusMessage = await conn.sendMessage(m.chat, { text: '🎵 Procesando solicitud...' }, { quoted: m });
+        let statusMessage = await conn.sendMessage(m.chat, { text: '🎵 Descargando de Apple Music...' }, { quoted: m });
         await conn.sendMessage(m.chat, { react: { text: '⏳', key: m.key } });
 
         const musicData = text.startsWith("http")
           ? await appledown.download(text)
           : await appledown.download((await appleMusic.search(text))[0].link);
 
-        const { name, artist, albumname, duration, url, thumb } = musicData;
+        const { name, artist, albumname, duration, url } = musicData;
 
         await conn.sendMessage(m.chat, {
           text: `🔰 *Admin-TK Apple Music Downloader*\n\n🎵 *Título:* ${name}\n🎤 *Artista:* ${artist}\n📀 *Álbum:* ${albumname || 'N/A'}\n⏳ *Duración:* ${duration}\n🔗 *Enlace:* ${url}\n\n✅ *Audio descargado con éxito.*`,
-        }, { quoted: m });
+          edit: statusMessage.key,
+        });
 
         const doc = {
           audio: { url },
           mimetype: 'audio/mp4',
           fileName: `${name}.mp3`,
-          contextInfo: {
-            externalAdReply: {
-              showAdAttribution: true,
-              mediaType: 2,
-              mediaUrl: url,
-              title: name,
-              sourceUrl: url,
-              thumbnail: await (await conn.getFile(thumb)).data,
-            },
-          },
         };
 
         await conn.sendMessage(m.chat, doc, { quoted: m });
@@ -157,8 +152,8 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
   }
 };
 
-handler.help = ['applemusicsearch', 'applemusicdetail', 'applemusicplay', 'aplay'];
+handler.help = ['applemusicsearch', 'applemusicdetail', 'applemusicplay', 'asearch', 'adetail', 'aplay'];
 handler.tags = ['downloader', 'search', 'info'];
-handler.command = /^(applemusicsearch|applemusicdetail|applemusicplay|aplay)$/i;
+handler.command = /^(applemusicsearch|asearch|applemusicdetail|adetail|applemusicplay|aplay)$/i;
 
 export default handler;
