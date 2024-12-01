@@ -3,7 +3,7 @@ import cheerio from 'cheerio';
 import qs from 'qs';
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
-  if (!text) throw m.reply(`Ejemplo de uso: ${usedPrefix + command} <texto o link>`);
+  if (!text) throw m.reply(`Ejemplo de uso: ${usedPrefix + command} <link o descripción>`);
 
   const appleMusic = {
     // Búsqueda de canciones o álbumes en Apple Music
@@ -22,7 +22,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
         return results;
       } catch (error) {
         console.error("Error en búsqueda:", error.response ? error.response.data : error.message);
-        return { success: false, message: error.message };
+        throw new Error("Error al buscar en Apple Music.");
       }
     },
 
@@ -38,7 +38,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
         return { albumTitle, artistName, releaseInfo, description };
       } catch (error) {
         console.error("Error en detalles:", error.response ? error.response.data : error.message);
-        return { success: false, message: error.message };
+        throw new Error("Error al obtener los detalles de la música.");
       }
     },
   };
@@ -56,7 +56,14 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
             'Referer': 'https://aaplmusicdownloader.com/',
           },
         });
+
         const musicData = response.data;
+
+        // Validar duración del audio
+        if (!musicData.duration || parseInt(musicData.duration) === 0) {
+          throw new Error("El audio tiene una duración inválida o es de cero segundos.");
+        }
+
         return {
           name: musicData.name,
           albumname: musicData.albumname,
@@ -67,54 +74,97 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
         };
       } catch (error) {
         console.error("Error en descarga:", error.response ? error.response.data : error.message);
-        return { success: false, message: error.message };
+        throw new Error("Error al descargar la música. Verifica el enlace o inténtalo más tarde.");
       }
     },
   };
 
-  // Comandos
-  switch (command) {
-    case "applemusicsearch":
-      const searchResults = await appleMusic.search(text);
-      const searchText = searchResults.map((v, i) => `${i + 1}. *${v.title}*\n   Link: ${v.link}`).join('\n\n');
-      m.reply(searchText);
-      break;
+  try {
+    switch (command) {
+      case "applemusicsearch":
+        const searchResults = await appleMusic.search(text);
+        if (!searchResults || searchResults.length === 0) {
+          return m.reply("No se encontraron resultados. Por favor, intenta con otra descripción.");
+        }
+        const searchText = searchResults
+          .map((v, i) => `${i + 1}. *${v.title}*\n   Link: ${v.link}`)
+          .join('\n\n');
+        m.reply(searchText);
+        break;
 
-    case "applemusicdetail":
-      const details = await appleMusic.detail(text);
-      const detailText = `\`✦ APPLE MUSIC DETAILS ✧\`\n\n✦ - Album: ${details.albumTitle}\n✧ - Artista: ${details.artistName}\n✦ - Publicado: ${details.releaseInfo}\n✧ - Descripción: ${details.description}`;
-      m.reply(detailText);
-      break;
+      case "applemusicdetail":
+        const details = await appleMusic.detail(text);
+        const detailText = `\`✦ APPLE MUSIC DETAILS ✧\`\n\n✦ - Album: ${details.albumTitle}\n✧ - Artista: ${details.artistName}\n✦ - Publicado: ${details.releaseInfo}\n✧ - Descripción: ${details.description}`;
+        m.reply(detailText);
+        break;
 
-    case "applemusicplay":
-      const musicData = await appledown.download(text);
-      const { name, albumname, artist, thumb, duration, url } = musicData;
-      m.reply(`_✧ Enviando ${name} (${artist}/${duration})_\n\n> ${url}`);
-      const doc = {
-        audio: { url: musicData.url },
-        mimetype: 'audio/mp4',
-        fileName: `${name}.mp3`,
-        contextInfo: {
-          externalAdReply: {
-            showAdAttribution: true,
-            mediaType: 2,
-            mediaUrl: url,
-            title: name,
-            sourceUrl: url,
-            thumbnail: await (await conn.getFile(thumb)).data,
-          },
-        },
-      };
-      await conn.sendMessage(m.chat, doc, { quoted: m });
-      break;
+      case "applemusicplay":
+      case "aplay":
+        if (text.startsWith("http")) {
+          // Descargar directamente desde el enlace
+          const musicData = await appledown.download(text);
+          const { name, artist, duration, thumb, url } = musicData;
 
-    default:
-      m.reply("Comando no reconocido.");
+          const doc = {
+            audio: { url },
+            mimetype: 'audio/mp4',
+            fileName: `${name}.mp3`,
+            contextInfo: {
+              externalAdReply: {
+                showAdAttribution: true,
+                mediaType: 2,
+                mediaUrl: url,
+                title: name,
+                sourceUrl: url,
+                thumbnail: await (await conn.getFile(thumb)).data,
+              },
+            },
+          };
+
+          await conn.sendMessage(m.chat, doc, { quoted: m });
+          m.reply(`_✧ Música enviada: ${name} (${artist}/${duration})_`);
+        } else {
+          // Buscar y descargar desde descripción
+          const searchResults = await appleMusic.search(text);
+          if (!searchResults || searchResults.length === 0) {
+            return m.reply("No se encontraron resultados. Por favor, intenta con otra descripción.");
+          }
+
+          const firstResult = searchResults[0];
+          const musicData = await appledown.download(firstResult.link);
+          const { name, artist, duration, thumb, url } = musicData;
+
+          const doc = {
+            audio: { url },
+            mimetype: 'audio/mp4',
+            fileName: `${name}.mp3`,
+            contextInfo: {
+              externalAdReply: {
+                showAdAttribution: true,
+                mediaType: 2,
+                mediaUrl: url,
+                title: name,
+                sourceUrl: url,
+                thumbnail: await (await conn.getFile(thumb)).data,
+              },
+            },
+          };
+
+          await conn.sendMessage(m.chat, doc, { quoted: m });
+          m.reply(`_✧ Música enviada: ${name} (${artist}/${duration})_`);
+        }
+        break;
+
+      default:
+        m.reply("Comando no reconocido.");
+    }
+  } catch (error) {
+    m.reply(error.message || "Ocurrió un error al procesar tu solicitud.");
   }
 };
 
 handler.help = ['applemusicsearch', 'applemusicdetail', 'applemusicplay'];
 handler.tags = ['downloader', 'search', 'info'];
-handler.command = /^(applemusicsearch|applemusicdetail|applemusicplay)$/i;
+handler.command = /^(applemusicsearch|applemusicdetail|applemusicplay|aplay)$/i;
 
 export default handler;
