@@ -90,6 +90,10 @@
     "xmldom": "^0.6.0",
     "yargs": "^17.7.2",
     "yt-search": "^2.10.4",
-    "zs-extract": "^1.4.2"
+    "zs-extract": "^1.4.2",
+    "m3u8-parser": "^4.9.0",
+    "path": "^0.12.7",
+    "fs": "0.0.1-security",
+    "child_process": "^1.0.2"
   }
 }
