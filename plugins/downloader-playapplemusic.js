@@ -26,11 +26,11 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     }
 
     const song = searchResults[0];
-    const { name, artist_name, album_name, url, artwork_url } = song;
+    const { name, artist_name, album_name, url, previewUrl, artwork_url } = song;
 
-    const songInfo = `🔰 *Admin-TK Apple Music Downloader*\n\n🎵 *Título:* ${name}\n🎤 *Artista:* ${artist_name}\n📀 *Álbum:* ${album_name}\n🔗 *Enlace:* ${url}`;
+    const songInfo = `🔰 *Admin-TK Apple Music Downloader*\n\n🎵 *Título:* ${name}\n🎤 *Artista:* ${artist_name}\n📀 *Álbum:* ${album_name}\n🔗 *Enlace:* ${url}\n🎧 *Vista Previa:* ${previewUrl}`;
     await conn.sendMessage(m.chat, {
-      text: `${songInfo}\n\n🔗 Enlace directo a Apple Music proporcionado.`,
+      text: `${songInfo}\n\n✅ Información proporcionada.`,
       edit: statusMessage.key,
     });
 
