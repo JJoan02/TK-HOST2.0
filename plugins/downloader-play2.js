@@ -7,11 +7,10 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
     if (!text) {
       return conn.reply(
         m.chat,
-        `🌟 *Admin-TK te pregunta:*
+        `⚠️ *Admin-TK:*
+Necesitas proporcionar una consulta de búsqueda.
 
-¿Qué deseas buscar? Escribe el título o enlace después del comando.
-
-📌 Ejemplo: *${usedPrefix}${command} Joji - Glimpse of Us*`,
+*Ejemplo de uso:* ${usedPrefix}${command} Joji Ew`,
         m
       );
     }
