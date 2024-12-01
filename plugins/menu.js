@@ -19,12 +19,13 @@ const estilo = (text, style = 1) => {
 };
 
 const tags = {
-    general: '`💎 ꜰᴜɴᴄɪᴏɴᴇꜱ Generales`',
+    general: '`💎 ꜰᴜɴᴄɪᴏɴᴇꜱ ɢᴇɴᴇʀᴀʟᴇꜱ`',
     group: '`👥 ᴄᴏɴꜰɪɢᴜʀᴀᴄɪóɴ ᴅᴇ ɢʀᴜᴘᴏꜱ`',
     search: '`🔍 ʙúꜱqᴜᴇᴅᴀ`',
     downloader: '`⬇️ ᴅᴇꜱᴄᴀʀɢᴀꜱ`',
     nsfw: '`🔞 ᴄᴏɴᴛᴇɴɪᴅᴏ ᴀᴅᴜʟᴛᴏ`',
-    tools: '`🔧 ʜᴇʀʀᴀᴍɪᴇɴᴛᴀꜱ`'
+    tools: '`🔧 ʜᴇʀʀᴀᴍɪᴇɴᴛᴀꜱ`',
+    owner: '`🔧 Owner`'
 };
 
 const defaultMenu = {
@@ -45,7 +46,7 @@ const defaultMenu = {
     body: `➤   %description\n> .         %cmd`,
     after: `
 
-> 👑 *Admin-TK / Comunidad TK*`,
+> 👑 *ᴀᴅᴍɪɴ-ᴛᴋ / ᴄᴏᴍᴜɴɪᴅᴀᴅ ᴛᴋ*`,
 };
 
 const handler = async (m, { conn, usedPrefix: _p }) => {
@@ -85,7 +86,6 @@ const handler = async (m, { conn, usedPrefix: _p }) => {
 };
 
 // Submenús por categoría
-
 const subMenuHandler = async (m, { conn, usedPrefix: _p, command }) => {
     try {
         const names = await conn.getName(m.sender);
@@ -124,7 +124,7 @@ const subMenuHandler = async (m, { conn, usedPrefix: _p, command }) => {
 ➤ \`.grupocmd2\` - Descripción del comando 2.
 `;
                 break;
-            case 'menusearch':
+            case 'menubusqueda':
                 subMenuText = `
 ╔════════════════════════════╗
 ║     🔍 *ᴍᴇɴú ʙúꜱqᴜᴇᴅᴀ* 🔍     
@@ -179,7 +179,19 @@ const subMenuHandler = async (m, { conn, usedPrefix: _p, command }) => {
 ➤ \`.passgen <longitud>\` - Generador de contraseñas.
 `;
                 break;
-            // Agrega más casos para otros submenús
+            case 'menuowner':
+                subMenuText = `
+╔════════════════════════════╗
+║     🔧 *ᴍᴇɴú ᴏᴡɴᴇʀ* 🔧     
+╚════════════════════════════╝
+
+📋 *Instrucciones:*
+- Usa los comandos a continuación para acceder a las funciones exclusivas del propietario.
+
+➤ \`.ownercmd1\` - Descripción del comando 1.
+➤ \`.ownercmd2\` - Descripción del comando 2.
+`;
+                break;
         }
 
         const text = `
@@ -198,13 +210,6 @@ ${subMenuText}
 
 handler.help = ['menu'];
 handler.tags = ['main'];
-handler.command = ['menu', 'allmenu'];
-
-export const subMenuHandlerExport = {
-    help: ['menugeneral', 'menugrupo', 'menusearch', 'menudescargas', 'menunsfw', 'menutools'],
-    tags: ['main'],
-    command: ['menugeneral', 'menugrupo', 'menusearch', 'menudescargas', 'menunsfw', 'menutools'],
-    handler: subMenuHandler,
-};
+handler.command = ['menu', 'menugeneral', 'menugrupo', 'menubusqueda', 'menudescargas', 'menunsfw', 'menutools', 'menuowner'];
 
 export default handler;
