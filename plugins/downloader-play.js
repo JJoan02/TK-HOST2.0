@@ -1,95 +1,85 @@
-import yts from 'yt-search';
 import axios from 'axios';
 
 const BASE_URL = 'https://youtube-download-api.matheusishiyama.repl.co';
 
-let searchResults = []; // Resultados temporales por chat
-
-const buscarPlay = async (m, { conn, text, command, usedPrefix }) => {
+const handler = async (m, { conn, text, command, usedPrefix }) => {
   try {
     if (!text) {
       return await conn.reply(
         m.chat,
-        `🌟 *Admin-TK te pregunta:*\n\n¿Qué música deseas buscar? Escribe el título o enlace después del comando.\n\n📌 Ejemplo: *${usedPrefix}${command} Joji - Glimpse of Us*`,
+        `🌟 *Admin-TK te pregunta:*\n\n¿Qué deseas descargar? Escribe el título o enlace después del comando.\n\n📌 Ejemplo: *${usedPrefix}${command} Joji - Glimpse of Us*`,
         m
       );
     }
 
-    const results = await yts(text);
-    const videos = results.videos;
+    // Reacción: Procesando
+    await conn.sendMessage(m.chat, { react: { text: '🔄', key: m.key } });
 
-    if (!videos.length) {
-      return await conn.reply(m.chat, '❌ No se encontraron resultados. Intenta con otro título.', m);
+    // Obtener información del video
+    await conn.reply(m.chat, '🔍 *Buscando información del video...*', m);
+    const infoResponse = await axios.get(`${BASE_URL}/info/?url=${encodeURIComponent(text)}`);
+    const videoInfo = infoResponse.data;
+
+    if (!videoInfo || !videoInfo.title) {
+      throw '❌ No se pudo obtener información del video. Verifica el enlace o título.';
     }
 
-    // Almacena resultados temporalmente
-    searchResults[m.chat] = videos;
+    const { title, thumbnail } = videoInfo;
 
-    let message = `🔍 *Resultados de búsqueda:*\n\n`;
-    videos.slice(0, 5).forEach((video, index) => {
-      message += `*${index + 1}.* 🎵 *${video.title}*\n`;
-      message += `⏳ Duración: ${video.timestamp}\n👁️ Vistas: ${video.views}\n🌐 Enlace: ${video.url}\n\n`;
-    });
+    // Mostrar información del video
+    await conn.reply(
+      m.chat,
+      `🎥 *Título:* ${title}\n🖼️ *Thumbnail:* ${thumbnail}\n\n⏳ *Preparando descargas...*\n`,
+      m
+    );
 
-    message += `📝 *Responde con el número del video para descargar (MP3 o MP4).*`;
-
-    await conn.reply(m.chat, message, m);
-  } catch (error) {
-    console.error('Error en buscarPlay:', error.message || error);
-    await conn.reply(m.chat, `❌ *Error al buscar:* ${error.message || 'Ocurrió un problema'}`, m);
-  }
-};
-
-const descargarPlay = async (m, { conn, text, command }) => {
-  try {
-    const chatResults = searchResults[m.chat];
-    if (!chatResults || !chatResults.length) {
-      return await conn.reply(m.chat, '❌ No hay resultados disponibles. Usa el comando `.play` primero.', m);
+    // Descargar video en calidad 480p o 360p
+    const qualities = ['480', '360'];
+    let videoUrl;
+    for (const quality of qualities) {
+      try {
+        await conn.reply(m.chat, `📹 *Intentando descargar en calidad ${quality}p...*`, m);
+        videoUrl = `${BASE_URL}/mp4/?url=${encodeURIComponent(text)}&quality=${quality}`;
+        await axios.head(videoUrl); // Verifica si el enlace es válido
+        break;
+      } catch (err) {
+        console.error(`❌ Calidad ${quality}p no disponible.`);
+      }
     }
 
-    const index = parseInt(text) - 1;
-    if (isNaN(index) || index < 0 || index >= chatResults.length) {
-      return await conn.reply(m.chat, '❌ Número inválido. Elige un número válido de la lista.', m);
-    }
+    if (!videoUrl) throw '❌ No se pudo descargar el video en ninguna calidad.';
 
-    const video = chatResults[index];
-    const isAudio = command === 'play';
-    const downloadUrl = isAudio
-      ? `${BASE_URL}/mp3/?url=${encodeURIComponent(video.url)}`
-      : `${BASE_URL}/mp4/?url=${encodeURIComponent(video.url)}`;
-    const fileType = isAudio ? 'audio' : 'video';
-    const mimetype = isAudio ? 'audio/mpeg' : 'video/mp4';
-    const extension = isAudio ? 'mp3' : 'mp4';
-
-    await conn.reply(m.chat, `⏳ Descargando *${video.title}* en formato ${isAudio ? 'MP3' : 'MP4'}...`, m);
-
+    // Enviar video
     await conn.sendMessage(m.chat, {
-      [fileType]: { url: downloadUrl },
-      mimetype,
-      fileName: `${video.title}.${extension}`,
-      caption: `🎶 *Título:* ${video.title}\n\n*🔰 Servicio proporcionado por Admin-TK*`,
+      video: { url: videoUrl },
+      mimetype: 'video/mp4',
+      fileName: `${title}_480p_or_360p.mp4`,
+      caption: `🎥 *Título:* ${title}\n📺 *Calidad:* 480p o 360p\n\n🔰 *Video descargado por Admin-TK*`,
     });
 
-    await conn.reply(m.chat, `✅ *¡Descarga completada!*\n\n🔰 *Admin-TK siempre a tu servicio.*`, m);
+    // Descargar audio en formato MP3
+    await conn.reply(m.chat, '🎶 *Descargando el audio en formato MP3...*', m);
+    const audioUrl = `${BASE_URL}/mp3/?url=${encodeURIComponent(text)}`;
+    await conn.sendMessage(m.chat, {
+      audio: { url: audioUrl },
+      mimetype: 'audio/mpeg',
+      fileName: `${title}.mp3`,
+      caption: `🎶 *Título:* ${title}\n\n🔰 *Audio descargado por Admin-TK*`,
+    });
+
+    // Confirmar finalización
+    await conn.reply(m.chat, `✅ *Descarga completada!*\n\n🔰 *Admin-TK siempre a tu servicio.*`, m);
+    await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
   } catch (error) {
-    console.error('Error en descargarPlay:', error.message || error);
-    await conn.reply(m.chat, `❌ *Error al descargar:* ${error.message || 'Ocurrió un problema'}`, m);
+    console.error('❌ Error en .play:', error.message || error);
+    await conn.reply(m.chat, `❌ *Error:* ${error.message || 'Ocurrió un problema inesperado.'}`, m);
+    await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
   }
 };
 
-handler = {
-  buscar: {
-    command: ['play', 'playvideo'], // Comandos para buscar
-    handler: buscarPlay,
-    tags: ['downloader'],
-    help: ['play <consulta>', 'playvideo <consulta>'],
-  },
-  descargar: {
-    command: ['descargarplay'], // Comando para descargar
-    handler: descargarPlay,
-    tags: ['downloader'],
-    help: ['descargarplay <número>'],
-  },
-};
+handler.command = ['play'];
+handler.help = ['play *<título o enlace>*'];
+handler.tags = ['downloader'];
+handler.register = true;
 
 export default handler;
