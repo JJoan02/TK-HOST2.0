@@ -3,20 +3,46 @@ import yts from 'yt-search';
 import fetch from 'node-fetch';
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
-  if (!text) throw m.reply(`💥 *Hace falta el título o enlace del video de YouTube.*
+  if (!text) {
+    await conn.sendMessage(m.chat, {
+      text: `⚠️ *Admin-TK:*
+Necesitas proporcionar una consulta de búsqueda.
 
-*𔔢 Ejemplo: _.play JAWNY - Honeypie Animation*`);
+*Ejemplo de uso:* *.play Rosa pastel Belanova*`
+    }, { quoted: m });
+    await conn.sendMessage(m.chat, { react: { text: '❗', key: m.key } });
+    return;
+  }
 
   // Enviar mensaje inicial indicando que se está procesando
   let initialMessage = await conn.sendMessage(m.chat, {
-    text: '🕒 *Preparando descarga...* Por favor, espere mientras procesamos la solicitud.'
+    text: '✧ Espere un momento...'
   }, { quoted: m });
+  await conn.sendMessage(m.chat, { react: { text: '⏳', key: m.key } });
 
   let results = await yts(text);
   let tes = results.videos[0];
-  if (!tes) throw conn.sendMessage(m.chat, {
-    text: '⚠️ *Admin-TK:* No se encontraron resultados para tu consulta. Por favor intenta ser un poco más específico.'
-  }, { quoted: m });
+  if (!tes) {
+    await conn.sendMessage(m.chat, {
+      text: '⚠️ *Admin-TK:* No se encontraron resultados para tu consulta. Por favor intenta ser un poco más específico.'
+    }, { quoted: m });
+    await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
+    return;
+  }
+
+  // Editar el mensaje inicial con la información detallada del video
+  await conn.sendMessage(m.chat, {
+    text: `🔰 *Admin-TK Downloader*
+
+🎵 *Título:* ${tes.title}
+⏳ *Duración:* ${tes.duration.timestamp}
+👁️ *Vistas:* ${tes.views}
+📅 *Publicado:* ${tes.ago}
+🌐 *Enlace:* ${tes.url}
+
+🕒 *Preparando descarga...*`,
+    edit: initialMessage.key
+  });
 
   // Múltiples APIs para descarga, por si una falla.
   const apiList = [
@@ -62,14 +88,16 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
 
   let dataos = await downloadFromApi(0, tes.url, 'mp3');
   if (!dataos.success) {
-    return conn.sendMessage(m.chat, {
+    await conn.sendMessage(m.chat, {
       text: dataos.message
     }, { quoted: m });
+    await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
+    return;
   }
 
   let { title, thumbnail, quality, downloadUrl, views, ago, duration } = tes;
 
-  // Editar el mensaje inicial con la información detallada del video
+  // Editar el mensaje con el estado de descarga completada
   await conn.sendMessage(m.chat, {
     text: `🔰 *Admin-TK Downloader*
 
@@ -79,9 +107,10 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
 📅 *Publicado:* ${ago}
 🌐 *Enlace:* ${tes.url}
 
-🕒 *Descargando el audio 🔊, aguarde un momento...*`,
+🕒 *Audio descargado...*`,
     edit: initialMessage.key
   });
+  await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
 
   // Luego enviar el archivo de audio
   const doc = {
@@ -108,83 +137,8 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
   }
 };
 
-// Handler para el comando '.playvideo'
-let playVideoHandler = async (m, { conn, text, usedPrefix, command }) => {
-  if (!text) throw m.reply(`💥 *Hace falta el título o enlace del video de YouTube.*
-
-*𔔢 Ejemplo: _.playvideo JAWNY - Honeypie Animation*`);
-
-  // Enviar mensaje inicial indicando que se está procesando
-  let initialMessage = await conn.sendMessage(m.chat, {
-    text: '🕒 *Preparando descarga del video...* Por favor, espere mientras procesamos la solicitud.'
-  }, { quoted: m });
-
-  let results = await yts(text);
-  let tes = results.videos[0];
-  if (!tes) throw conn.sendMessage(m.chat, {
-    text: '⚠️ *Admin-TK:* No se encontraron resultados para tu consulta. Por favor intenta ser un poco más específico.'
-  }, { quoted: m });
-
-  let videoUrl = tes.url;
-
-  // Editar el mensaje inicial con la información detallada del video
-  await conn.sendMessage(m.chat, {
-    text: `🔰 *Admin-TK Downloader*
-
-🎵 *Título:* ${tes.title}
-⏳ *Duración:* ${tes.duration.timestamp}
-👁️ *Vistas:* ${tes.views}
-📅 *Publicado:* ${tes.ago}
-🌐 *Enlace:* ${tes.url}
-
-🕒 *Preparando el video...*`,
-    edit: initialMessage.key
-  });
-
-  // Enviar el video descargado
-  const videoDoc = {
-    video: { url: videoUrl },
-    mimetype: 'video/mp4',
-    fileName: `${tes.title}.mp4`,
-    caption: `🎥 *${tes.title}*
-📽 *Fuente*: ${videoUrl}`
-  };
-  try {
-    await conn.sendMessage(m.chat, videoDoc, { quoted: m });
-    m.reply('⚠️ *Admin-TK:* El video ha sido enviado exitosamente. Ahora estoy preparando el archivo de audio...');
-  } catch (error) {
-    console.error('Error al enviar el video:', error);
-    return m.reply('⚠️ *Admin-TK:* Hubo un error mientras intentaba enviar el video. Por favor, inténtalo nuevamente.');
-  }
-
-  let dataos = await downloadFromApi(0, tes.url, 'mp3');
-  if (!dataos.success) {
-    return m.reply(dataos.message);
-  }
-
-  let { downloadUrl } = dataos;
-
-  const audioDoc = {
-    audio: { url: downloadUrl },
-    mimetype: 'audio/mp4',
-    fileName: `${tes.title}.mp3`
-  };
-  try {
-    await conn.sendMessage(m.chat, audioDoc, { quoted: m });
-    m.reply('⚠️ *Admin-TK:* El archivo de audio ha sido enviado exitosamente. Si necesitas algo más, no dudes en pedírmelo.');
-  } catch (error) {
-    console.error('Error al enviar el audio:', error);
-    m.reply('⚠️ *Admin-TK:* Hubo un error mientras intentaba enviar el archivo de audio. Por favor, inténtalo nuevamente.');
-  }
-};
-
 handler.help = ['play *<consulta>*'];
 handler.tags = ['downloader'];
 handler.command = /^(play)$/i;
 
-playVideoHandler.help = ['playvideo *<consulta>*'];
-playVideoHandler.tags = ['downloader'];
-playVideoHandler.command = /^(playvideo)$/i;
-
 export default handler;
-export { playVideoHandler };
