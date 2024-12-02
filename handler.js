@@ -155,7 +155,7 @@ if (!('antiLinkWaChannel' in chat)) chat.antiLinkWaChannel = true
 global.db.data.chats[m.chat] = {
 isBanned: false,
 bienvenida: true,
-welcome: false,
+welcome: true,
 antiLinkWaChannel: true,
 antiLinkHttp: true,
 modoadmin: false,
