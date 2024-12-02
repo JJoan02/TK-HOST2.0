@@ -19,34 +19,50 @@ const estilo = (text, style = 1) => {
 };
 
 const tags = {
-    general: '`💎 ꜰᴜɴᴄɪᴏɴᴇꜱ ɢᴇɴᴇʀᴀʟᴇꜱ`',
-    group: '`👥 ᴄᴏɴꜰɪɢᴜʀᴀᴄɪóɴ ᴅᴇ ɢʀᴜᴘᴏꜱ`',
-    search: '`🔍 ʙúꜱqᴜᴇᴅᴀ`',
-    downloader: '`⬇️ ᴅᴇꜱᴄᴀʀɢᴀꜱ`',
-    nsfw: '`🔞 ᴄᴏɴᴛᴇɴɪᴅᴏ ᴀᴅᴜʟᴛᴏ`',
-    tools: '`🔧 ʜᴇʀʀᴀᴍɪᴇɴᴛᴀꜱ`',
-    owner: '`🔧 Owner`'
+    main: '`💎 FUNCIONES PRINCIPALES`',
+    group: '`👥 CONFIGURACIÓN DE GRUPOS`',
+    search: '`🔍 BÚSQUEDA`',
+    downloader: '`⬇️ DESCARGAS`',
+    nsfw: '`🔞 CONTENIDO ADULTO`',
+    internet: '`🌐 INTERNET Y HERRAMIENTAS`',
+    anime: '`🍙 ANIME`',
+    anonymous: '`🎭 CHAT ANÓNIMO`',
+    ai: '`🤖 INTELIGENCIA ARTIFICIAL`',
+    confesar: '`💌 CONFESIONES`',
+    rpg: '`🎮 AVENTURAS Y JUEGOS`',
+    fun: '`🎉 DIVERSIÓN`',
+    sticker: '`✨ CREACIÓN DE STICKERS`',
+    tools: '`🔧 HERRAMIENTAS`',
+    owner: '`👑 ADMINISTRACIÓN`'
 };
 
 const defaultMenu = {
     before: `
 ╔════════════════════════════╗
-║     📜 *ɢᴜíᴀ ᴅᴇʟ ᴍᴇɴú ᴛᴋ* 📜     
+║     📜 *GUÍA DEL MENÚ TK* 📜     
 ╚════════════════════════════╝
 
-👋 *ʜᴏʟᴀ, %names*.  
-ᴇɴ ᴇꜱᴛᴇ ᴍᴇɴú ᴇɴᴄᴏɴᴛʀᴀʀáꜱ ʟᴀꜱ ᴄᴀᴛᴇɢᴏʀíᴀꜱ ᴅɪꜱᴘᴏɴɪʙʟᴇꜱ.  
+👋 *Hola, %names*.  
+En este menú encontrarás una descripción detallada de cada comando disponible.  
 
-🗓️ ꜰᴇᴄʜᴀ: %date  
-⏰ ʜᴏʀᴀ: %time  
-👥 ᴜꜱᴜᴀʀɪᴏꜱ ʀᴇɢɪꜱᴛʀᴀᴅᴏꜱ: %totalreg  
+🗓️ Fecha: %date  
+⏰ Hora: %time  
+👥 Usuarios registrados: %totalreg  
 
-🌟 _ᴄᴏɴꜱᴜʟᴛᴀ ᴇꜱᴛᴀ ɢᴜíᴀ ꜱɪᴇᴍᴘʀᴇ qᴜᴇ ɴᴇᴄᴇꜱɪᴛᴇꜱ ᴏʀɪᴇɴᴛᴀᴄɪóɴ._  
+🛠️ *¿Cómo usar este menú?*
+1️⃣ Busca los comandos disponibles en cada sección.  
+2️⃣ Usa el prefijo adecuado antes de cada comando (por ejemplo: \`.comando\`).  
+
+🌟 _Consulta esta guía siempre que necesites orientación._  
 `.trimStart(),
-    body: `➤   %description\n> .         %cmd`,
+    header: `
+╭───✦ *%category* ✦───╮`,
+    body: `➤ %cmd`, // Sin saltos adicionales
+    footer: `
+╰──────────────╯`,
     after: `
-
-> 👑 *ᴀᴅᴍɪɴ-ᴛᴋ / ᴄᴏᴍᴜɴɪᴅᴀᴅ ᴛᴋ*`,
+🌐 **Comunidad TK: Más que un bot, somos un equipo.**  
+👑 *Admin-TK está siempre contigo.*`,
 };
 
 const handler = async (m, { conn, usedPrefix: _p }) => {
@@ -60,15 +76,28 @@ const handler = async (m, { conn, usedPrefix: _p }) => {
         const date = d.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
         const totalreg = Object.keys(global.db.data.users).length;
 
-        const menuCategories = Object.keys(tags).map(tag => {
-            return defaultMenu.body
-                .replace(/%cmd/g, `${_p}menu${tag}`)
-                .replace(/%description/g, tags[tag]);
-        }).join('\n');
+        const help = Object.values(global.plugins).filter(plugins => !plugins.disabled).map(plugins => ({
+            help: Array.isArray(plugins.tags) ? plugins.help : [plugins.help],
+            tags: Array.isArray(plugins.tags) ? plugins.tags : [plugins.tags],
+            description: plugins.description || 'Sin descripción disponible.',
+            limit: plugins.limit,
+            premium: plugins.premium,
+        }));
+
+        const menuSections = Object.keys(tags).map(tag => {
+            const sectionCommands = help
+                .filter(plugin => plugin.tags.includes(tag) && plugin.help)
+                .map(plugin => plugin.help.map(cmd => defaultMenu.body
+                    .replace(/%cmd/g, `${_p}${cmd}`)
+                    .replace(/%description/g, plugin.description)
+                ).join('\n')).join('\n');
+            if (!sectionCommands) return '';
+            return defaultMenu.header.replace(/%category/g, tags[tag]) + '\n' + sectionCommands + '\n' + defaultMenu.footer;
+        }).filter(v => v).join('\n\n');
 
         const text = [
             defaultMenu.before,
-            menuCategories,
+            menuSections,
             defaultMenu.after
         ].join('\n')
             .replace(/%names/g, names)
@@ -85,131 +114,15 @@ const handler = async (m, { conn, usedPrefix: _p }) => {
     }
 };
 
-// Submenús por categoría
-const subMenuHandler = async (m, { conn, usedPrefix: _p, command }) => {
-    try {
-        const names = await conn.getName(m.sender);
-        const d = new Date();
-        const locale = 'es';
-        const time = d.toLocaleTimeString(locale, { hour: 'numeric', minute: 'numeric', second: 'numeric' });
-        const date = d.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
-        const totalreg = Object.keys(global.db.data.users).length;
-
-        let subMenuText = '';
-
-        switch (command) {
-            case 'menugeneral':
-                subMenuText = `
-╔════════════════════════════╗
-║     💎 *ᴍᴇɴú ꜰᴜɴᴄɪᴏɴᴇꜱ ɢᴇɴᴇʀᴀʟᴇꜱ* 💎     
-╚════════════════════════════╝
-
-📋 *Instrucciones:*
-- Usa los comandos a continuación para acceder a las funciones generales.
-
-➤ \`.generalcmd1\` - Descripción del comando 1.
-➤ \`.generalcmd2\` - Descripción del comando 2.
-`;
-                break;
-            case 'menugrupo':
-                subMenuText = `
-╔════════════════════════════╗
-║     👥 *ᴍᴇɴú ᴄᴏɴꜰɪɢᴜʀᴀᴄɪóɴ ᴅᴇ ɢʀᴜᴘᴏꜱ* 👥     
-╚════════════════════════════╝
-
-📋 *Instrucciones:*
-- Usa los comandos a continuación para configurar los grupos.
-
-➤ \`.grupocmd1\` - Descripción del comando 1.
-➤ \`.grupocmd2\` - Descripción del comando 2.
-`;
-                break;
-            case 'menubusqueda':
-                subMenuText = `
-╔════════════════════════════╗
-║     🔍 *ᴍᴇɴú ʙúꜱqᴜᴇᴅᴀ* 🔍     
-╚════════════════════════════╝
-
-📋 *Instrucciones:*
-- Usa los comandos a continuación para realizar búsquedas.
-
-➤ \`.searchcmd1\` - Descripción del comando 1.
-➤ \`.searchcmd2\` - Descripción del comando 2.
-`;
-                break;
-            case 'menudescargas':
-                subMenuText = `
-╔════════════════════════════╗
-║     ⬇️ *ᴍᴇɴú ᴅᴇꜱᴄᴀʀɢᴀꜱ* ⬇️     
-╚════════════════════════════╝
-
-📋 *Instrucciones:*
-- Usa los comandos a continuación para descargar contenido.
-
-➤ \`.yt <link>\` - Descargar videos de YouTube.
-➤ \`.img <término>\` - Descargar imágenes.
-➤ \`.music <título>\` - Descargar música.
-`;
-                break;
-            case 'menunsfw':
-                subMenuText = `
-╔════════════════════════════╗
-║     🔞 *ᴍᴇɴú ᴄᴏɴᴛᴇɴɪᴅᴏ ᴀᴅᴜʟᴛᴏ* 🔞     
-╚════════════════════════════╝
-
-📋 *Instrucciones:*
-- Usa los comandos a continuación para acceder a contenido NSFW.
-
-➤ \`.nsfwimg\` - Imágenes NSFW.
-➤ \`.nsfwvideo\` - Videos NSFW.
-➤ \`.nsfwcomic\` - Cómics NSFW.
-`;
-                break;
-            case 'menutools':
-                subMenuText = `
-╔════════════════════════════╗
-║     🔧 *ᴍᴇɴú ʜᴇʀʀᴀᴍɪᴇɴᴛᴀꜱ* 🔧     
-╚════════════════════════════╝
-
-📋 *Instrucciones:*
-- Usa los comandos a continuación para acceder a herramientas útiles.
-
-➤ \`.calc <expresión>\` - Calculadora.
-➤ \`.convert <valor>\` - Conversor de unidades.
-➤ \`.passgen <longitud>\` - Generador de contraseñas.
-`;
-                break;
-            case 'menuowner':
-                subMenuText = `
-╔════════════════════════════╗
-║     🔧 *ᴍᴇɴú ᴏᴡɴᴇʀ* 🔧     
-╚════════════════════════════╝
-
-📋 *Instrucciones:*
-- Usa los comandos a continuación para acceder a las funciones exclusivas del propietario.
-
-➤ \`.ownercmd1\` - Descripción del comando 1.
-➤ \`.ownercmd2\` - Descripción del comando 2.
-`;
-                break;
-        }
-
-        const text = `
-${subMenuText}
-🗓️ ꜰᴇᴄʜᴀ: ${date}  
-⏰ ʜᴏʀᴀ: ${time}  
-👥 ᴜꜱᴜᴀʀɪᴏꜱ ʀᴇɢɪꜱᴛʀᴀᴅᴏꜱ: ${totalreg}
-`;
-
-        await conn.sendMessage(m.chat, estilo(text), m);
-    } catch (error) {
-        console.error(error);
-        throw 'Hubo un error generando el submenú. Por favor, intenta nuevamente.';
-    }
+// Funciones auxiliares
+const getGreeting = (hour) => {
+    if (hour >= 5 && hour < 12) return 'Buenos Días ☀️';
+    if (hour >= 12 && hour < 19) return 'Buenas Tardes 🌅';
+    return 'Buenas Noches 🌙';
 };
 
 handler.help = ['menu'];
 handler.tags = ['main'];
-handler.command = ['menu', 'menugeneral', 'menugrupo', 'menubusqueda', 'menudescargas', 'menunsfw', 'menutools', 'menuowner'];
+handler.command = ['menu', 'allmenu'];
 
 export default handler;
