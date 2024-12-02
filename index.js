@@ -1,5 +1,8 @@
 // index.js
+
+// Importaciones necesarias
 import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
 import cfonts from 'cfonts';
 import { fileURLToPath } from 'url';
 import { join, dirname } from 'path';
@@ -11,24 +14,43 @@ import { openDb } from './data/codigos.js'; // Importamos la función openDb
 import cron from 'node-cron'; // Importamos node-cron para tareas programadas
 
 // Configuración global
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const require = createRequire(__dirname); // Permite usar `require` en ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const require = createRequire(import.meta.url); // Permite usar `require` en ES Modules
 const { name, author } = require(join(__dirname, './package.json')); // Carga la información desde el package.json
-const rl = createInterface(process.stdin, process.stdout);
+const rl = createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
 let procesoEjecutandose = false; // Indicador para saber si el proceso está corriendo
 
 // Función para mostrar los banners de inicio
 function mostrarBanner() {
   const banners = [
-    { texto: 'Admin-TK', fuente: 'block', alineación: 'center', colores: ['cyan'] },             // Escala 3 (grande)
-    { texto: 'TK-HOST', fuente: 'console', alineación: 'center', colores: ['red'] },             // Escala 2 (mediano)
-    { texto: 'Creado por • JoanTK', fuente: 'tiny', alineación: 'center', colores: ['magenta'] } // Escala 1 (pequeño)
+    {
+      texto: 'Admin-TK',
+      fuente: 'block',
+      alineacion: 'center',
+      colores: ['cyan'],
+    }, // Escala 3 (grande)
+    {
+      texto: 'TK-HOST',
+      fuente: 'console',
+      alineacion: 'center',
+      colores: ['red'],
+    }, // Escala 2 (mediano)
+    {
+      texto: 'Creado por • JoanTK',
+      fuente: 'tiny',
+      alineacion: 'center',
+      colores: ['magenta'],
+    }, // Escala 1 (pequeño)
   ];
 
   banners.forEach((banner) =>
     cfonts.say(banner.texto, {
       font: banner.fuente,
-      align: banner.alineación,
+      align: banner.alineacion,
       colors: banner.colores,
     })
   );
@@ -101,7 +123,9 @@ function iniciar(file) {
   procesoEjecutandose = true;
 
   const args = [join(__dirname, file), ...process.argv.slice(2)];
-  cfonts.say(args.join(' '), { font: 'console', align: 'center', gradient: ['red', 'magenta'] });
+
+  // Mostrar el nombre del archivo que se va a iniciar
+  console.log(`Iniciando el archivo principal: ${file}`);
 
   // Configurar proceso maestro y forkear el proceso hijo
   setupMaster({ exec: args[0], args: args.slice(1) });
@@ -144,7 +168,7 @@ function iniciar(file) {
   });
 
   // Configurar entrada interactiva desde la línea de comandos
-  const opciones = new Object(yargs(process.argv.slice(2)).exitProcess(false).parse());
+  const opciones = yargs(hideBin(process.argv)).exitProcess(false).parse();
   if (!rl.listenerCount('line')) {
     rl.on('line', (linea) => {
       procesoHijo.emit('message', linea.trim());
