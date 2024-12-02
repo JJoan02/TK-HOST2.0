@@ -1,10 +1,10 @@
 import fs from 'fs';
 import path from 'path';
-import { uploadToTelegraph } from '../lib/uploadImage.js'; // Importación corregida
+import { uploadToTelegraph } from '../lib/uploadImage.js';
 import { sticker } from '../lib/sticker.js';
 
 let handler = async (m, { conn, usedPrefix }) => {
-    if (!db.data.chats[m.chat].nsfw && m.isGroup) {
+    if (!global.db.data.chats[m.chat].nsfw && m.isGroup) {
         return m.reply('🚩 *¡Estos comandos están desactivados!*');
     }
 
@@ -36,8 +36,7 @@ let handler = async (m, { conn, usedPrefix }) => {
 
         conn.sendMessage(
             m.chat,
-            { video: { url: video }, gifPlayback: true, caption: str, mentions: [m.sender] },
-            { quoted: estilo }
+            { video: { url: video }, gifPlayback: true, caption: str, mentions: [m.sender] }
         );
     }
 };
@@ -46,7 +45,7 @@ handler.help = ['anal @tag'];
 handler.tags = ['fun'];
 handler.command = ['anal', 'culiar'];
 handler.register = true;
+
 handler.group = true;
 
 export default handler;
-
