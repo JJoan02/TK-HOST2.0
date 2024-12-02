@@ -26,7 +26,7 @@ const handler = async (m, { text, usedPrefix, command, conn }) => {
     let result = await response.json();
 
     // URL de la imagen de Admin-TK
-    let imageUrl = "https://example.com/admin-tk-image.jpg"; // Cambia esta URL por la imagen que deseas usar
+    let imageUrl = "https://pomf2.lain.la/f/fqeogyqi.jpg"; // Cambia esta URL por la imagen que deseas usar
 
     // Enviar respuesta con imagen
     await conn.sendFile(
