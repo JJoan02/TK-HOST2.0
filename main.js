@@ -1,6 +1,9 @@
+// main.js
+
 // =======================================
 // CONFIGURACIONES INICIALES Y MÓDULOS
 // =======================================
+
 import './config.js';
 
 import path, { join } from 'path';
@@ -14,6 +17,7 @@ import {
   existsSync,
   readFileSync,
   watch,
+  mkdirSync,
 } from 'fs';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
@@ -95,7 +99,7 @@ global.opts = yargs(hideBin(process.argv)).exitProcess(false).parse();
 global.prefix = new RegExp(
   '^[' +
     (global.opts['prefix'] || '/\\#!@\\^').replace(
-      /[|\\{}()[\]^$+*?.\-\^]/g,
+      /[|\\{}()[\]^$+*?.\\-]/g,
       '\\$&'
     ) +
     ']'
@@ -139,11 +143,7 @@ global.loadDatabase = async function loadDatabase() {
 };
 loadDatabase();
 
-// Elimina o comenta estas líneas si las tienes en tu código:
-// const usePairingCode = true; // Usar siempre el código de emparejamiento de 8 dígitos
-// const useMobile = process.argv.includes('--mobile');
-
-// Añade este código:
+// Eliminar las líneas que establecen 'usePairingCode' y 'useMobile' si existen
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -312,6 +312,11 @@ function clearTmp() {
   const files = [];
 
   tmpDirs.forEach((dirname) => {
+    if (!existsSync(dirname)) {
+      // Crear el directorio si no existe
+      mkdirSync(dirname);
+      console.log(`Directorio creado: ${dirname}`);
+    }
     readdirSync(dirname).forEach((file) => {
       files.push(join(dirname, file));
     });
@@ -324,6 +329,7 @@ function clearTmp() {
       Date.now() - stats.mtimeMs >= 1000 * 60 * 3
     ) {
       unlinkSync(file);
+      console.log(`Archivo eliminado: ${file}`);
     }
   });
 }
@@ -594,4 +600,4 @@ _quickTest().then(() =>
     '☑️ Prueba rápida realizada, nombre de la sesión ~> creds.json'
   )
 );
-  
+      
