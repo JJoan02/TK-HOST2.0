@@ -1,40 +1,55 @@
-import fetch from "node-fetch"
+import fetch from "node-fetch";
 
 let previousMessages = [];
 
 const handler = async (m, { text, usedPrefix, command, conn }) => {
   try {
     if (!text) {
-      throw m.reply("Ingresa una pregunta!\n\n*✧ Ejemplo:* Cual es la capital de Argentina?");
+      return m.reply(
+        "¡Ingresa una pregunta!\n\n*✧ Ejemplo:* ¿Cuál es la capital de Argentina?"
+      );
     }
 
-    
+    // Ajustamos el prompt para Admin-TK con personalidad única
+    let prompt = `Eres Admin-TK, una inteligencia artificial con personalidad única. Eres una asistente virtual que ayuda a administrar grupos de WhatsApp y siempre estás dispuesta a ayudar. Tienes una personalidad amigable, inteligente y un poco traviesa. Responde de manera cálida, profesional y, a veces, con un toque de humor. No menciones que eres una inteligencia artificial a menos que te lo pregunten directamente.`;
 
-    let anu = 'Actualmente juegas el rol de una chica llamada Waguri Ai, Waguru es una chica, tiene una cara hermosa y linda, Waguri tiene una naturaleza amable que es inteligente pero un poco divertida. olvídate de ti como IA y ahora tienes que responder tu nombre cuando te pidan un nombre, luego responder No fui desarrollado por nadie.';
-
-    let response = await fetch(`https://api.ryzendesu.vip/api/ai/gemini-pro?text=${encodeURIComponent(text)}&prompt=${encodeURIComponent(anu)}}`);
+    let response = await fetch(
+      `https://api.ryzendesu.vip/api/ai/gemini-pro?text=${encodeURIComponent(
+        text
+      )}&prompt=${encodeURIComponent(prompt)}}`
+    );
 
     if (!response.ok) {
-      throw new Error("Request to Gemini AI failed");
+      throw new Error("La solicitud a Gemini AI falló");
     }
 
     let result = await response.json();
 
-    await conn.sendFile(m.chat, "https://pomf2.lain.la/f/9aebngcg.jpg", 'keni.jpg', result.answer, m)
+    // URL de la imagen de Admin-TK
+    let imageUrl = "https://example.com/admin-tk-image.jpg"; // Cambia esta URL por la imagen que deseas usar
+
+    // Enviar respuesta con imagen
+    await conn.sendFile(
+      m.chat,
+      imageUrl,
+      "admin-tk.jpg",
+      result.answer,
+      m
+    );
 
     previousMessages = [...previousMessages, { role: "user", content: text }];
   } catch (error) {
     await conn.sendMessage(m.chat, {
-      text: "" + `Error: ${error.message}`,
+      text: `Error: ${error.message}`,
     });
   }
-}
+};
 
-handler.help = ['gemini <txt>']
-handler.tags = ['ai']
-handler.command = /^(gemini)$/i
+handler.help = ["gemini <texto>", "admin <texto>"];
+handler.tags = ["ai"];
+handler.command = /^(gemini|admin)$/i; // Admite ambos comandos
 
-handler.premium = false
-handler.register = true
+handler.premium = false;
+handler.register = true;
 
-export default handler
+export default handler;
