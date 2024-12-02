@@ -1,128 +1,230 @@
-import moment from 'moment-timezone';
+const {
+    BufferJSON,
+    WA_DEFAULT_EPHEMERAL,
+    generateWAMessageFromContent,
+    proto,
+    generateWAMessageContent,
+    generateWAMessage,
+    prepareWAMessageMedia,
+    areJidsSameUser,
+    getContentType
+} = (await import('@adiwajshing/baileys')).default;
+
+process.env.TZ = 'America/Buenos_Aires';
+import fs from "fs";
+import path from "path";
+import fetch from "node-fetch";
+import moment from "moment-timezone";
 import { xpRange } from '../lib/levelling.js';
 
-const estilo = (text, style = 1) => {
-    const xStr = 'abcdefghijklmnopqrstuvwxyz1234567890'.split('');
-    const yStr = Object.freeze({
-        1: 'ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘqʀꜱᴛᴜᴠᴡxʏᴢ1234567890'
+let arrayMenu = [
+    'all',
+    'main',
+    'anonymous',
+    'ai',
+    'jadibot',
+    'confesar',
+    'rpg',
+    'fun',
+    'search',
+    'downloader',
+    'internet',
+    'anime',
+    'nsfw',
+    'sticker',
+    'tools',
+    'group',
+    'owner'
+];
+
+let estilo = (text, style = 1) => {
+    var xStr = 'abcdefghijklmnopqrstuvwxyz1234567890'.split('');
+    var yStr = Object.freeze({
+        1: '𝓪𝓫𝓬𝓭𝓮𝓯𝓰𝓱𝓲𝓳𝓴𝓵𝓶𝓷𝓸𝓹𝓺𝓻𝓼𝓽𝓾𝓿𝔀𝔁𝔂𝔃1234567890'
     });
-    const replacer = [];
+    var replacer = [];
     xStr.map((v, i) => replacer.push({
         original: v,
         convert: yStr[style].split('')[i]
     }));
-    return text
-        .toLowerCase()
-        .split('')
-        .map(v => replacer.find(x => x.original === v)?.convert || v)
-        .join('');
+    var str = text.toLowerCase().split('');
+    var output = [];
+    str.map(v => {
+        const find = replacer.find(x => x.original == v);
+        find ? output.push(find.convert) : output.push(v);
+    });
+    return output.join('');
 };
 
-const tags = {
-    main: '`💎 FUNCIONES PRINCIPALES`',
-    group: '`👥 CONFIGURACIÓN DE GRUPOS`',
-    search: '`🔍 BÚSQUEDA`',
-    downloader: '`⬇️ DESCARGAS`',
-    nsfw: '`🔞 CONTENIDO ADULTO`',
-    internet: '`🌐 INTERNET Y HERRAMIENTAS`',
-    anime: '`🍙 ANIME`',
-    anonymous: '`🎭 CHAT ANÓNIMO`',
-    ai: '`🤖 INTELIGENCIA ARTIFICIAL`',
-    confesar: '`💌 CONFESIONES`',
-    rpg: '`🎮 AVENTURAS Y JUEGOS`',
-    fun: '`🎉 DIVERSIÓN`',
-    sticker: '`✨ CREACIÓN DE STICKERS`',
-    tools: '`🔧 HERRAMIENTAS`',
-    owner: '`👑 ADMINISTRACIÓN`'
+const allTags = {
+    all: "🌟 MENÚ COMPLETO",
+    main: "🏠 MENÚ PRINCIPAL",
+    downloader: "📥 MENÚ DESCARGAS",
+    jadibot: "🤖 MENÚ SUBBOTS",
+    rpg: "⚔️ MENÚ RPG",
+    ai: "🤖 MENú INTELIGENCIA ARTIFICIAL",
+    search: "🔍 MENÚ BÚSQUEDA",
+    anime: "🍥 MENú ANIME",
+    sticker: "✨ MENú STICKER",
+    fun: "🎉 MENú DIVERTIDO",
+    group: "👥 MENú GRUPO",
+    nsfw: "🔞 MENú NSFW",
+    info: "ℹ️ MENú INFORMACIóN",
+    internet: "🌐 MENú INTERNET",
+    owner: "👑 MENú DUEÑO",
+    tools: "🛠️ MENú HERRAMIENTAS",
+    anonymous: "🕵️ CHAT ANÓNIMO"
 };
 
 const defaultMenu = {
     before: `
-╔════════════════════════════╗
-║     📜 *GUÍA DEL MENÚ TK* 📜     
-╚════════════════════════════╝
+💬 *Hola %name*,
+Soy Admin-TK, tu asistente en WhatsApp.
+Aquí puedes encontrar lo que puedo hacer para ti:
 
-👋 *Hola, %names*.  
-En este menú encontrarás una descripción detallada de cada comando disponible.  
-
-🗓️ Fecha: %date  
-⏰ Hora: %time  
-👥 Usuarios registrados: %totalreg  
-
-🛠️ *¿Cómo usar este menú?*
-1️⃣ Busca los comandos disponibles en cada sección.  
-2️⃣ Usa el prefijo adecuado antes de cada comando (por ejemplo: \`.comando\`).  
-
-🌟 _Consulta esta guía siempre que necesites orientación._  
+🗓️ Fecha: %date
+⏰ Hora: %time
+📈 Tiempo Activo: %uptime
+🔹 Prefijo Usado: *[ %p ]*
 `.trimStart(),
-    header: `
-╭───✦ *%category* ✦───╮`,
-    body: `➤ %cmd`, // Sin saltos adicionales
-    footer: `
-╰──────────────╯`,
+    header: '┌─📂 *%category*',
+    body: '│ ➜ %cmd %islimit %isPremium',
+    footer: '└──────────────',
     after: `
-🌐 **Comunidad TK: Más que un bot, somos un equipo.**  
-👑 *Admin-TK está siempre contigo.*`,
+*✦ Nota:* Puedes escribir .menu <categoría> para seleccionar un menú específico.
+Ejemplo: *.menu tools*`
 };
 
-const handler = async (m, { conn, usedPrefix: _p }) => {
+let handler = async (m, { conn, usedPrefix: _p, args = [], command }) => {
     try {
-        const { exp, limit, level } = global.db.data.users[m.sender];
-        const { min, xp, max } = xpRange(level, global.multiplier);
-        const names = await conn.getName(m.sender);
-        const d = new Date();
-        const locale = 'es';
-        const time = d.toLocaleTimeString(locale, { hour: 'numeric', minute: 'numeric', second: 'numeric' });
-        const date = d.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
-        const totalreg = Object.keys(global.db.data.users).length;
+        let { exp, limit, level, role } = global.db.data.users[m.sender];
+        let { min, xp, max } = xpRange(level, global.multiplier);
+        let name = `@${m.sender.split`@`[0]}`;
+        let teks = args[0] || '';
+        
+        let d = new Date(new Date + 3600000);
+        let locale = 'es';
+        let date = d.toLocaleDateString(locale, {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
+        
+        let time = d.toLocaleTimeString(locale, {
+            hour: 'numeric',
+            minute: 'numeric',
+            second: 'numeric'
+        });
 
-        const help = Object.values(global.plugins).filter(plugins => !plugins.disabled).map(plugins => ({
-            help: Array.isArray(plugins.tags) ? plugins.help : [plugins.help],
-            tags: Array.isArray(plugins.tags) ? plugins.tags : [plugins.tags],
-            description: plugins.description || 'Sin descripción disponible.',
-            limit: plugins.limit,
-            premium: plugins.premium,
-        }));
+        let _uptime = process.uptime() * 1000;
+        let uptime = clockString(_uptime);
+        
+        let help = Object.values(global.plugins).filter(plugin => !plugin.disabled).map(plugin => {
+            return {
+                help: Array.isArray(plugin.help) ? plugin.help : [plugin.help],
+                tags: Array.isArray(plugin.tags) ? plugin.tags : [plugin.tags],
+                prefix: 'customPrefix' in plugin,
+                limit: plugin.limit,
+                premium: plugin.premium,
+                enabled: !plugin.disabled,
+            };
+        });
 
-        const menuSections = Object.keys(tags).map(tag => {
-            const sectionCommands = help
-                .filter(plugin => plugin.tags.includes(tag) && plugin.help)
-                .map(plugin => plugin.help.map(cmd => defaultMenu.body
-                    .replace(/%cmd/g, `${_p}${cmd}`)
-                    .replace(/%description/g, plugin.description)
-                ).join('\n')).join('\n');
-            if (!sectionCommands) return '';
-            return defaultMenu.header.replace(/%category/g, tags[tag]) + '\n' + sectionCommands + '\n' + defaultMenu.footer;
-        }).filter(v => v).join('\n\n');
+        if (!teks) {
+            let menuList = `${defaultMenu.before}\n\n┌─🎛️ *LISTA DE MENÚS*\n`;
+            for (let tag of arrayMenu) {
+                if (tag && allTags[tag]) {
+                    menuList += `│ ➜ ${_p}menu ${tag}\n`;
+                }
+            }
+            menuList += `└──────────────\n\n${defaultMenu.after}`;
 
-        const text = [
-            defaultMenu.before,
-            menuSections,
-            defaultMenu.after
-        ].join('\n')
-            .replace(/%names/g, names)
-            .replace(/%time/g, time)
-            .replace(/%date/g, date)
-            .replace(/%totalreg/g, totalreg);
+            let replace = {
+                '%': '%',
+                p: _p, 
+                uptime,
+                name, 
+                date,
+                time
+            };
 
-        const imageUrl = 'https://pomf2.lain.la/f/ucogaqax.jpg'; // Cambia esta URL por la imagen que prefieras
+            let text = menuList.replace(new RegExp(`%(${Object.keys(replace).sort((a, b) => b.length - a.length).join`|`})`, 'g'), 
+                (_, name) => '' + replace[name]);
 
-        await conn.sendFile(m.chat, imageUrl, 'menu.jpg', estilo(text), m);
-    } catch (error) {
-        console.error(error);
-        throw 'Hubo un error generando el menú. Por favor, intenta nuevamente.';
+            conn.sendFile(m.chat, "https://pomf2.lain.la/f/4gv01t8y.png", 'menu.jpg', estilo(text), global.fliveLoc2, null);
+            return;
+        }
+
+        if (!allTags[teks]) {
+            return m.reply(`El menú "${teks}" no está registrado.\nEscribe ${_p}menu para ver la lista de menús.`);
+        }
+
+        let menuCategory = defaultMenu.before + '\n\n';
+        
+        if (teks === 'all') {
+            for (let tag of arrayMenu) {
+                if (tag !== 'all' && allTags[tag]) {
+                    menuCategory += defaultMenu.header.replace(/%category/g, allTags[tag]) + '\n';
+                    
+                    let categoryCommands = help.filter(menu => menu.tags && menu.tags.includes(tag) && menu.help);
+                    for (let menu of categoryCommands) {
+                        for (let help of menu.help) {
+                            menuCategory += defaultMenu.body
+                                .replace(/%cmd/g, menu.prefix ? help : _p + help)
+                                .replace(/%islimit/g, menu.limit ? '(Ⓛ)' : '')
+                                .replace(/%isPremium/g, menu.premium ? '(Ⓟ)' : '') + '\n';
+                        }
+                    }
+                    menuCategory += defaultMenu.footer + '\n';
+                }
+            }
+        } else {
+            menuCategory += defaultMenu.header.replace(/%category/g, allTags[teks]) + '\n';
+            
+            let categoryCommands = help.filter(menu => menu.tags && menu.tags.includes(teks) && menu.help);
+            for (let menu of categoryCommands) {
+                for (let help of menu.help) {
+                    menuCategory += defaultMenu.body
+                        .replace(/%cmd/g, menu.prefix ? help : _p + help)
+                        .replace(/%islimit/g, menu.limit ? '(Ⓛ)' : '')
+                        .replace(/%isPremium/g, menu.premium ? '(Ⓟ)' : '') + '\n';
+                }
+            }
+            menuCategory += defaultMenu.footer + '\n';
+        }
+
+        menuCategory += '\n' + defaultMenu.after;
+        
+        let replace = {
+            '%': '%',
+            p: _p, 
+            uptime, 
+            name,
+            date,
+            time
+        };
+
+        let text = menuCategory.replace(new RegExp(`%(${Object.keys(replace).sort((a, b) => b.length - a.length).join`|`})`, 'g'), 
+            (_, name) => '' + replace[name]);
+
+        conn.sendFile(m.chat, "https://pomf2.lain.la/f/7b5qzd8.png", 'menu.jpg', estilo(text), global.fliveLoc2, null);
+    } catch (e) {
+        conn.reply(m.chat, 'Lo siento, hubo un error con el menú', m);
+        console.error(e);
     }
-};
-
-// Funciones auxiliares
-const getGreeting = (hour) => {
-    if (hour >= 5 && hour < 12) return 'Buenos Días ☀️';
-    if (hour >= 12 && hour < 19) return 'Buenas Tardes 🌅';
-    return 'Buenas Noches 🌙';
 };
 
 handler.help = ['menu'];
 handler.tags = ['main'];
-handler.command = ['menu', 'allmenu'];
+handler.command = /^(menu|help)$/i;
+handler.exp = 3;
 
 export default handler;
+
+function clockString(ms) {
+    if (isNaN(ms)) return '--';
+    let h = Math.floor(ms / 3600000);
+    let m = Math.floor(ms / 60000) % 60;
+    let s = Math.floor(ms / 1000) % 60;
+    return [h, m, s].map(v => v.toString().padStart(2, 0)).join(':');
+}
