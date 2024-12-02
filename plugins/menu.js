@@ -38,16 +38,16 @@ let arrayMenu = [
 ];
 
 let estilo = (text, style = 1) => {
-    var xStr = 'abcdefghijklmnopqrstuvwxyz1234567890'.split('');
+    var xStr = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'.split('');
     var yStr = Object.freeze({
-        1: '𝓪𝓫𝓬𝓭𝓮𝓯𝓰𝓱𝓲𝓳𝓴𝓵𝓶𝓷𝓸𝓹𝓺𝓻𝓼𝓽𝓾𝓿𝔀𝔁𝔂𝔃1234567890'
+        1: '𝓪𝓫𝓬𝓭𝓮𝓯𝓰𝓱𝓲𝓳𝓴𝓵𝓶𝓷𝓸𝓹𝓺𝓻𝓼𝓽𝓾𝓿𝔀𝔁𝔂𝔃𝓐𝓑𝓒𝓓𝓔𝓕𝓖𝓗𝓘𝓙𝓚𝓛𝓜𝓝𝓞𝓟𝓠𝓡𝓢𝓣𝓤𝓥𝓦𝓧𝓨𝓩1234567890'
     });
     var replacer = [];
     xStr.map((v, i) => replacer.push({
         original: v,
         convert: yStr[style].split('')[i]
     }));
-    var str = text.toLowerCase().split('');
+    var str = text.split('');
     var output = [];
     str.map(v => {
         const find = replacer.find(x => x.original == v);
@@ -62,17 +62,17 @@ const allTags = {
     downloader: "📥 MENÚ DESCARGAS",
     jadibot: "🤖 MENÚ SUBBOTS",
     rpg: "⚔️ MENÚ RPG",
-    ai: "🤖 MENú INTELIGENCIA ARTIFICIAL",
+    ai: "🤖 MENÚ INTELIGENCIA ARTIFICIAL",
     search: "🔍 MENÚ BÚSQUEDA",
-    anime: "🍥 MENú ANIME",
-    sticker: "✨ MENú STICKER",
-    fun: "🎉 MENú DIVERTIDO",
-    group: "👥 MENú GRUPO",
-    nsfw: "🔞 MENú NSFW",
-    info: "ℹ️ MENú INFORMACIóN",
-    internet: "🌐 MENú INTERNET",
-    owner: "👑 MENú DUEÑO",
-    tools: "🛠️ MENú HERRAMIENTAS",
+    anime: "🍥 MENÚ ANIME",
+    sticker: "✨ MENÚ STICKER",
+    fun: "🎉 MENÚ DIVERTIDO",
+    group: "👥 MENÚ GRUPO",
+    nsfw: "🔞 MENÚ NSFW",
+    info: "ℹ️ MENÚ INFORMACIÓN",
+    internet: "🌐 MENÚ INTERNET",
+    owner: "👑 MENÚ DUEÑO",
+    tools: "🛠️ MENÚ HERRAMIENTAS",
     anonymous: "🕵️ CHAT ANÓNIMO"
 };
 
