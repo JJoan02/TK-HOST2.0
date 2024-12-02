@@ -1,6 +1,12 @@
+// data/codigos.js
+
+import fs from 'fs';
+import sqlite3 from 'sqlite3';
+import { open } from 'sqlite';
+
 /**
  * Abre una conexión a la base de datos SQLite.
- * 
+ *
  * @returns {Promise<sqlite3.Database>} La conexión a la base de datos.
  */
 export async function openDb() {
@@ -17,7 +23,7 @@ export async function openDb() {
       db = await open({
         filename: './data/bot.db',
         driver: sqlite3.Database,
-        mode: 'create', // Crear la base de datos si no existe
+        mode: sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, // Usamos las constantes correctas
       });
     } else {
       // Abrir la conexión a la base de datos
