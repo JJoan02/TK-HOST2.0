@@ -37,11 +37,10 @@ const {
   fetchLatestBaileysVersion,
   makeInMemoryStore,
   makeCacheableSignalKeyStore,
-  makeWASocket,
-} = pkg; // Asegúrate de importar 'makeWASocket' desde 'pkg'
+} = pkg;
 
 import { Low, JSONFile } from 'lowdb';
-import { protoType, serialize } from './lib/simple.js';
+import { makeWASocket, protoType, serialize } from './lib/simple.js';
 import cloudDBAdapter from './lib/cloudDBAdapter.js';
 import { mongoDB, mongoDBV2 } from './lib/mongoDB.js';
 
@@ -144,7 +143,7 @@ global.loadDatabase = async function loadDatabase() {
 };
 loadDatabase();
 
-// Añade este código:
+// Eliminar las líneas que establecen 'usePairingCode' y 'useMobile' si existen
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -259,12 +258,7 @@ if (!conn.authState.creds.registered) {
       let code = await conn.requestPairingCode(phoneNumber);
       code = code?.match(/.{1,4}/g)?.join('-') || code;
       console.log(chalk.magenta(`Su código de emparejamiento es: ${code}`));
-      console.log(
-        chalk.yellow(
-          'Por favor, ingrese este código en su dispositivo WhatsApp para vincular.'
-        )
-      );
-      console.log(chalk.green('\nEjemplo de número ingresado: 521234567890'));
+      console.log(chalk.yellow('Por favor, ingrese este código en su dispositivo WhatsApp para vincular.'));
     } else {
       console.error('La función requestPairingCode no está disponible.');
     }
@@ -278,9 +272,7 @@ if (!conn.authState.creds.registered) {
     conn.ev.on('connection.update', (update) => {
       const { qr } = update;
       if (qr) {
-        console.log(
-          chalk.yellow('Escanea este código QR con tu aplicación de WhatsApp:')
-        );
+        console.log(chalk.yellow('Escanea este código QR con tu aplicación de WhatsApp:'));
       }
     });
     rl.close();
@@ -332,7 +324,10 @@ function clearTmp() {
 
   files.forEach((file) => {
     const stats = statSync(file);
-    if (stats.isFile() && Date.now() - stats.mtimeMs >= 1000 * 60 * 3) {
+    if (
+      stats.isFile() &&
+      Date.now() - stats.mtimeMs >= 1000 * 60 * 3
+    ) {
       unlinkSync(file);
       console.log(`Archivo eliminado: ${file}`);
     }
@@ -397,9 +392,7 @@ async function connectionUpdate(update) {
   }
 
   if (qr) {
-    console.log(
-      chalk.yellow('Escanea este código QR con tu aplicación de WhatsApp:')
-    );
+    console.log(chalk.yellow('Escanea este código QR con tu aplicación de WhatsApp:'));
   }
 
   global.timestamp.connect = new Date();
@@ -607,4 +600,3 @@ _quickTest().then(() =>
     '☑️ Prueba rápida realizada, nombre de la sesión ~> creds.json'
   )
 );
-      
