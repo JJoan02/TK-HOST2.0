@@ -14,6 +14,7 @@ import {
   existsSync,
   readFileSync,
   watch,
+  mkdirSync,
 } from 'fs';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
@@ -94,8 +95,8 @@ const __dirname = global.__dirname(import.meta.url);
 global.opts = yargs(hideBin(process.argv)).exitProcess(false).parse();
 global.prefix = new RegExp(
   '^[' +
-    (global.opts['prefix'] || '\/\*\.\\\^').replace(
-      /[|\\{}()[\]^$+*?.\-\^]/g,
+    (global.opts['prefix'] || '/\\#\\!@\\^').replace(
+      /[|\\{}()[\]^$+*?.\\-]/g,
       '\\$&'
     ) +
     ']'
@@ -139,8 +140,11 @@ global.loadDatabase = async function loadDatabase() {
 };
 loadDatabase();
 
-const usePairingCode = true; // Usar siempre el código de emparejamiento de 8 dígitos
-const useMobile = process.argv.includes('--mobile');
+// Elimina o comenta estas líneas si las tienes en tu código:
+// const usePairingCode = true; // Usar siempre el código de emparejamiento de 8 dígitos
+// const useMobile = process.argv.includes('--mobile');
+
+// Añade este código:
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -152,6 +156,21 @@ const question = function (text) {
     rl.question(text, resolve);
   });
 };
+
+async function mostrarMenu() {
+  console.log(chalk.green('Seleccione el método de vinculación:'));
+  console.log('1. Código de 8 dígitos');
+  console.log('2. Código QR');
+
+  let opcion = await question('Ingrese el número de su opción (1 o 2): ');
+
+  while (opcion !== '1' && opcion !== '2') {
+    console.log(chalk.red('Opción inválida. Por favor, ingrese 1 o 2.'));
+    opcion = await question('Ingrese el número de su opción (1 o 2): ');
+  }
+
+  return opcion;
+}
 
 const { version } = await fetchLatestBaileysVersion();
 const { state, saveCreds } = await useMultiFileAuthState('./sessions');
@@ -167,7 +186,7 @@ setInterval(() => {
 const connectionOptions = {
   version,
   logger: pino({ level: 'silent' }),
-  printQRInTerminal: false, // No imprimir QR
+  printQRInTerminal: false, // Se configurará más adelante
   browser: ['Ubuntu', 'Chrome', '20.0.04'],
   auth: {
     creds: state.creds,
@@ -215,22 +234,53 @@ const connectionOptions = {
 global.conn = makeWASocket(connectionOptions);
 conn.isInit = false;
 
-if (usePairingCode && !conn.authState.creds.registered) {
-  const phoneNumber = await question(
-    chalk.blue(
-      'Ingresa el número de WhatsApp en el cual estará el Bot (con código de país, sin +): '
-    )
-  );
-  rl.close();
+let usePairingCode = false;
 
-  if (conn.requestPairingCode) {
-    let code = await conn.requestPairingCode(phoneNumber);
-    code = code?.match(/.{1,4}/g)?.join('-') || code;
-    console.log(chalk.magenta(`Su código de emparejamiento es:`, code));
+if (!conn.authState.creds.registered) {
+  const opcion = await mostrarMenu();
+
+  if (opcion === '1') {
+    usePairingCode = true;
   } else {
-    console.error('La función requestPairingCode no está disponible.');
+    usePairingCode = false;
+  }
+
+  if (usePairingCode) {
+    // Proceso de vinculación por código de 8 dígitos
+    const phoneNumber = await question(
+      chalk.blue(
+        'Ingresa el número de WhatsApp en el cual estará el Bot (con código de país, sin +): '
+      )
+    );
+    rl.close();
+
+    if (conn.requestPairingCode) {
+      let code = await conn.requestPairingCode(phoneNumber);
+      code = code?.match(/.{1,4}/g)?.join('-') || code;
+      console.log(chalk.magenta(`Su código de emparejamiento es: ${code}`));
+      console.log(chalk.yellow('Por favor, ingrese este código en su dispositivo WhatsApp para vincular.'));
+      console.log(chalk.green('\nEjemplo de número ingresado: 521234567890'));
+    } else {
+      console.error('La función requestPairingCode no está disponible.');
+    }
+  } else {
+    // Proceso de vinculación por código QR
+    console.log(chalk.green('Se generará un código QR para vinculación.'));
+    // Asegúrate de que la opción 'printQRInTerminal' esté habilitada
+    conn.opts.printQRInTerminal = true;
+
+    // Manejar el evento 'connection.update' para mostrar el QR
+    conn.ev.on('connection.update', (update) => {
+      const { qr } = update;
+      if (qr) {
+        console.log(chalk.yellow('Escanea este código QR con tu aplicación de WhatsApp:'));
+      }
+    });
+    rl.close();
   }
 }
+
+// Continuar con el resto de la configuración y eventos...
 
 if (!global.opts['test']) {
   (await import('./server.js')).default(PORT);
@@ -263,6 +313,11 @@ function clearTmp() {
   const files = [];
 
   tmpDirs.forEach((dirname) => {
+    if (!existsSync(dirname)) {
+      // Crear el directorio si no existe
+      mkdirSync(dirname);
+      console.log(`Directorio creado: ${dirname}`);
+    }
     readdirSync(dirname).forEach((file) => {
       files.push(join(dirname, file));
     });
@@ -275,6 +330,7 @@ function clearTmp() {
       Date.now() - stats.mtimeMs >= 1000 * 60 * 3
     ) {
       unlinkSync(file);
+      console.log(`Archivo eliminado: ${file}`);
     }
   });
 }
@@ -305,6 +361,7 @@ async function connectionUpdate(update) {
     lastDisconnect,
     isOnline,
     isNewLogin,
+    qr,
   } = update;
 
   if (isNewLogin) {
@@ -333,6 +390,10 @@ async function connectionUpdate(update) {
     console.log(
       chalk.red('✦ Desconectado e intentando volver a conectarse...')
     );
+  }
+
+  if (qr) {
+    console.log(chalk.yellow('Escanea este código QR con tu aplicación de WhatsApp:'));
   }
 
   global.timestamp.connect = new Date();
@@ -540,3 +601,4 @@ _quickTest().then(() =>
     '☑️ Prueba rápida realizada, nombre de la sesión ~> creds.json'
   )
 );
+                
