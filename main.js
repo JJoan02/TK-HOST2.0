@@ -14,6 +14,8 @@ import {
   existsSync,
   readFileSync,
   watch,
+  mkdirSync,
+  rmSync, // Importar rmSync para eliminar carpetas
 } from 'fs';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
@@ -25,6 +27,7 @@ import { format } from 'util';
 import pino from 'pino';
 import { tmpdir } from 'os';
 import ws from 'ws';
+import { Boom } from '@hapi/boom'; // Importar Boom para manejar errores
 
 import pkg from '@adiwajshing/baileys'; // Importar el paquete correcto
 const {
@@ -33,10 +36,11 @@ const {
   fetchLatestBaileysVersion,
   makeInMemoryStore,
   makeCacheableSignalKeyStore,
+  makeWASocket,
 } = pkg;
 
 import { Low, JSONFile } from 'lowdb';
-import { makeWASocket, protoType, serialize } from './lib/simple.js';
+import { protoType, serialize } from './lib/simple.js';
 import cloudDBAdapter from './lib/cloudDBAdapter.js';
 import { mongoDB, mongoDBV2 } from './lib/mongoDB.js';
 
@@ -94,8 +98,8 @@ const __dirname = global.__dirname(import.meta.url);
 global.opts = yargs(hideBin(process.argv)).exitProcess(false).parse();
 global.prefix = new RegExp(
   '^[' +
-    (global.opts['prefix'] || '\/\*\.\\\^').replace(
-      /[|\\{}()[\]^$+*?.\-\^]/g,
+    (global.opts['prefix'] || '/\\*\\.#\\$').replace(
+      /[|\\{}()[\]^$+*?.\\-]/g,
       '\\$&'
     ) +
     ']'
@@ -108,7 +112,9 @@ global.db = new Low(
     ? global.opts['mongodbv2']
       ? new mongoDBV2(global.opts['db'])
       : new mongoDB(global.opts['db'])
-    : new JSONFile(`${global.opts._[0] ? global.opts._[0] + '_' : ''}database.json`)
+    : new JSONFile(
+        `${global.opts._[0] ? global.opts._[0] + '_' : ''}database.json`
+      )
 );
 
 global.DATABASE = global.db; // Compatibilidad con versiones anteriores
@@ -119,7 +125,9 @@ global.loadDatabase = async function loadDatabase() {
       setInterval(async function () {
         if (!global.db.READ) {
           clearInterval(this);
-          resolve(global.db.data == null ? global.loadDatabase() : global.db.data);
+          resolve(
+            global.db.data == null ? global.loadDatabase() : global.db.data
+          );
         }
       }, 1000)
     );
@@ -139,98 +147,122 @@ global.loadDatabase = async function loadDatabase() {
 };
 loadDatabase();
 
-const usePairingCode = true; // Usar siempre el código de emparejamiento de 8 dígitos
-const useMobile = process.argv.includes('--mobile');
-
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
-
-const question = function (text) {
-  return new Promise(function (resolve) {
-    rl.question(text, resolve);
+// Función para iniciar la conexión
+async function startConnection() {
+  // Crear la interfaz readline dentro de la función
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
   });
-};
 
-const { version } = await fetchLatestBaileysVersion();
-const { state, saveCreds } = await useMultiFileAuthState('./sessions');
+  const question = function (text) {
+    return new Promise(function (resolve) {
+      rl.question(text, resolve);
+    });
+  };
 
-const store = makeInMemoryStore({
-  logger: pino().child({ level: 'silent', stream: 'store' }),
-});
-store.readFromFile('./baileys_store.json');
-setInterval(() => {
-  store.writeToFile('./baileys_store.json');
-}, 10_000);
+  const { version } = await fetchLatestBaileysVersion();
+  const { state, saveCreds } = await useMultiFileAuthState('./sessions');
 
-const connectionOptions = {
-  version,
-  logger: pino({ level: 'silent' }),
-  printQRInTerminal: false, // No imprimir QR
-  browser: ['Ubuntu', 'Chrome', '20.0.04'],
-  auth: {
-    creds: state.creds,
-    keys: makeCacheableSignalKeyStore(
-      state.keys,
-      pino().child({
-        level: 'silent',
-        stream: 'store',
-      })
-    ),
-  },
-  getMessage: async (key) => {
-    const messageData = await store.loadMessage(key.remoteJid, key.id);
-    return messageData?.message || undefined;
-  },
-  generateHighQualityLinkPreview: true,
-  patchMessageBeforeSending: (message) => {
-    const requiresPatch = !!(
-      message.buttonsMessage ||
-      message.templateMessage ||
-      message.listMessage
-    );
-    if (requiresPatch) {
-      message = {
-        viewOnceMessage: {
-          message: {
-            messageContextInfo: {
-              deviceListMetadataVersion: 2,
-              deviceListMetadata: {},
+  const store = makeInMemoryStore({
+    logger: pino().child({ level: 'silent', stream: 'store' }),
+  });
+  store.readFromFile('./baileys_store.json');
+  setInterval(() => {
+    store.writeToFile('./baileys_store.json');
+  }, 10_000);
+
+  // Definir connectionOptions como global para poder modificarlo en reloadHandler
+  global.connectionOptions = {
+    version,
+    logger: pino({ level: 'silent' }),
+    printQRInTerminal: false, // No imprimir QR
+    browser: ['Ubuntu', 'Chrome', '20.0.04'],
+    auth: {
+      creds: state.creds,
+      keys: makeCacheableSignalKeyStore(
+        state.keys,
+        pino().child({
+          level: 'silent',
+          stream: 'store',
+        })
+      ),
+    },
+    getMessage: async (key) => {
+      const messageData = await store.loadMessage(key.remoteJid, key.id);
+      return messageData?.message || undefined;
+    },
+    generateHighQualityLinkPreview: true,
+    patchMessageBeforeSending: (message) => {
+      const requiresPatch = !!(
+        message.buttonsMessage ||
+        message.templateMessage ||
+        message.listMessage
+      );
+      if (requiresPatch) {
+        message = {
+          viewOnceMessage: {
+            message: {
+              messageContextInfo: {
+                deviceListMetadataVersion: 2,
+                deviceListMetadata: {},
+              },
+              ...message,
             },
-            ...message,
           },
-        },
-      };
+        };
+      }
+
+      return message;
+    },
+    connectTimeoutMs: 60000,
+    defaultQueryTimeoutMs: 0,
+    syncFullHistory: true,
+    markOnlineOnConnect: true,
+  };
+
+  // Inicializar la conexión
+  global.conn = makeWASocket(global.connectionOptions);
+  conn.isInit = false;
+
+  if (!conn.authState.creds.registered) {
+    // Vinculación mediante código de 8 dígitos
+    console.log(chalk.green('Vinculación mediante código de 8 dígitos'));
+    const phoneNumber = await question(
+      chalk.blue(
+        'Ingresa el número de WhatsApp en el cual estará el Bot (con código de país, sin +): '
+      )
+    );
+    rl.close();
+
+    if (conn.requestPairingCode) {
+      let code = await conn.requestPairingCode(phoneNumber);
+      code = code?.match(/.{1,4}/g)?.join('-') || code;
+      console.log(chalk.magenta(`Su código de emparejamiento es: ${code}`));
+      console.log(
+        chalk.yellow(
+          'Por favor, ingrese este código en su dispositivo WhatsApp para vincular.'
+        )
+      );
+      console.log(chalk.green('\nEjemplo de número ingresado: 521234567890'));
+    } else {
+      console.error('La función requestPairingCode no está disponible.');
     }
-
-    return message;
-  },
-  connectTimeoutMs: 60000,
-  defaultQueryTimeoutMs: 0,
-  syncFullHistory: true,
-  markOnlineOnConnect: true,
-};
-
-global.conn = makeWASocket(connectionOptions);
-conn.isInit = false;
-
-if (usePairingCode && !conn.authState.creds.registered) {
-  const phoneNumber = await question(
-    chalk.blue(
-      'Ingresa el número de WhatsApp en el cual estará el Bot (con código de país, sin +): '
-    )
-  );
-  rl.close();
-
-  if (conn.requestPairingCode) {
-    let code = await conn.requestPairingCode(phoneNumber);
-    code = code?.match(/.{1,4}/g)?.join('-') || code;
-    console.log(chalk.magenta(`Su código de emparejamiento es:`, code));
-  } else {
-    console.error('La función requestPairingCode no está disponible.');
   }
+
+  // Configurar eventos
+  conn.ev.on('connection.update', connectionUpdate);
+  // ... otros eventos
+
+  // Configurar las funciones de manejo
+  conn.connectionUpdate = connectionUpdate.bind(conn);
+  // ... otras funciones
 }
+
+// Llamar a startConnection para iniciar el proceso
+startConnection();
+
+// Continuar con el resto de la configuración y eventos...
 
 if (!global.opts['test']) {
   (await import('./server.js')).default(PORT);
@@ -263,6 +295,11 @@ function clearTmp() {
   const files = [];
 
   tmpDirs.forEach((dirname) => {
+    if (!existsSync(dirname)) {
+      // Crear el directorio si no existe
+      mkdirSync(dirname);
+      console.log(`Directorio creado: ${dirname}`);
+    }
     readdirSync(dirname).forEach((file) => {
       files.push(join(dirname, file));
     });
@@ -333,19 +370,25 @@ async function connectionUpdate(update) {
     console.log(
       chalk.red('✦ Desconectado e intentando volver a conectarse...')
     );
+
+    const reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
+
+    if (reason === DisconnectReason.loggedOut) {
+      console.log(
+        'La sesión ha cerrado. Eliminando datos de sesión y reiniciando...'
+      );
+      // Eliminar la carpeta de sesiones
+      rmSync('./sessions', { recursive: true, force: true });
+      // Llamar a startConnection nuevamente
+      startConnection();
+    } else {
+      console.log('Intentando reconectar...');
+      // Llamar a reloadHandler para reconectar
+      console.log(await global.reloadHandler(true));
+    }
   }
 
   global.timestamp.connect = new Date();
-
-  if (
-    lastDisconnect &&
-    lastDisconnect.error &&
-    lastDisconnect.error.output &&
-    lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut &&
-    conn.ws.readyState !== CONNECTING
-  ) {
-    console.log(await global.reloadHandler(true));
-  }
 
   if (global.db.data == null) {
     await global.loadDatabase();
@@ -369,7 +412,7 @@ global.reloadHandler = async function (restartConn) {
       global.conn.ws.close();
     } catch {}
     conn.ev.removeAllListeners();
-    global.conn = makeWASocket(connectionOptions, { chats: oldChats });
+    global.conn = makeWASocket(global.connectionOptions, { chats: oldChats });
     isInit = true;
   }
   if (!isInit) {
@@ -419,7 +462,7 @@ global.reloadHandler = async function (restartConn) {
   conn.groupsUpdate = handler.groupsUpdate.bind(global.conn);
   conn.onDelete = handler.deleteUpdate.bind(global.conn);
   conn.connectionUpdate = connectionUpdate.bind(global.conn);
-  conn.credsUpdate = saveCreds.bind(global.conn);
+  conn.credsUpdate = conn.authState.saveCreds.bind(global.conn);
 
   conn.ev.on('messages.upsert', conn.handler);
   conn.ev.on('group-participants.update', conn.participantsUpdate);
@@ -451,7 +494,8 @@ global.reload = async (_ev, filename) => {
   if (pluginFilter(filename)) {
     let dir = global.__filename(join(pluginFolder, filename), true);
     if (filename in global.plugins) {
-      if (existsSync(dir)) conn.logger.info(`Re - require plugin '${filename}'`);
+      if (existsSync(dir))
+        conn.logger.info(`Re - require plugin '${filename}'`);
       else {
         conn.logger.warn(`Plugin eliminado '${filename}'`);
         return delete global.plugins[filename];
@@ -477,7 +521,9 @@ global.reload = async (_ev, filename) => {
         );
       } finally {
         global.plugins = Object.fromEntries(
-          Object.entries(global.plugins).sort(([a], [b]) => a.localeCompare(b))
+          Object.entries(global.plugins).sort(([a], [b]) =>
+            a.localeCompare(b)
+          )
         );
       }
   }
@@ -540,3 +586,4 @@ _quickTest().then(() =>
     '☑️ Prueba rápida realizada, nombre de la sesión ~> creds.json'
   )
 );
+               
