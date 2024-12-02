@@ -1,6 +1,9 @@
+// main.js
+
 // =======================================
 // CONFIGURACIONES INICIALES Y MÓDULOS
 // =======================================
+
 import './config.js';
 
 import path, { join } from 'path';
@@ -34,10 +37,11 @@ const {
   fetchLatestBaileysVersion,
   makeInMemoryStore,
   makeCacheableSignalKeyStore,
-} = pkg;
+  makeWASocket,
+} = pkg; // Asegúrate de importar 'makeWASocket' desde 'pkg'
 
 import { Low, JSONFile } from 'lowdb';
-import { makeWASocket, protoType, serialize } from './lib/simple.js';
+import { protoType, serialize } from './lib/simple.js';
 import cloudDBAdapter from './lib/cloudDBAdapter.js';
 import { mongoDB, mongoDBV2 } from './lib/mongoDB.js';
 
@@ -95,7 +99,7 @@ const __dirname = global.__dirname(import.meta.url);
 global.opts = yargs(hideBin(process.argv)).exitProcess(false).parse();
 global.prefix = new RegExp(
   '^[' +
-    (global.opts['prefix'] || '/\\#\\!@\\^').replace(
+    (global.opts['prefix'] || '/\\#!@\\^').replace(
       /[|\\{}()[\]^$+*?.\\-]/g,
       '\\$&'
     ) +
@@ -139,10 +143,6 @@ global.loadDatabase = async function loadDatabase() {
   };
 };
 loadDatabase();
-
-// Elimina o comenta estas líneas si las tienes en tu código:
-// const usePairingCode = true; // Usar siempre el código de emparejamiento de 8 dígitos
-// const useMobile = process.argv.includes('--mobile');
 
 // Añade este código:
 
@@ -231,6 +231,7 @@ const connectionOptions = {
   markOnlineOnConnect: true,
 };
 
+// Inicializa la conexión
 global.conn = makeWASocket(connectionOptions);
 conn.isInit = false;
 
@@ -258,7 +259,11 @@ if (!conn.authState.creds.registered) {
       let code = await conn.requestPairingCode(phoneNumber);
       code = code?.match(/.{1,4}/g)?.join('-') || code;
       console.log(chalk.magenta(`Su código de emparejamiento es: ${code}`));
-      console.log(chalk.yellow('Por favor, ingrese este código en su dispositivo WhatsApp para vincular.'));
+      console.log(
+        chalk.yellow(
+          'Por favor, ingrese este código en su dispositivo WhatsApp para vincular.'
+        )
+      );
       console.log(chalk.green('\nEjemplo de número ingresado: 521234567890'));
     } else {
       console.error('La función requestPairingCode no está disponible.');
@@ -273,7 +278,9 @@ if (!conn.authState.creds.registered) {
     conn.ev.on('connection.update', (update) => {
       const { qr } = update;
       if (qr) {
-        console.log(chalk.yellow('Escanea este código QR con tu aplicación de WhatsApp:'));
+        console.log(
+          chalk.yellow('Escanea este código QR con tu aplicación de WhatsApp:')
+        );
       }
     });
     rl.close();
@@ -325,10 +332,7 @@ function clearTmp() {
 
   files.forEach((file) => {
     const stats = statSync(file);
-    if (
-      stats.isFile() &&
-      Date.now() - stats.mtimeMs >= 1000 * 60 * 3
-    ) {
+    if (stats.isFile() && Date.now() - stats.mtimeMs >= 1000 * 60 * 3) {
       unlinkSync(file);
       console.log(`Archivo eliminado: ${file}`);
     }
@@ -393,7 +397,9 @@ async function connectionUpdate(update) {
   }
 
   if (qr) {
-    console.log(chalk.yellow('Escanea este código QR con tu aplicación de WhatsApp:'));
+    console.log(
+      chalk.yellow('Escanea este código QR con tu aplicación de WhatsApp:')
+    );
   }
 
   global.timestamp.connect = new Date();
@@ -601,4 +607,4 @@ _quickTest().then(() =>
     '☑️ Prueba rápida realizada, nombre de la sesión ~> creds.json'
   )
 );
-                
+      
