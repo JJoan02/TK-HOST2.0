@@ -147,6 +147,10 @@ global.loadDatabase = async function loadDatabase() {
 };
 loadDatabase();
 
+// Variables globales para conn y handler
+global.conn = null;
+global.handler = null;
+
 // Función para iniciar la conexión
 async function startConnection() {
   // Crear la interfaz readline dentro de la función
@@ -255,12 +259,67 @@ async function startConnection() {
   // ... otros eventos
 
   // Configurar las funciones de manejo
-  conn.connectionUpdate = connectionUpdate.bind(conn);
-  // ... otras funciones
+  await setupHandlers();
+
+  // Esperar a que se cargue el handler antes de continuar
 }
 
 // Llamar a startConnection para iniciar el proceso
 startConnection();
+
+// Función para configurar los handlers
+async function setupHandlers() {
+  // Importar el handler
+  let handlerModule = await import('./handler.js');
+  global.handler = handlerModule;
+
+  conn.handler = handler.handler.bind(conn);
+  conn.participantsUpdate = handler.participantsUpdate.bind(conn);
+  conn.groupsUpdate = handler.groupsUpdate.bind(conn);
+  conn.onDelete = handler.deleteUpdate.bind(conn);
+  conn.connectionUpdate = connectionUpdate.bind(conn);
+  conn.credsUpdate = conn.authState.saveCreds.bind(conn);
+
+  conn.ev.on('messages.upsert', conn.handler);
+  conn.ev.on('group-participants.update', conn.participantsUpdate);
+  conn.ev.on('groups.update', conn.groupsUpdate);
+  conn.ev.on('message.delete', conn.onDelete);
+  conn.ev.on('connection.update', conn.connectionUpdate);
+  conn.ev.on('creds.update', conn.credsUpdate);
+
+  // Mensajes personalizados
+  conn.welcome = `❖━━━━━━[ BIENVENIDO ]━━━━━━❖
+
+┏------━━━━━━━━•
+│☘︎ @subject
+┣━━━━━━━━┅┅┅
+│( 👋 Hola @user)
+├[ ¡Soy *Admin-TK* ]
+├ tu administrador en este grupo! —
+
+│ Por favor, regístrate con el comando:
+│ \`.reg nombre.edad\`
+┗------━━┅┅┅
+
+------┅┅ Descripción ┅┅––––––
+
+@desc`;
+  conn.bye = '❖━━━━━━[ BYEBYE ]━━━━━━❖\n\nSayonara @user 👋😃';
+  conn.spromote = '*✧ @user ahora es admin!*';
+  conn.sdemote = '*✧ @user ya no es admin!*';
+  conn.sDesc = '*✧ La descripción se actualizó a* \n@desc';
+  conn.sSubject = '*✧ El nombre del grupo fue alterado a* \n@subject';
+  conn.sIcon = '*✧ Se actualizó el nombre del grupo!*';
+  conn.sRevoke = '*✧ El link del grupo se actualizó a* \n@revoke';
+  conn.sAnnounceOn =
+    '*✧ Grupo cerrado!*\n> Ahora solo los admins pueden enviar mensajes.';
+  conn.sAnnounceOff =
+    '*✧ El grupo fue abierto!*\n> Ahora todos pueden enviar mensajes.';
+  conn.sRestrictOn =
+    '*✧ Ahora solo los admin podrán editar la información del grupo!*';
+  conn.sRestrictOff =
+    '*✧ Ahora todos pueden editar la información del grupo!*';
+}
 
 // Continuar con el resto de la configuración y eventos...
 
@@ -380,7 +439,7 @@ async function connectionUpdate(update) {
       // Eliminar la carpeta de sesiones
       rmSync('./sessions', { recursive: true, force: true });
       // Llamar a startConnection nuevamente
-      startConnection();
+      await startConnection();
     } else {
       console.log('Intentando reconectar...');
       // Llamar a reloadHandler para reconectar
@@ -397,80 +456,23 @@ async function connectionUpdate(update) {
 
 process.on('uncaughtException', console.error);
 
-let isInit = true;
-let handler = await import('./handler.js');
 global.reloadHandler = async function (restartConn) {
   try {
-    const Handler = await import(`./handler.js?update=${Date.now()}`);
-    if (Object.keys(Handler || {}).length) handler = Handler;
+    await setupHandlers(); // Reconfigurar los handlers
   } catch (e) {
     console.error(e);
   }
   if (restartConn) {
-    const oldChats = global.conn.chats;
+    const oldChats = conn.chats;
     try {
-      global.conn.ws.close();
+      conn.ws.close();
     } catch {}
     conn.ev.removeAllListeners();
     global.conn = makeWASocket(global.connectionOptions, { chats: oldChats });
-    isInit = true;
+    conn = global.conn; // Actualizar la referencia de conn
+    conn.isInit = true;
+    await setupHandlers(); // Configurar los handlers nuevamente
   }
-  if (!isInit) {
-    conn.ev.off('messages.upsert', conn.handler);
-    conn.ev.off('group-participants.update', conn.participantsUpdate);
-    conn.ev.off('groups.update', conn.groupsUpdate);
-    conn.ev.off('message.delete', conn.onDelete);
-    conn.ev.off('connection.update', conn.connectionUpdate);
-    conn.ev.off('creds.update', conn.credsUpdate);
-  }
-
-  // Mensajes personalizados
-  conn.welcome = `❖━━━━━━[ BIENVENIDO ]━━━━━━❖
-
-┏------━━━━━━━━•
-│☘︎ @subject
-┣━━━━━━━━┅┅┅
-│( 👋 Hola @user)
-├[ ¡Soy *Admin-TK* ]
-├ tu administrador en este grupo! —
-
-│ Por favor, regístrate con el comando:
-│ \`.reg nombre.edad\`
-┗------━━┅┅┅
-
-------┅┅ Descripción ┅┅––––––
-
-@desc`;
-  conn.bye = '❖━━━━━━[ BYEBYE ]━━━━━━❖\n\nSayonara @user 👋😃';
-  conn.spromote = '*✧ @user ahora es admin!*';
-  conn.sdemote = '*✧ @user ya no es admin!*';
-  conn.sDesc = '*✧ La descripción se actualizó a* \n@desc';
-  conn.sSubject = '*✧ El nombre del grupo fue alterado a* \n@subject';
-  conn.sIcon = '*✧ Se actualizó el nombre del grupo!*';
-  conn.sRevoke = '*✧ El link del grupo se actualizó a* \n@revoke';
-  conn.sAnnounceOn =
-    '*✧ Grupo cerrado!*\n> Ahora solo los admins pueden enviar mensajes.';
-  conn.sAnnounceOff =
-    '*✧ El grupo fue abierto!*\n> Ahora todos pueden enviar mensajes.';
-  conn.sRestrictOn =
-    '*✧ Ahora solo los admin podrán editar la información del grupo!*';
-  conn.sRestrictOff =
-    '*✧ Ahora todos pueden editar la información del grupo!*';
-
-  conn.handler = handler.handler.bind(global.conn);
-  conn.participantsUpdate = handler.participantsUpdate.bind(global.conn);
-  conn.groupsUpdate = handler.groupsUpdate.bind(global.conn);
-  conn.onDelete = handler.deleteUpdate.bind(global.conn);
-  conn.connectionUpdate = connectionUpdate.bind(global.conn);
-  conn.credsUpdate = conn.authState.saveCreds.bind(global.conn);
-
-  conn.ev.on('messages.upsert', conn.handler);
-  conn.ev.on('group-participants.update', conn.participantsUpdate);
-  conn.ev.on('groups.update', conn.groupsUpdate);
-  conn.ev.on('message.delete', conn.onDelete);
-  conn.ev.on('connection.update', conn.connectionUpdate);
-  conn.ev.on('creds.update', conn.credsUpdate);
-  isInit = false;
   return true;
 };
 
@@ -586,4 +588,4 @@ _quickTest().then(() =>
     '☑️ Prueba rápida realizada, nombre de la sesión ~> creds.json'
   )
 );
-               
+                      
