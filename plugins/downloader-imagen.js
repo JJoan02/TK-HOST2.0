@@ -21,7 +21,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
 
   if (prohibitedWords.some(word => text.toLowerCase().includes(word))) {
     await m.react('✖️');
-    return m.reply('🔰 Admin-TK: Hola enfermo UwU, esa búsqueda está prohibida.');
+    return m.reply('🔰 Admin-TK: Esa búsqueda está prohibida.');
   }
 
   await m.react('🕓');
@@ -45,6 +45,5 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
 handler.help = ['imagen *<búsqueda>*'];
 handler.tags = ['downloader'];
 handler.command = ['image', 'gimage', 'imagen'];
-handler.register = true;
 
 export default handler;
