@@ -9,15 +9,22 @@ const extractVideoID = (url) => {
 };
 
 const handler = async (m, { conn, text, usedPrefix, command }) => {
-  if (!text) return m.reply(`🔰 Admin-TK: Por favor, ingresa el enlace del video de YouTube junto al comando.\n\n✦ Ejemplo:\n> ${usedPrefix + command} https://youtube.com/watch?v=_r7impapnQY\``);
+  if (!text) {
+    return m.reply(
+      `🔰 Admin-TK: Por favor, envía el enlace del video de YouTube junto al comando.\n\n✦ Ejemplo:\n> ${usedPrefix + command} https://youtube.com/watch?v=kGobHQ7z8X4`
+    );
+  }
 
   const videoID = extractVideoID(text);
-  if (!videoID) return m.reply('🔰 Admin-TK: Por favor, asegúrate de que el enlace sea válido.');
+  if (!videoID) {
+    return m.reply('🔰 Admin-TK: El enlace proporcionado no es válido. Asegúrate de usar un enlace de YouTube.');
+  }
 
-  await conn.sendMessage(m.chat, { react: { text: '🕒', key: m.key } });
+  await conn.sendMessage(m.chat, { text: '🔰 Admin-TK: Descargando video desde YouTube... 🔽' });
 
   try {
     let ytdata = await ytdl(text);
+
     if (!ytdata.success || !ytdata.video[0]) {
       throw new Error('No se pudo obtener el enlace de descarga. Inténtalo más tarde.');
     }
@@ -27,7 +34,7 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
       m.chat,
       {
         document: { url: videoInfo.downloadLink },
-        caption: `🔰 Admin-TK: Tu pedido está listo.\n\n🎥 Título: ${ytdata.title}\n⏳ Duración: ${ytdata.duration}\n✅ Video descargado con éxito.`,
+        caption: `🔰 Admin-TK: Video descargado con éxito.\n\n🎥 Título: ${ytdata.title}\n⏳ Duración: ${ytdata.duration}`,
         mimetype: 'video/mp4',
         fileName: `${ytdata.title}.mp4`,
       },
