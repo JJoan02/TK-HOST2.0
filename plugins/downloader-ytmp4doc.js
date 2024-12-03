@@ -9,7 +9,7 @@ const extractVideoID = (url) => {
 };
 
 const handler = async (m, { conn, text, usedPrefix, command }) => {
-  if (!text) return m.reply(`🔰 Admin-TK: Por favor, ingresa el enlace del video de YouTube junto al comando.\n\n✦ Ejemplo: \`\n> ${usedPrefix + command} https://youtube.com/watch?v=_r7impapnQY\``);
+  if (!text) return m.reply(`🔰 Admin-TK: Por favor, ingresa el enlace del video de YouTube junto al comando.\n\n✦ Ejemplo:\n> ${usedPrefix + command} https://youtube.com/watch?v=_r7impapnQY\``);
 
   const videoID = extractVideoID(text);
   if (!videoID) return m.reply('🔰 Admin-TK: Por favor, asegúrate de que el enlace sea válido.');
