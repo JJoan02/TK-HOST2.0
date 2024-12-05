@@ -49,7 +49,20 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
     });
 
     if (suitableVideos.length === 0) {
-      throw new Error('No hay videos disponibles que sean menores o iguales a 500 MB.');
+      let videoInfo = ytdata.video.map(video => ({
+        title: ytdata.title,
+        fileSize: video.fileSize,
+        downloadLink: video.downloadLink,
+      }));
+      return m.reply(
+        `🔰 Admin-TK: No hay videos disponibles menores o iguales a ${MAX_SIZE_MB} MB.\n\n📋 Información de los videos encontrados:\n` +
+        videoInfo
+          .map(
+            (info, i) =>
+              `\n${i + 1}. 🎥 Título: ${info.title}\n📦 Tamaño: ${info.fileSize}\n🔗 Enlace: ${info.downloadLink}`
+          )
+          .join('\n')
+      );
     }
 
     const selectedVideo = suitableVideos[0];
@@ -58,7 +71,7 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
         m.chat,
         {
           document: { url: selectedVideo.downloadLink },
-          caption: `🔰 Admin-TK: Video descargado con éxito.\n\n🎥 Título: ${ytdata.title}`,
+          caption: `🔰 Admin-TK: Video descargado con éxito.\n\n🎥 Título: ${ytdata.title}\n📦 Tamaño: ${selectedVideo.fileSize}`,
           mimetype: 'video/mp4',
           fileName: `${ytdata.title}.mp4`,
         },
@@ -70,7 +83,6 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
     ]);
   } catch (error) {
     console.error(`Error: ${error.message}`);
-    await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
     m.reply(`🔰 Admin-TK: Ocurrió un error al procesar tu solicitud.\n\n✦ Detalle del error: ${error.message}`);
   }
 };
