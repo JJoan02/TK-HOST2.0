@@ -2,7 +2,7 @@ import FormData from 'form-data';
 import axios from 'axios';
 import cheerio from 'cheerio';
 
-const MAX_SIZE_MB = 200;
+const MAX_SIZE_MB = 500; // Límite de tamaño en MB
 const TIMEOUT_MS = 60000; // 60 segundos
 
 const extractVideoID = (url) => {
@@ -49,7 +49,7 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
     });
 
     if (suitableVideos.length === 0) {
-      throw new Error('No hay videos disponibles que sean menores o iguales a 200 MB.');
+      throw new Error('No hay videos disponibles que sean menores o iguales a 500 MB.');
     }
 
     const selectedVideo = suitableVideos[0];
