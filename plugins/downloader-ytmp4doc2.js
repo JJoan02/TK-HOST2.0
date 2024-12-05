@@ -25,7 +25,15 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
       throw new Error('No se pudo procesar el enlace. Inténtalo más tarde.');
     }
 
-    let { title, mediaLink } = result.result.content[0];
+    let { title, mediaLink, fileSize } = result.result.content[0];
+    const fileSizeInMB = parseFloat(fileSize.replace('MB', '').trim());
+
+    if (fileSizeInMB > 200) {
+      return m.reply(
+        `🔰 Admin-TK: El archivo excede el límite permitido de 200 MB. Tamaño detectado: ${fileSizeInMB} MB.\nNo se puede descargar.`
+      );
+    }
+
     await conn.sendMessage(
       m.chat,
       {
