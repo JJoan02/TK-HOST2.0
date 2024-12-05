@@ -1,6 +1,7 @@
 import axios from 'axios';
 import yts from 'yt-search';
-import fetch from 'node-fetch';
+
+const MAX_SIZE_MB = 200;
 
 const handler = async (m, { conn, text, usedPrefix, command }) => {
   if (!text) {
@@ -14,33 +15,38 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
     let videoInfo = results.all[0];
 
     if (!videoInfo) {
-      return m.reply('🔰 Admin-TK: No se encontró ningún video con esa búsqueda. Asegúrate de que el enlace o título sea válido.');
+      return m.reply('🔰 Admin-TK: No se encontró ningún video con esa búsqueda.');
     }
 
-    await conn.sendMessage(m.chat, { text: '🔰 Admin-TK: Descargando video desde YouTube... 🔽' });
-    let response = await fetch(`https://api.zenkey.my.id/api/download/ytmp4?url=${videoInfo.url}&apikey=zenkey`);
-    let result = await response.json();
+    await conn.sendMessage(m.chat, { text: '🔰 Admin-TK: Procesando solicitud...' });
 
-    if (!result.result || !result.result.content || !result.result.content[0]) {
-      throw new Error('No se pudo procesar el enlace. Inténtalo más tarde.');
+    const response = await axios.get(`https://api.zenkey.my.id/api/download/ytmp4?url=${videoInfo.url}&apikey=zenkey`);
+    const { result } = response.data;
+
+    if (!result || !result.content || !result.content[0]) {
+      throw new Error('No se pudo procesar el enlace.');
     }
 
-    let { title, mediaLink } = result.result.content[0];
+    const suitableVideos = result.content.filter(video => video.size && video.size <= MAX_SIZE_MB * 1024 * 1024);
+
+    if (suitableVideos.length === 0) {
+      throw new Error('No hay videos disponibles menores o iguales a 200 MB.');
+    }
+
+    const selectedVideo = suitableVideos[0];
     await conn.sendMessage(
       m.chat,
       {
-        document: { url: mediaLink },
-        caption: `🔰 Admin-TK: Video descargado con éxito.\n\n🎥 Título: ${title}`,
+        document: { url: selectedVideo.mediaLink },
+        caption: `🔰 Admin-TK: Video descargado con éxito.\n\n🎥 Título: ${selectedVideo.title}`,
         mimetype: 'video/mp4',
-        fileName: `${title}.mp4`,
+        fileName: `${selectedVideo.title}.mp4`,
       },
       { quoted: m }
     );
-    await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
   } catch (error) {
     console.error(`Error: ${error.message}`);
-    await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
-    m.reply(`🔰 Admin-TK: Ocurrió un error al procesar tu solicitud.\n\n✦ Detalle del error: ${error.message || 'Error desconocido.'}`);
+    m.reply(`🔰 Admin-TK: Error al procesar tu solicitud.\n\n✦ Detalle del error: ${error.message}`);
   }
 };
 
@@ -49,4 +55,3 @@ handler.tags = ['downloader'];
 handler.command = /^(ytmp4|ytvdoc)$/i;
 
 export default handler;
-
