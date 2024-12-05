@@ -30,6 +30,14 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
     }
 
     let videoInfo = ytdata.video[0];
+    const fileSizeInMB = parseFloat(videoInfo.fileSize.replace('MB', '').trim());
+
+    if (fileSizeInMB > 200) {
+      return m.reply(
+        `🔰 Admin-TK: El archivo excede el límite permitido de 200 MB. Tamaño detectado: ${fileSizeInMB} MB.\nNo se puede descargar.`
+      );
+    }
+
     await conn.sendMessage(
       m.chat,
       {
