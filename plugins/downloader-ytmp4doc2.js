@@ -1,7 +1,7 @@
 import axios from 'axios';
 import yts from 'yt-search';
 
-const MAX_SIZE_MB = 200;
+const MAX_SIZE_MB = 500; // Límite de tamaño en MB
 
 const handler = async (m, { conn, text, usedPrefix, command }) => {
   if (!text) {
@@ -30,7 +30,7 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
     const suitableVideos = result.content.filter(video => video.size && video.size <= MAX_SIZE_MB * 1024 * 1024);
 
     if (suitableVideos.length === 0) {
-      throw new Error('No hay videos disponibles menores o iguales a 200 MB.');
+      throw new Error('No hay videos disponibles menores o iguales a 500 MB.');
     }
 
     const selectedVideo = suitableVideos[0];
