@@ -24,10 +24,10 @@
         🐙 𝗚𝗶𝘁𝗵𝘂𝗯 𝗥𝗲𝗽𝗼𝘀𝗶𝘁𝗼𝗿𝘆: [JJoan02/Admin-TK](https://github.com/JJoan02/Admin-TK)
         👤 𝗢𝘄𝗻𝗲𝗿/𝗖𝗿𝗲𝗮𝘁𝗼𝗿: @JJoan02
         📌 𝗗𝗲𝘀𝗰𝗿𝗶𝗽𝘁𝗶𝗼𝗻:
-        Admin-TK es un bot avanzado y multifuncional para WhatsApp que ofrece una amplia gama de complementos, incluyendo automatización de tareas, juegos interactivos,
-        y herramientas útiles. 
-        Con un diseño centrado en la eficiencia y el entretenimiento, Admin-TK transforma la forma en que interactúas en WhatsApp, brindándote una experiencia intuitiva
-        y poderosa.
+        Admin-TK es un bot avanzado y multifuncional para WhatsApp que ofrece una amplia gama de complementos, 
+        incluyendo automatización de tareas, juegos interactivos, y herramientas útiles. 
+        Con un diseño centrado en la eficiencia y el entretenimiento, Admin-TK transforma la forma en que interactúas 
+        en WhatsApp, brindándote una experiencia intuitiva y poderosa.
 
         
         📅 𝗖𝗿𝗲𝗮𝘁𝗶𝗼𝗻: 15/11/2024 at 08:25:10
