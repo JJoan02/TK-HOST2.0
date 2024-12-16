@@ -184,150 +184,278 @@ const filterStrings = [
   conn.well = false
   
   if (!opts['test']) {
-    if (global.db) {
-      setInterval(async () => {
-        if (global.db.data) await global.db.write();
-        if (opts['autocleartmp'] && (global.support || {}).find) (tmp = [os.tmpdir(), 'tmp', 'serbot'], tmp.forEach((filename) => cp.spawn('find', [filename, '-amin', '3', '-type', 'f', '-delete'])))
-      }, 30 * 1000)
-    }
+  if (global.db) {
+    setInterval(async () => {
+      if (global.db.data) await global.db.write();
+      if (opts['autocleartmp'] && (global.support || {}).find) (tmp = [os.tmpdir(), 'tmp', 'serbot'], tmp.forEach((filename) => cp.spawn('find', [filename, '-amin', '3', '-type', 'f', '-delete'])))
+    }, 60 * 1000)
   }
-  
-  async function clearTmp() {
-    const tmp = [tmpdir(), join(__dirname, './tmp')]
-    const filename = []
-    tmp.forEach(dirname => readdirSync(dirname).forEach(file => filename.push(join(dirname, file))))
-  
-  
-    return filename.map(file => {
-      const stats = statSync(file)
-      if (stats.isFile() && (Date.now() - stats.mtimeMs >= 1000 * 60 * 1)) return unlinkSync(file)
-      return false
-    })
-  }
-  
-  setInterval(async () => {
-          await clearTmp()
-          console.log(chalk.cyan(`Se limpio la carpeta tmp`))
-  }, 60000)
-  
-  
-  function purgeSession() {
-  let prekey = []
-  let directorio = readdirSync("./sessions")
-  let filesFolderPreKeys = directorio.filter(file => {
-  return file.startsWith('pre-key-')
+}
+
+/* async function clearTmp() {
+  const tmp = [tmpdir(), join(__dirname, './tmp')]
+  const filename = []
+  tmp.forEach(dirname => readdirSync(dirname).forEach(file => filename.push(join(dirname, file))))
+
+
+  return filename.map(file => {
+    const stats = statSync(file)
+    if (stats.isFile() && (Date.now() - stats.mtimeMs >= 1000 * 60 * 3)) return unlinkSync(file)
+    return false
   })
-  prekey = [...prekey, ...filesFolderPreKeys]
-  filesFolderPreKeys.forEach(files => {
-  unlinkSync(`../sessions/${files}`)
+}
+
+setInterval(async () => {
+	await clearTmp()
+	console.log(chalk.cyan(Se limpio la carpeta tmp))
+}, 60000) */
+
+
+async function clearTmp() {
+  const tmp = [tmpdir(), join(__dirname, './tmp')]
+  const filename = []
+  tmp.forEach(dirname => readdirSync(dirname).forEach(file => filename.push(join(dirname, file))))
+  return filename.map(file => {
+    const stats = statSync(file)
+    if (stats.isFile() && (Date.now() - stats.mtimeMs >= 1000 * 60 * 3)) return unlinkSync(file) // 3 minutes
+    return false
   })
+}
+
+
+function purgeSession() {
+let prekey = []
+let directorio = readdirSync("./sessions")
+let filesFolderPreKeys = directorio.filter(file => {
+return file.startsWith('pre-key-')
+})
+prekey = [...prekey, ...filesFolderPreKeys]
+filesFolderPreKeys.forEach(files => {
+unlinkSync(./sessions/${files})
+})
+}
+
+function redefineConsoleMethod(methodName, filterStrings) {
+const originalConsoleMethod = console[methodName]
+console[methodName] = function() {
+const message = arguments[0]
+if (typeof message === 'string' && filterStrings.some(filterString => message.includes(atob(filterString)))) {
+arguments[0] = ""
+}
+originalConsoleMethod.apply(console, arguments)
+}}
+
+function purgeSessionSB() {
+try {
+let listaDirectorios = readdirSync('../serbot/');
+let SBprekey = []
+listaDirectorios.forEach(directorio => {
+if (statSync(../serbot/${directorio}).isDirectory()) {
+let DSBPreKeys = readdirSync(../serbot/${directorio}).filter(fileInDir => {
+return fileInDir.startsWith('pre-key-')
+})
+SBprekey = [...SBprekey, ...DSBPreKeys]
+DSBPreKeys.forEach(fileInDir => {
+unlinkSync(../serbot/${directorio}/${fileInDir})
+})
+}
+})
+if (SBprekey.length === 0) return null
+} catch (err) {
+}}
+
+function purgeOldFiles() {
+const directories = ['./sessions/', '../serbot/']
+const oneHourAgo = Date.now() - (60 * 60 * 1000)
+directories.forEach(dir => {
+readdirSync(dir, (err, files) => {
+if (err) throw err
+files.forEach(file => {
+const filePath = path.join(dir, file)
+stat(filePath, (err, stats) => {
+if (err) throw err;
+if (stats.isFile() && stats.mtimeMs < oneHourAgo && file !== 'creds.json') { 
+unlinkSync(filePath, err => {  
+if (err) throw err
+})
+} else {  
+} }) }) }) })
+}
+
+async function connectionUpdate(update) {
+  const {connection, lastDisconnect, isNewLogin} = update;
+  global.stopped = connection;
+  if (isNewLogin) conn.isInit = true;
+  const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.output?.payload?.statusCode;
+  if (code && code !== DisconnectReason.loggedOut && conn?.ws.socket == null) {
+    await global.reloadHandler(true).catch(console.error);
+    global.timestamp.connect = new Date;
   }
-  
-  function redefineConsoleMethod(methodName, filterStrings) {
-  const originalConsoleMethod = console[methodName]
-  console[methodName] = function() {
-  const message = arguments[0]
-  if (typeof message === 'string' && filterStrings.some(filterString => message.includes(atob(filterString)))) {
-  arguments[0] = ""
+  if (global.db.data == null) loadDatabase()
+  if (connection == 'open') {
+    console.log(chalk.yellow('Conectado correctamente.'))
   }
-  originalConsoleMethod.apply(console, arguments)
-  }}
-  
-  async function connectionUpdate(update) {
-    const {connection, lastDisconnect, isNewLogin} = update
-    global.stopped = connection
-    if (isNewLogin) conn.isInit = true
-    const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.output?.payload?.statusCode
-    if (code && code !== DisconnectReason.loggedOut && conn?.ws.socket == null) {
-      await global.reloadHandler(true).catch(console.error)
+let reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
+if (reason == 405) {
+await fs.unlinkSync("./sessions/" + "creds.json")
+console.log(chalk.bold.redBright(Conexión replazada, Por favor espere un momento me voy a reiniciar...\nSi aparecen error vuelve a iniciar con : npm start)) 
+process.send('reset')}
+if (connection === 'close') {
+    if (reason === DisconnectReason.badSession) {
+        conn.logger.error(Sesión incorrecta, por favor elimina la carpeta ${global.authFile} y escanea nuevamente.)
+    } else if (reason === DisconnectReason.connectionClosed) {
+        conn.logger.warn(Conexión cerrada, reconectando...)
+        await global.reloadHandler(true).catch(console.error)
+    } else if (reason === DisconnectReason.connectionLost) {
+        conn.logger.warn(Conexión perdida con el servidor, reconectando...)
+        await global.reloadHandler(true).catch(console.error)
+    } else if (reason === DisconnectReason.connectionReplaced) {
+        conn.logger.error(Conexión reemplazada, se ha abierto otra nueva sesión. Por favor, cierra la sesión actual primero.)
+    } else if (reason === DisconnectReason.loggedOut) {
+        conn.logger.error(Conexion cerrada, por favor elimina la carpeta ${global.authFile} y escanea nuevamente.)
+    } else if (reason === DisconnectReason.restartRequired) {
+        conn.logger.info(Reinicio necesario, reinicie el servidor si presenta algún problema.)
+        await global.reloadHandler(true).catch(console.error)
+    } else if (reason === DisconnectReason.timedOut) {
+        conn.logger.warn(Tiempo de conexión agotado, reconectando...)
+        await global.reloadHandler(true).catch(console.error)
+    } else {
+        conn.logger.warn(Razón de desconexión desconocida. ${reason || ''}: ${connection || ''})
+        await global.reloadHandler(true).catch(console.error)
     }
-    if (global.db.data == null) loadDatabase()
-  
-    if (connection == 'open') {
-      console.log(chalk.cyan('Conectado correctamente.'))
-    }
+}
+}
+
+process.on('uncaughtException', console.error)
+
+let isInit = true;
+let handler = await import('./handler.js')
+global.reloadHandler = async function(restatConn) {
+  try {
+    const Handler = await import(./handler.js?update=${Date.now()}).catch(console.error);
+    if (Object.keys(Handler || {}).length) handler = Handler
+  } catch (e) {
+    console.error(e);
   }
-  
-  process.on('uncaughtException', console.error)
-  
-  let isInit = true
-  let handler = await import('./handler.js')
-  global.reloadHandler = async function(restatConn) {
+  if (restatConn) {
+    const oldChats = global.conn.chats
     try {
-      const Handler = await import(`./handler.js?update=${Date.now()}`).catch(console.error)
-      if (Object.keys(Handler || {}).length) handler = Handler;
+      global.conn.ws.close()
+    } catch { }
+    conn.ev.removeAllListeners()
+    global.conn = makeWASocket(connectionOptions, {chats: oldChats})
+    isInit = true
+  }
+  if (!isInit) {
+    conn.ev.off('messages.upsert', conn.handler)
+    conn.ev.off('connection.update', conn.connectionUpdate)
+    conn.ev.off('creds.update', conn.credsUpdate)
+  }
+
+  conn.handler = handler.handler.bind(global.conn)
+  conn.connectionUpdate = connectionUpdate.bind(global.conn)
+  conn.credsUpdate = saveCreds.bind(global.conn, true)
+
+  const currentDateTime = new Date()
+  const messageDateTime = new Date(conn.ev)
+  if (currentDateTime >= messageDateTime) {
+    const chats = Object.entries(conn.chats).filter(([jid, chat]) => !jid.endsWith('@g.us') && chat.isChats).map((v) => v[0])
+  } else {
+    const chats = Object.entries(conn.chats).filter(([jid, chat]) => !jid.endsWith('@g.us') && chat.isChats).map((v) => v[0])
+  }
+
+  conn.ev.on('messages.upsert', conn.handler)
+  conn.ev.on('connection.update', conn.connectionUpdate)
+  conn.ev.on('creds.update', conn.credsUpdate)
+  isInit = false
+  return true
+};
+
+const pluginFolder = global._dirname(join(_dirname, './plugins/index'))
+const pluginFilter = filename => /\.js$/.test(filename)
+global.plugins = {}
+async function filesInit() {
+  for (let filename of readdirSync(pluginFolder).filter(pluginFilter)) {
+    try {
+      let file = global.__filename(join(pluginFolder, filename))
+      const module = await import(file)
+      global.plugins[filename] = module.default || module
     } catch (e) {
-      console.error(e)
-    }
-    if (restatConn) {
-      const oldChats = global.conn.chats;
-      try {
-        global.conn.ws.close()
-      } catch { }
-      conn.ev.removeAllListeners()
-      global.conn = makeWASocket(connectionOptions, {chats: oldChats})
-      isInit = true
-    }
-    if (!isInit) {
-      conn.ev.off('messages.upsert', conn.handler)
-      conn.ev.off('connection.update', conn.connectionUpdate)
-      conn.ev.off('creds.update', conn.credsUpdate)
-    }
-  
-    conn.handler = handler.handler.bind(global.conn)
-    conn.connectionUpdate = connectionUpdate.bind(global.conn)
-    conn.credsUpdate = saveCreds.bind(global.conn, true)
-  
-    conn.ev.on('messages.upsert', conn.handler)
-    conn.ev.on('connection.update', conn.connectionUpdate)
-    conn.ev.on('creds.update', conn.credsUpdate)
-    isInit = false
-    return true
-  }
-  
-  const pluginFolder = global.__dirname(join(__dirname, './plugins/index'))
-  const pluginFilter = (filename) => /\.js$/.test(filename)
-  global.plugins = {}
-  async function filesInit() {
-    for (const filename of readdirSync(pluginFolder).filter(pluginFilter)) {
-      try {
-        const file = global.__filename(join(pluginFolder, filename))
-        const module = await import(file)
-        global.plugins[filename] = module.default || module
-      } catch (e) {
-        conn.logger.error(e)
-        delete global.plugins[filename]
-      }
+     // conn.logger.error(e)
+      delete global.plugins[filename]
     }
   }
-  filesInit().then((_) => Object.keys(global.plugins)).catch(console.error)
-  
-  global.reload = async (_ev, filename) => {
-    if (pluginFilter(filename)) {
-      const dir = global.__filename(join(pluginFolder, filename), true);
-      if (filename in global.plugins) {
-        if (existsSync(dir)) conn.logger.info(` updated plugin - '${filename}'`)
-        else {
-          conn.logger.warn(`deleted plugin - '${filename}'`)
-          return delete global.plugins[filename]
-        }
-      } else conn.logger.info(`new plugin - '${filename}'`);
-      const err = syntaxerror(readFileSync(dir), filename, {
-        sourceType: 'module',
-        allowAwaitOutsideFunction: true,
-      });
-      if (err) conn.logger.error(`syntax error while loading '${filename}'\n${format(err)}`)
+}
+filesInit().then((_) => Object.keys(global.plugins)).catch(console.error)
+
+global.reload = async (_ev, filename) => {
+  if (pluginFilter(filename)) {
+    const dir = global.__filename(join(pluginFolder, filename), true);
+    if (filename in global.plugins) {
+      if (existsSync(dir)) conn.logger.info(` updated plugin - '${filename}'`)
       else {
-        try {
-          const module = (await import(`${global.__filename(dir)}?update=${Date.now()}`));
-          global.plugins[filename] = module.default || module;
-        } catch (e) {
-          conn.logger.error(e);
-        }
+        conn.logger.warn(deleted plugin - '${filename}')
+        return delete global.plugins[filename]
+      }
+    } else conn.logger.info(new plugin - '${filename}');
+    const err = syntaxerror(readFileSync(dir), filename, {
+      sourceType: 'module',
+      allowAwaitOutsideFunction: true,
+    });
+    if (err) conn.logger.error(syntax error while loading '${filename}'\n${format(err)})
+    else {
+      try {
+        const module = (await import(${global.__filename(dir)}?update=${Date.now()}));
+        global.plugins[filename] = module.default || module;
+      } catch (e) {
+        conn.logger.error(error require plugin '${filename}\n${format(e)}')
+      } finally {
+        global.plugins = Object.fromEntries(Object.entries(global.plugins).sort(([a], [b]) => a.localeCompare(b)))
       }
     }
   }
-  Object.freeze(global.reload)
-  watch(pluginFolder, global.reload)
-  
-  await global.reloadHandler()
+}
+Object.freeze(global.reload)
+watch(pluginFolder, global.reload)
+await global.reloadHandler()
+async function _quickTest() {
+  const test = await Promise.all([
+    spawn('ffmpeg'),
+    spawn('ffprobe'),
+    spawn('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-filter_complex', 'color', '-frames:v', '1', '-f', 'webp', '-']),
+    spawn('convert'),
+    spawn('magick'),
+    spawn('gm'),
+    spawn('find', ['--version']),
+  ].map((p) => {
+    return Promise.race([
+      new Promise((resolve) => {
+        p.on('close', (code) => {
+          resolve(code !== 127);
+        });
+      }),
+      new Promise((resolve) => {
+        p.on('error', (_) => resolve(false));
+      })]);
+  }));
+  const [ffmpeg, ffprobe, ffmpegWebp, convert, magick, gm, find] = test;
+  const s = global.support = {ffmpeg, ffprobe, ffmpegWebp, convert, magick, gm, find};
+  Object.freeze(global.support);
+}
+setInterval(async () => {
+  if (stopped === 'close' || !conn || !conn.user) return
+  const a = await clearTmp()
+}, 180000)
+setInterval(async () => {
+  if (stopped === 'close' || !conn || !conn.user) return
+  await purgeSession()
+}, 1000 * 60 * 60);
+setInterval(async () => {
+  if (stopped === 'close' || !conn || !conn.user) return
+  await purgeSessionSB()
+}, 1000 * 60 * 60);
+setInterval(async () => {
+  if (stopped === 'close' || !conn || !conn.user) return
+  await purgeOldFiles()
+}, 1000 * 60 * 60);
+_quickTest().catch(console.error)
