@@ -5,9 +5,9 @@
         "update_url": null
     },
     "exported_at": "2024-12-21T00:00:00+00:00",
-    "name": "Bedrock Crossplay (Oficial)",
-    "author": "tu_email@example.com",
-    "description": "Servidor Minecraft Bedrock Edition para jugar en celular, PC y consolas compatibles. Soporta juego cruzado en la última versión oficial.",
+    "name": "Minecraft Bedrock Edition (Automático)",
+    "author": "JJoan02",
+    "description": "Egg automatizado para Minecraft Bedrock Edition. Descarga, instala y configura automáticamente la última versión oficial.",
     "features": [
         "pid_limit"
     ],
@@ -24,7 +24,7 @@
     },
     "scripts": {
         "installation": {
-            "script": "#!/bin/bash\r\n\r\napt update\r\napt install -y zip unzip wget curl\r\n\r\nif [ ! -d /mnt/server/ ]; then\r\n    mkdir /mnt/server/\r\nfi\r\n\r\ncd /mnt/server\r\n\r\n# Descargar la última versión oficial\r\nRANDVERSION=$(echo $((1 + $RANDOM % 4000)))\r\n\r\nif [ -z \"${BEDROCK_VERSION}\" ] || [ \"${BEDROCK_VERSION}\" == \"latest\" ]; then\r\n    echo -e \"\\nDescargando la última versión de Bedrock Server\"\r\n    curl -L -A \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.$RANDVERSION.212 Safari/537.36\" -o versions.html.gz https://www.minecraft.net/en-us/download/server/bedrock\r\n    DOWNLOAD_URL=$(zgrep -o 'https://minecraft.azureedge.net/bin-linux/[^\"]*' versions.html.gz)\r\nelse\r\n    echo -e \"\\nDescargando la versión ${BEDROCK_VERSION}\"\r\n    DOWNLOAD_URL=https://minecraft.azureedge.net/bin-linux/bedrock-server-$BEDROCK_VERSION.zip\r\nfi\r\n\r\nDOWNLOAD_FILE=$(echo ${DOWNLOAD_URL} | cut -d\"/\" -f5)\r\n\r\necho -e \"Respaldando archivos de configuración\"\r\nrm *.bak versions.html.gz\r\ncp server.properties server.properties.bak || true\r\ncp permissions.json permissions.json.bak || true\r\ncp allowlist.json allowlist.json.bak || true\r\n\r\necho -e \"Descargando archivos desde: $DOWNLOAD_URL\"\r\ncurl -L -o $DOWNLOAD_FILE $DOWNLOAD_URL\r\n\r\necho -e \"Extrayendo los archivos del servidor\"\r\nunzip -o $DOWNLOAD_FILE\r\n\r\necho -e \"Limpiando archivos de instalación\"\r\nrm $DOWNLOAD_FILE\r\n\r\nchmod +x bedrock_server\r\n\r\necho -e \"Instalación completada\"\r\n",
+            "script": "#!/bin/bash\r\n\r\n# Actualiza el sistema e instala dependencias necesarias\r\napt update && apt install -y zip unzip wget curl\r\n\r\n# Crea el directorio del servidor si no existe\r\nmkdir -p /mnt/server\r\ncd /mnt/server\r\n\r\n# Minecraft CDN bloquea algunos agentes de usuario\r\nRANDVERSION=$(echo $((1 + $RANDOM % 4000)))\r\n\r\n# Descarga la última versión o la especificada\r\nif [ -z \"${BEDROCK_VERSION}\" ] || [ \"${BEDROCK_VERSION}\" == \"latest\" ]; then\r\n    echo -e \"\\nDescargando la última versión de Bedrock Server...\"\r\n    curl -L -A \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.$RANDVERSION.212 Safari/537.36\" -o versions.html.gz https://www.minecraft.net/en-us/download/server/bedrock\r\n    DOWNLOAD_URL=$(zgrep -o 'https://minecraft.azureedge.net/bin-linux/[^\"]*' versions.html.gz)\r\nelse\r\n    echo -e \"\\nDescargando Bedrock Server versión ${BEDROCK_VERSION}...\"\r\n    DOWNLOAD_URL=https://minecraft.azureedge.net/bin-linux/bedrock-server-${BEDROCK_VERSION}.zip\r\nfi\r\n\r\n# Descarga el archivo\r\nDOWNLOAD_FILE=$(echo ${DOWNLOAD_URL} | cut -d\"/\" -f5)\r\necho -e \"Descargando archivos desde: $DOWNLOAD_URL\"\r\ncurl -L -o $DOWNLOAD_FILE $DOWNLOAD_URL\r\n\r\n# Extrae los archivos del servidor\r\necho -e \"Extrayendo archivos...\"\r\nunzip -o $DOWNLOAD_FILE\r\n\r\n# Limpia los archivos temporales\r\necho -e \"Limpiando archivos de instalación...\"\r\nrm $DOWNLOAD_FILE versions.html.gz\r\n\r\n# Asegura permisos de ejecución\r\nchmod +x bedrock_server\r\n\r\n# Finaliza la instalación\r\necho -e \"Instalación completada. El servidor está listo para iniciar.\"\r\n",
             "container": "ghcr.io/parkervcp/installers:debian",
             "entrypoint": "bash"
         }
@@ -32,7 +32,7 @@
     "variables": [
         {
             "name": "Bedrock Version",
-            "description": "La versión de Bedrock (por ejemplo, 1.20.10). Por defecto es la última versión disponible.",
+            "description": "Versión específica de Bedrock (ej. 1.20.30). Deja 'latest' para la última versión disponible.",
             "env_variable": "BEDROCK_VERSION",
             "default_value": "latest",
             "user_viewable": true,
@@ -41,10 +41,10 @@
             "field_type": "text"
         },
         {
-            "name": "Server Name",
-            "description": "Nombre del servidor.",
+            "name": "Minecraft-TK",
+            "description": "Servididor de Minecraft en TK-HOST.",
             "env_variable": "SERVERNAME",
-            "default_value": "Servidor Bedrock Oficial",
+            "default_value": "Servidor Bedrock Automático",
             "user_viewable": true,
             "user_editable": true,
             "rules": "required|string|max:50",
@@ -52,7 +52,7 @@
         },
         {
             "name": "Gamemode",
-            "description": "Modo de juego. Valores permitidos: \"survival\", \"creative\", \"adventure\".",
+            "description": "Modo de juego. Opciones: \"survival\", \"creative\", \"adventure\".",
             "env_variable": "GAMEMODE",
             "default_value": "survival",
             "user_viewable": true,
@@ -62,7 +62,7 @@
         },
         {
             "name": "Difficulty",
-            "description": "Dificultad. Valores permitidos: \"peaceful\", \"easy\", \"normal\", \"hard\".",
+            "description": "Dificultad del juego. Opciones: \"peaceful\", \"easy\", \"normal\", \"hard\".",
             "env_variable": "DIFFICULTY",
             "default_value": "normal",
             "user_viewable": true,
@@ -72,7 +72,7 @@
         },
         {
             "name": "Allow Cheats",
-            "description": "Permitir comandos y trucos. Valores permitidos: \"true\" o \"false\".",
+            "description": "Permitir trucos (cheats). Opciones: \"true\" o \"false\".",
             "env_variable": "CHEATS",
             "default_value": "false",
             "user_viewable": true,
