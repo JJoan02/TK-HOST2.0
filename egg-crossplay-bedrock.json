@@ -1,0 +1,84 @@
+{
+    "_comment": "DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PTERODACTYL PANEL - PTERODACTYL.IO",
+    "meta": {
+        "version": "PTDL_v2",
+        "update_url": null
+    },
+    "exported_at": "2024-12-21T00:00:00+00:00",
+    "name": "Bedrock Crossplay (Oficial)",
+    "author": "tu_email@example.com",
+    "description": "Servidor Minecraft Bedrock Edition para jugar en celular, PC y consolas compatibles. Soporta juego cruzado en la última versión oficial.",
+    "features": [
+        "pid_limit"
+    ],
+    "docker_images": {
+        "ghcr.io/parkervcp/yolks:debian": "ghcr.io/parkervcp/yolks:debian"
+    },
+    "file_denylist": [],
+    "startup": "./bedrock_server",
+    "config": {
+        "files": "{\r\n    \"server.properties\": {\r\n        \"parser\": \"properties\",\r\n        \"find\": {\r\n            \"server-port\": \"{{server.build.default.port}}\",\r\n            \"server-name\": \"{{server.build.env.SERVERNAME}}\",\r\n            \"gamemode\": \"{{server.build.env.GAMEMODE}}\",\r\n            \"difficulty\": \"{{server.build.env.DIFFICULTY}}\",\r\n            \"allow-cheats\": \"{{server.build.env.CHEATS}}\"\r\n        }\r\n    }\r\n}",
+        "startup": "{\r\n    \"done\": \"Server started\"\r\n}",
+        "logs": "{}",
+        "stop": "stop"
+    },
+    "scripts": {
+        "installation": {
+            "script": "#!/bin/bash\r\n\r\napt update\r\napt install -y zip unzip wget curl\r\n\r\nif [ ! -d /mnt/server/ ]; then\r\n    mkdir /mnt/server/\r\nfi\r\n\r\ncd /mnt/server\r\n\r\n# Descargar la última versión oficial\r\nRANDVERSION=$(echo $((1 + $RANDOM % 4000)))\r\n\r\nif [ -z \"${BEDROCK_VERSION}\" ] || [ \"${BEDROCK_VERSION}\" == \"latest\" ]; then\r\n    echo -e \"\\nDescargando la última versión de Bedrock Server\"\r\n    curl -L -A \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.$RANDVERSION.212 Safari/537.36\" -o versions.html.gz https://www.minecraft.net/en-us/download/server/bedrock\r\n    DOWNLOAD_URL=$(zgrep -o 'https://minecraft.azureedge.net/bin-linux/[^\"]*' versions.html.gz)\r\nelse\r\n    echo -e \"\\nDescargando la versión ${BEDROCK_VERSION}\"\r\n    DOWNLOAD_URL=https://minecraft.azureedge.net/bin-linux/bedrock-server-$BEDROCK_VERSION.zip\r\nfi\r\n\r\nDOWNLOAD_FILE=$(echo ${DOWNLOAD_URL} | cut -d\"/\" -f5)\r\n\r\necho -e \"Respaldando archivos de configuración\"\r\nrm *.bak versions.html.gz\r\ncp server.properties server.properties.bak || true\r\ncp permissions.json permissions.json.bak || true\r\ncp allowlist.json allowlist.json.bak || true\r\n\r\necho -e \"Descargando archivos desde: $DOWNLOAD_URL\"\r\ncurl -L -o $DOWNLOAD_FILE $DOWNLOAD_URL\r\n\r\necho -e \"Extrayendo los archivos del servidor\"\r\nunzip -o $DOWNLOAD_FILE\r\n\r\necho -e \"Limpiando archivos de instalación\"\r\nrm $DOWNLOAD_FILE\r\n\r\nchmod +x bedrock_server\r\n\r\necho -e \"Instalación completada\"\r\n",
+            "container": "ghcr.io/parkervcp/installers:debian",
+            "entrypoint": "bash"
+        }
+    },
+    "variables": [
+        {
+            "name": "Bedrock Version",
+            "description": "La versión de Bedrock (por ejemplo, 1.20.10). Por defecto es la última versión disponible.",
+            "env_variable": "BEDROCK_VERSION",
+            "default_value": "latest",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:20",
+            "field_type": "text"
+        },
+        {
+            "name": "Server Name",
+            "description": "Nombre del servidor.",
+            "env_variable": "SERVERNAME",
+            "default_value": "Servidor Bedrock Oficial",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:50",
+            "field_type": "text"
+        },
+        {
+            "name": "Gamemode",
+            "description": "Modo de juego. Valores permitidos: \"survival\", \"creative\", \"adventure\".",
+            "env_variable": "GAMEMODE",
+            "default_value": "survival",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|in:survival,creative,adventure",
+            "field_type": "text"
+        },
+        {
+            "name": "Difficulty",
+            "description": "Dificultad. Valores permitidos: \"peaceful\", \"easy\", \"normal\", \"hard\".",
+            "env_variable": "DIFFICULTY",
+            "default_value": "normal",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|in:peaceful,easy,normal,hard",
+            "field_type": "text"
+        },
+        {
+            "name": "Allow Cheats",
+            "description": "Permitir comandos y trucos. Valores permitidos: \"true\" o \"false\".",
+            "env_variable": "CHEATS",
+            "default_value": "false",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|in:true,false",
+            "field_type": "text"
+        }
+    ]
+}
