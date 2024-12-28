@@ -1,29 +1,37 @@
-/* 
+/*
    =========================================================================================
-   main.js - Flujo de Vinculación por Código 8 Dígitos Antes de Cualquier Mensaje Posterior
+   main.js - Código Robusto (Baileys @whiskeysockets) con Vinculación por Código de 8 Dígitos
    =========================================================================================
 
-   Pasos:
-   1) Menú (opciones 1 o 2).
-   2) Pide phoneNumber.
-   3) Crea conexión, NO pide pairing code todavía.
-   4) Cuando connection='open' => requestPairingCode => se muestra el code 8 díg.
-   5) Esperamos que usuario vincule en WhatsApp => en "creds.update" si registered => postLinkFlow()
-   6) postLinkFlow => restablece límites, arranca server, mensajes "Conectando..." etc.
-   7) Si connection='close' => resetea TK-Session => espera 45s => initWhatsApp() de nuevo.
+   CORREGIDO: Se deja UN SOLO import "readline" al principio,
+   evitando "Identifier 'readline' has already been declared".
+
+   - Menú (1,2) => genera code 8 díg.
+   - Pide phoneNumber (sin +).
+   - Espera connection='open' => requestPairingCode => Muestra code antes de mensajes finales.
+   - Cuando "creds.update" indica registered => Se ejecuta postLinkFlow()
+     => Límite restablecido, Servidor => 4021, Dependencias checadas...
+   - Si "close" => reset TK-Session, esperar 45s => initWhatsApp().
+   - Tiempos 120s de connectTimeoutMs / defaultQueryTimeoutMs para dar holgura.
 */
 
 ////////////////////////////////////
-// 1) Importar Config y Principales
+// 1) Importar config.js
 ////////////////////////////////////
-import './config.js'; // Ajusta si tu config.js está en otro lugar
+import './config.js'; // Ajusta la ruta si tu config.js está en otro lugar
+
+////////////////////////////////////
+// 2) Imports Principales
+////////////////////////////////////
 import chalk from 'chalk';
 import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs';
 import { spawn } from 'child_process';
 import pino from 'pino';
 import ws from 'ws';
-import readline from 'readline';
+/* CORREGIDO: SOLO UNO */
+import readline from 'readline'; // Importamos 'readline' UNA sola vez
+
 import {
   readdirSync,
   statSync,
@@ -39,9 +47,9 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import { createRequire } from 'module';
 
 ////////////////////////////////////
-// 2) Baileys (whiskeysockets)
+// 3) Baileys (whiskeysockets)
 ////////////////////////////////////
-import pkg from '@adiwajshing/baileys'; // Es la de npm:@whiskeysockets/baileys
+import pkg from '@adiwajshing/baileys'; // => npm:@whiskeysockets/baileys
 const {
   makeInMemoryStore,
   useMultiFileAuthState,
@@ -51,25 +59,25 @@ const {
 } = pkg;
 
 ////////////////////////////////////
-// 3) LowDB y/o Mongo Adaptadores
+// 4) LowDB / Mongo Adaptadores
 ////////////////////////////////////
 import { Low, JSONFile } from 'lowdb';
-import cloudDBAdapter from './lib/cloudDBAdapter.js'; // Comenta si NO lo usas
-import { mongoDB, mongoDBV2 } from './lib/mongoDB.js'; // Comenta si NO lo usas
+import cloudDBAdapter from './lib/cloudDBAdapter.js'; // Comenta si no usas
+import { mongoDB, mongoDBV2 } from './lib/mongoDB.js'; // Comenta si no usas
 
 ////////////////////////////////////
-// 4) Baileys Personalizaciones
+// 5) Baileys Personal
 ////////////////////////////////////
 import { makeWASocket, protoType, serialize } from './lib/simple.js';
 protoType();
 serialize();
 
 /*
-   =====================================================================
-   5) Variables Globales y Config
-   =====================================================================
+   ============================================================
+   6) Variables Globales y Config
+   ============================================================
 */
-let isInit = false; // Evitar ReferenceError
+let isInit = false; // Evitamos error con 'isInit'
 const { CONNECTING } = ws;
 const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
 
@@ -119,17 +127,17 @@ global.prefix = new RegExp(
 );
 
 /*
-   =====================================================================
-   6) DB Setup (LowDB o Mongo)
-   =====================================================================
+   ============================
+   7) Base de datos con LowDB
+   ============================
 */
 global.db = new Low(
   /https?:\/\//.test(global.opts['db'] || '')
-    ? new cloudDBAdapter(global.opts['db'])
+    ? new cloudDBAdapter(global.opts['db']) // Quita si no usas
     : /mongodb(\+srv)?:\/\//i.test(global.opts['db'])
     ? global.opts['mongodbv2']
-      ? new mongoDBV2(global.opts['db'])
-      : new mongoDB(global.opts['db'])
+      ? new mongoDBV2(global.opts['db'])    // Quita si no usas
+      : new mongoDB(global.opts['db'])      // Quita si no usas
     : new JSONFile(`${global.opts._[0] ? global.opts._[0] + '_' : ''}database.json`)
 );
 global.DATABASE = global.db;
@@ -160,14 +168,18 @@ global.loadDatabase = async function loadDatabase() {
 };
 await global.loadDatabase();
 
-// 7) Carpeta de Sesiones
+// ========================
+// 8) Carpeta de Sesión
+// ========================
 const sessionsFolder = './TK-Session';
 if (!existsSync(sessionsFolder)) {
   mkdirSync(sessionsFolder);
   console.log(chalk.green('Carpeta TK-Session creada.'));
 }
 
-// 8) Carpeta Plugins
+// ========================
+// 9) Carpeta plugins
+// ========================
 const pluginsFolder = join(projectDir, 'plugins');
 if (!existsSync(pluginsFolder)) {
   mkdirSync(pluginsFolder);
@@ -175,12 +187,10 @@ if (!existsSync(pluginsFolder)) {
 }
 
 /*
-   ================================
-   9) Menú Interactivo
-   ================================
+   ===================================
+   10) Menú Interactivo + phoneNumber
+   ===================================
 */
-import readline from 'readline';
-
 async function showMenu() {
   const rl = readline.createInterface({
     input: process.stdin,
@@ -214,13 +224,12 @@ Elige (1 o 2): `;
   }
 }
 
-// Pedir phoneNumber sin +
 async function askPhoneNumber() {
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
   });
-  const askText = chalk.blueBright('\n📲 Escribe tu número de WhatsApp (sin +), Ej: 5191052145:\n> ');
+  const askText = chalk.blueBright('\n📲 Escribe tu número de WhatsApp (sin +), ej: 5191052145:\n> ');
 
   return new Promise((resolve) => {
     rl.question(askText, (num) => {
@@ -231,9 +240,9 @@ async function askPhoneNumber() {
 }
 
 /*
-   ===========================================
-   10) Limpieza de Sesiones, Temp, Reset Límits
-   ===========================================
+   ==========================================
+   11) Limpieza de Sesiones + temporales
+   ==========================================
 */
 function clearSessions(folder = sessionsFolder) {
   try {
@@ -249,7 +258,7 @@ function clearSessions(folder = sessionsFolder) {
   } catch (err) {
     console.error(chalk.redBright(`Error en Clear Sessions: ${err.message}`));
   } finally {
-    setTimeout(() => clearSessions(folder), 60 * 60 * 1000); // 1h
+    setTimeout(() => clearSessions(folder), 60 * 60 * 1000);
   }
 }
 
@@ -271,6 +280,7 @@ function clearTmp() {
   }
 }
 
+// Reset de límites
 async function resetLimit() {
   try {
     const users = global.db.data.users || {};
@@ -286,7 +296,7 @@ async function resetLimit() {
   }
 }
 
-// Reset total de la carpeta TK-Session
+// Borrar completamenet TK-Session
 function resetSession() {
   try {
     if (existsSync(sessionsFolder)) {
@@ -300,7 +310,7 @@ function resetSession() {
           rmSync(filePath, { recursive: true, force: true });
         }
       }
-      console.log(chalk.magenta('Se ha reseteado la carpeta TK-Session (Sesiones).'));
+      console.log(chalk.magenta('Se ha reseteado la carpeta TK-Session (sesiones).'));
     } else {
       mkdirSync(sessionsFolder);
     }
@@ -312,9 +322,9 @@ function resetSession() {
 }
 
 /*
-   ==========================================
-   11) reloadHandler - Carga 'handler.js'
-   ==========================================
+   ========================================
+   12) reloadHandler => "handler.js"
+   ========================================
 */
 export async function reloadHandler(restartConn = false) {
   try {
@@ -355,7 +365,6 @@ export async function reloadHandler(restartConn = false) {
     }
   }
 
-  // Mensajes personal
   global.conn.welcome = `🌟 ¡Bienvenido! 🌟
 👋 Hola @user, disfruta tu estadía en:
 @subject
@@ -411,64 +420,50 @@ Descripción del grupo:
 }
 
 /*
-   ======================================
-   12) postLinkFlow - Mensajes Posteriores
-   ======================================
-   => Se llamará cuando ya esté "registered" con code 8 díg
-   => Aquí van "Límite restablecido", "Servidor listo => 4021",
-      "Dependencias checadas", etc.
+   ===============================================================
+   13) postLinkFlow => Mensajes tras code (Límite, server, etc.)
+   ===============================================================
 */
-let postLinkExecuted = false;
+let postLinkOnce = false;
 async function postLinkFlow() {
-  if (postLinkExecuted) return;
-  postLinkExecuted = true;
+  if (postLinkOnce) return;
+  postLinkOnce = true;
 
-  // Mensaje "Conectando a WhatsApp..."
-  console.log(chalk.yellow('Conectando a WhatsApp... (Ya registrado)'));
+  console.log(chalk.yellow('Ya estás registrado con el code => iniciamos postLinkFlow'));
+  // 1) resetLimit => "Límite restablecido"
+  resetLimit();
 
-  // 1) Reset Límite
-  resetLimit(); // "✅ Límite de usuarios restablecido automáticamente."
-
-  // 2) Arrancar server / mostrar “Servidor listo en puerto => 4021”
+  // 2) "Servidor listo en => 4021"
   console.log(chalk.green(`\n🌐 Servidor listo en puerto => ${PORT}`));
 
-  // 3) Dependencias checadas
-  await _quickTest(); // “Dependencias checadas: [...] - Prueba rápida realizada...”
+  // 3) Dependencias checadas => se hace _quickTest
+  await _quickTest();
 }
 
 /*
-   ======================================
-   13) initWhatsApp
-   ======================================
-   => Menú => askPhone => crea socket
-   => Espera "open" => code => user vincula => "registered"
-   => "creds.update" => si registered => postLinkFlow
+   =======================================================
+   14) initWhatsApp => Menú => phone => crea conn => ...
+   =======================================================
 */
 async function initWhatsApp() {
-  // Menú
   const choice = await showMenu();
   console.log(chalk.blueBright(`Elegiste la opción ${choice} => Generar code 8 díg.`));
 
-  // Teléfono
   const phoneNumber = await askPhoneNumber();
-  console.log(chalk.greenBright(`[✅ RECIBIDO PHONE] ${phoneNumber}`));
+  console.log(chalk.greenBright(`[✅ PHONE RECIBIDO] ${phoneNumber}`));
 
-  // Versión Baileys
   const { version } = await fetchLatestBaileysVersion();
-  // Auth multiFile
   const { state, saveCreds } = await useMultiFileAuthState(sessionsFolder);
   global.saveCredsFunction = saveCreds;
 
-  // Store
   const store = makeInMemoryStore({ logger: pino().child({ level: 'silent', stream: 'store' }) });
   store.readFromFile('./baileys_store.json');
   setInterval(() => store.writeToFile('./baileys_store.json'), 10000);
 
-  // Config
   global.connectionOptions = {
     version,
     logger: pino({ level: 'silent' }),
-    printQRInTerminal: false, // No necesitamos QR, tenemos code 8 díg
+    printQRInTerminal: false,
     browser: ['Ubuntu', 'Chrome', '20.0.04'],
     auth: {
       creds: state.creds,
@@ -483,51 +478,50 @@ async function initWhatsApp() {
     markOnlineOnConnect: true
   };
 
-  // Creamos conn
   global.conn = makeWASocket(global.connectionOptions);
   global.conn.isInit = false;
 
-  // Guardamos phoneNumber
   global.phoneNumberForPairing = phoneNumber;
-  postLinkExecuted = false; // Para permitir postLinkFlow una sola vez
+  postLinkOnce = false; // Permitimos postLinkFlow
 
   // Listeners
   global.conn.ev.on('connection.update', connectionUpdate);
-  global.conn.ev.on('creds.update', saveCreds);
 
-  // reloadHandler
+  // Escuchamos "creds.update" => si se registra => postLinkFlow
+  global.conn.ev.on('creds.update', () => {
+    if (global.conn?.authState?.creds?.registered && !postLinkOnce) {
+      postLinkFlow(); // Se llama 1 sola vez
+    }
+  });
+
   global.reloadHandler = async function (restartConn) {
     return reloadHandler(restartConn);
   };
   await global.reloadHandler();
 
-  // Limpieza
+  // Aún NO anunciamos "Servidor => ...", ni "Dependencias", ni "Límite"
+  // Se hará tras code => postLinkFlow
+
   clearSessions();
-  if (!postLinkExecuted) {
-    // No mostramos "Limite restablecido" ni nada todavía
-  }
-  if (!global.opts['test']) {
-    // Aún no anunciamos "Servidor => 4021" ni "Dependencias"
-    // Hasta que postLinkFlow se ejecute
-  }
+  // No reseteamos los límites ni nada. Esperamos code
+
+  // ... No server ni quickTest => se hará en postLinkFlow
 }
 
 /*
-   ======================================
-   14) connectionUpdate
-   ======================================
-   => open => requestPairingCode
-   => close => reset + reintento
-   => creds.update => if registered => postLinkFlow
+   ==========================================================
+   15) connectionUpdate => Pedir code en "open", reset en close
+   ==========================================================
 */
 async function connectionUpdate(update) {
-  const { connection, lastDisconnect, isOnline, isNewLogin, receivedPendingNotifications } = update;
+  const { connection, lastDisconnect, isOnline, isNewLogin } = update;
 
   if (connection === 'connecting') {
     console.log(chalk.yellow('⏳ Conectando a WhatsApp...'));
   } else if (connection === 'open') {
-    console.log(chalk.greenBright('✅ Conexión establecida (no code yet).'));
-    // Pedir code
+    console.log(chalk.greenBright('✅ Conexión establecida (sin code).'));
+
+    // AHORA => requestPairingCode
     if (!global.conn.authState.creds.registered && global.conn.requestPairingCode) {
       try {
         const phoneNumber = global.phoneNumberForPairing || '51999999999';
@@ -537,7 +531,7 @@ async function connectionUpdate(update) {
           console.log(chalk.magentaBright(`\n🔑 Tu código de emparejamiento es: `) + chalk.yellow.bold(code));
           console.log(chalk.gray('   Ingresa este código en WhatsApp para vincular.\n'));
         } else {
-          console.log(chalk.redBright('⚠️ No se pudo generar el código de emparejamiento.'));
+          console.log(chalk.redBright('⚠️ No se pudo generar el code de emparejamiento.'));
         }
       } catch (err) {
         console.error(chalk.redBright('❌ Error al solicitar pairing code:'), err);
@@ -545,11 +539,10 @@ async function connectionUpdate(update) {
     }
   }
 
-  // Si se desconecta
   if (connection === 'close') {
-    console.log(chalk.red('❌ Se perdió la conexión... Reseteando.'));
+    console.log(chalk.red('❌ Se perdió la conexión... Reseteando TK-Session.'));
     resetSession();
-    console.log(chalk.cyan('Esperaremos 45s y re-iniciaremos la vinculación...'));
+    console.log(chalk.cyan('Esperamos 45s y re-iniciamos la vinculación...'));
     setTimeout(async () => {
       await initWhatsApp();
     }, 45000);
@@ -560,37 +553,11 @@ async function connectionUpdate(update) {
   }
 }
 
-// Escuchar "creds.update" => si registered => postLinkFlow
-global.postLinkExecuted = false; // p/ no duplicar
-function watchCredsRegistered() {
-  global.conn.ev.on('creds.update', async () => {
-    if (global.conn?.authState?.creds?.registered && !postLinkExecuted) {
-      // => Se completó la vinculación
-      await postLinkFlow();
-    }
-  });
-}
-
-// postLinkFlow: Se ejecuta una sola vez cuando registered
-let postLinkOnce = false;
-async function postLinkFlow() {
-  if (postLinkOnce) return;
-  postLinkOnce = true;
-
-  console.log(chalk.yellow('Conexión y registro completados. Ahora sí:'));
-  // 1) Restablecer límites
-  resetLimit();
-
-  // 2) Anunciamos "Servidor listo en => 4021"
-  console.log(chalk.green(`\n🌐 Servidor listo en puerto => ${PORT}`));
-
-  // 3) Checamos dependencias
-  await _quickTest();
-}
-
-// ============================
-// 15) _quickTest
-// ============================
+/*
+   =========================================
+   16) _quickTest => Dep. ffmpeg, etc.
+   =========================================
+*/
 async function _quickTest() {
   let test = await Promise.all(
     [
@@ -629,13 +596,13 @@ async function _quickTest() {
   console.log(chalk.greenBright('☑️ Prueba rápida realizada, sesión => creds.json'));
 }
 
-// ==============================
-// 16) INICIAR
-// ==============================
+/*
+   ===========================
+   17) Llamamos initWhatsApp
+   ===========================
+*/
 async function main() {
-  // Iniciamos "initWhatsApp"
   await initWhatsApp();
 }
 
-// Llamamos
 main().catch(console.error);
