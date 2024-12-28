@@ -202,5 +202,4 @@ function startApp(entryFile) {
   await initializeDatabase();
   configureScheduledTasks();
   startApp('main.js');
-  console.log('Escribe el número de WhatsApp a vincular:');
 })();
