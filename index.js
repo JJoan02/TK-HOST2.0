@@ -202,4 +202,5 @@ function startApp(entryFile) {
   await initializeDatabase();
   configureScheduledTasks();
   startApp('main.js');
+  escribe el numero de whatsappp a vincular;
 })();
