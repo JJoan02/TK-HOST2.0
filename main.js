@@ -165,7 +165,7 @@ await global.loadDatabase();
 const sessionsFolder = './TK-Session';
 if (!existsSync(sessionsFolder)) {
   mkdirSync(sessionsFolder);
-  console.log(chalk.green('Carpeta TK-Session creada.'));
+  console.log(chalk.green('✅ Carpeta TK-Session creada.'));
 }
 
 // ========================
@@ -235,6 +235,35 @@ async function askPhoneNumber() {
    11) Limpieza de Sesiones + temporales
    ==========================================
 */
+
+/**
+ * Resetea por completo la carpeta de sesión (TK-Session) eliminando todos los archivos existentes.
+ */
+function resetSession() {
+  try {
+    if (existsSync(sessionsFolder)) {
+      const files = readdirSync(sessionsFolder);
+      for (let file of files) {
+        const filePath = join(sessionsFolder, file);
+        const stats = statSync(filePath);
+        if (stats.isFile()) {
+          unlinkSync(filePath);
+        } else {
+          rmSync(filePath, { recursive: true, force: true });
+        }
+      }
+      console.log(chalk.magenta('🔄 Se ha reseteado por completo la carpeta TK-Session (sesiones).'));
+    } else {
+      mkdirSync(sessionsFolder);
+      console.log(chalk.green('✅ Carpeta TK-Session creada.'));
+    }
+    return true;
+  } catch (err) {
+    console.error(chalk.red('❌ Error al resetear TK-Session:'), err);
+    return false;
+  }
+}
+
 function clearSessions(folder = sessionsFolder) {
   try {
     const filenames = readdirSync(folder);
@@ -244,11 +273,11 @@ function clearSessions(folder = sessionsFolder) {
       // No borramos "creds.json" si ya existe
       if (stats.isFile() && file !== 'creds.json') {
         unlinkSync(filePath);
-        console.log(chalk.gray('Sesión eliminada:', filePath));
+        console.log(chalk.gray('🔹 Sesión eliminada:', filePath));
       }
     }
   } catch (err) {
-    console.error(chalk.redBright(`Error en Clear Sessions: ${err.message}`));
+    console.error(chalk.redBright(`❌ Error en Clear Sessions: ${err.message}`));
   } finally {
     setTimeout(() => clearSessions(folder), 60 * 60 * 1000); // Cada 1 hora
   }
@@ -393,7 +422,7 @@ async function postLinkFlow() {
   if (postLinkOnce) return;
   postLinkOnce = true;
 
-  console.log(chalk.yellow('Ya estás registrado con el code => iniciamos postLinkFlow'));
+  console.log(chalk.yellow('✅ Ya estás registrado con el code => iniciamos postLinkFlow'));
   // 1) resetLimit => "Límite restablecido"
   resetLimit();
 
@@ -561,7 +590,7 @@ async function connectionUpdate(update) {
   if (connection === 'close') {
     console.log(chalk.red('❌ Se perdió la conexión... Reseteando TK-Session.'));
     resetSession();
-    console.log(chalk.cyan('Esperamos 45s y re-iniciamos la vinculación...'));
+    console.log(chalk.cyan('⏳ Esperamos 45s y re-iniciamos la vinculación...'));
     setTimeout(async () => {
       await initWhatsApp();
     }, 45000);
@@ -624,10 +653,10 @@ async function _quickTest() {
 async function startUpSequence() {
   console.clear();
   const steps = [
-    'Creando TK-Session para guardar datos...',
-    'Estableciendo menu de vinculacion...',
-    'Compilando @whiskeysockets/baileys@latest...',
-    'Cargando configuracion...'
+    'Inicializando sinapsis cognitivas virtuales...',
+    'Estableciendo red neuronal interna...',
+    'Compilando módulos lingüísticos avanzados...',
+    'Cargando conciencia artificial en memoria...'
   ];
 
   for (let i = 0; i < steps.length; i++) {
@@ -635,7 +664,7 @@ async function startUpSequence() {
     await new Promise(resolve => setTimeout(resolve, 1500));
   }
 
-  console.log(chalk.green('\n¡Hola! Soy tu Admin-TK. Comencemos la vinculación...\n'));
+  console.log(chalk.green('\n¡Hola! Soy tu Asistente IA. Comencemos la vinculación...\n'));
   await initWhatsApp(); // Iniciamos la parte real del bot
 }
 
@@ -645,3 +674,4 @@ async function startUpSequence() {
    ============================
 */
 startUpSequence().catch(console.error);
+
