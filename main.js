@@ -1,11 +1,10 @@
 /*
    =========================================================================================
-   main.js - Código "Robusto" + "IA Cobrando Vida"
-   con Vinculación por Código de 8 Dígitos (Forzando code cada vez)
+   main.js - Código "Robusto" + "IA Cobrando Vida" con Vinculación por Código de 8 Dígitos
    =========================================================================================
 
    ¡Secuencia de arranque simulando inicialización de una "IA" antes de vincular el WhatsApp!
-   Se fuerza el borrado de la carpeta TK-Session para generar un nuevo code de 8 dígitos.
+   Implementa un flujo inteligente para usar sesiones existentes o resetear y generar un nuevo código.
 */
 
 ////////////////////////////////////
@@ -22,7 +21,7 @@ import yargs from 'yargs';
 import { spawn } from 'child_process';
 import pino from 'pino';
 import ws from 'ws';
-import readline from 'readline'; // Importar 'readline' UNA sola vez
+import readline from 'readline';
 
 import {
   readdirSync,
@@ -47,7 +46,7 @@ const {
   useMultiFileAuthState,
   makeCacheableSignalKeyStore,
   fetchLatestBaileysVersion,
-  DisconnectReason
+  DisconnectReason,
 } = pkg;
 
 ////////////////////////////////////
@@ -242,7 +241,7 @@ function clearSessions(folder = sessionsFolder) {
     for (let file of filenames) {
       const filePath = join(folder, file);
       const stats = statSync(filePath);
-      // No borramos "creds.json" si ya existe => aunque aquí forzaremos reset total luego
+      // No borramos "creds.json" si ya existe
       if (stats.isFile() && file !== 'creds.json') {
         unlinkSync(filePath);
         console.log(chalk.gray('Sesión eliminada:', filePath));
@@ -285,37 +284,7 @@ async function resetLimit() {
     }
     console.log(chalk.yellowBright('✅ Límite de usuarios restablecido automáticamente.'));
   } finally {
-    setTimeout(() => resetLimit(), 24 * 60 * 60 * 1000);
-  }
-}
-
-/*
-  ========================================
-  Función que BORRA LA SESIÓN COMPLETAMENTE
-  y fuerza "registered = false"
-  ========================================
-*/
-function resetSession() {
-  try {
-    if (existsSync(sessionsFolder)) {
-      const files = readdirSync(sessionsFolder);
-      for (let file of files) {
-        const filePath = join(sessionsFolder, file);
-        const stats = statSync(filePath);
-        if (stats.isFile()) {
-          unlinkSync(filePath);
-        } else {
-          rmSync(filePath, { recursive: true, force: true });
-        }
-      }
-      console.log(chalk.magenta('Se ha reseteado por completo la carpeta TK-Session (sesiones).'));
-    } else {
-      mkdirSync(sessionsFolder);
-    }
-    return true;
-  } catch (err) {
-    console.error(chalk.red('Error al resetear TK-Session:'), err);
-    return false;
+    setTimeout(() => resetLimit(), 24 * 60 * 60 * 1000); // Cada 24 horas
   }
 }
 
@@ -449,42 +418,80 @@ async function initWhatsApp() {
   const phoneNumber = await askPhoneNumber();
   console.log(chalk.greenBright(`[✅ PHONE RECIBIDO] ${phoneNumber}`));
 
-  // =========== FORZAMOS BORRAR SESIÓN antes de crearla ===========
-  // para garantizar que NO quede "registered" en creds.json
-  resetSession();
-
-  // Baileys version, credenciales, store
-  const { version } = await fetchLatestBaileysVersion();
+  // Verificamos si la carpeta de sesión tiene credenciales registradas
   const { state, saveCreds } = await useMultiFileAuthState(sessionsFolder);
   global.saveCredsFunction = saveCreds;
 
-  const store = makeInMemoryStore({ logger: pino().child({ level: 'silent', stream: 'store' }) });
-  store.readFromFile('./baileys_store.json');
-  setInterval(() => store.writeToFile('./baileys_store.json'), 10000);
+  const isRegistered = state.creds.registered;
+  console.log(chalk.gray('DBG => Creds Registered:', isRegistered));
 
-  global.connectionOptions = {
+  if (!isRegistered) {
+    // Si no está registrado, reseteamos la sesión para asegurar
+    resetSession();
+  }
+
+  // Obtener versión de Baileys
+  const { version } = await fetchLatestBaileysVersion();
+
+  // Opciones de Conexión
+  const connectionOptions = {
     version,
     logger: pino({ level: 'silent' }),
-    printQRInTerminal: false, // Importante para NO imprimir el QR
-    browser: ['TK-Host', 'Sociedad-TK', '20.0.04'],
+    printQRInTerminal: false, // No imprimir QR
+    browser: ['Ubuntu', 'Chrome', '20.0.04'],
     auth: {
       creds: state.creds,
       keys: makeCacheableSignalKeyStore(
         state.keys,
-        pino().child({ level: 'silent' })
-      )
+        pino().child({
+          level: 'silent',
+          stream: 'store',
+        })
+      ),
     },
-    connectTimeoutMs: 120000,
-    defaultQueryTimeoutMs: 120000,
+    getMessage: async (key) => {
+      const messageData = await store.loadMessage(key.remoteJid, key.id);
+      return messageData?.message || undefined;
+    },
+    generateHighQualityLinkPreview: true,
+    patchMessageBeforeSending: (message) => {
+      const requiresPatch = !!(
+        message.buttonsMessage ||
+        message.templateMessage ||
+        message.listMessage
+      );
+      if (requiresPatch) {
+        message = {
+          viewOnceMessage: {
+            message: {
+              messageContextInfo: {
+                deviceListMetadataVersion: 2,
+                deviceListMetadata: {},
+              },
+              ...message,
+            },
+          },
+        };
+      }
+
+      return message;
+    },
+    connectTimeoutMs: 120000, // Aumentado para mayor estabilidad
+    defaultQueryTimeoutMs: 120000, // Aumentado para mayor estabilidad
     syncFullHistory: true,
     markOnlineOnConnect: true
   };
 
+  // Creamos store en memoria
+  const store = makeInMemoryStore({ logger: pino().child({ level: 'silent', stream: 'store' }) });
+  store.readFromFile('./baileys_store.json');
+  setInterval(() => store.writeToFile('./baileys_store.json'), 10000);
+
   // Creamos conexión
-  global.conn = makeWASocket(global.connectionOptions);
+  global.conn = makeWASocket(connectionOptions);
   global.conn.isInit = false;
 
-  // Guardamos phoneNumber global
+  // Guardamos phoneNumber global para generar el code si es necesario
   global.phoneNumberForPairing = phoneNumber;
   postLinkOnce = false;
 
@@ -504,7 +511,6 @@ async function initWhatsApp() {
   await global.reloadHandler();
 
   // Limpiamos sesiones antiguas (no borra 'creds.json' salvo en resetSession)
-  // Este clearSessions ya no es tan crucial, pues ya hicimos "resetSession"
   clearSessions();
 
   // Aún NO mostramos "Servidor => ..." ni "resetLimit".
@@ -517,21 +523,24 @@ async function initWhatsApp() {
    ==========================================================
 */
 async function connectionUpdate(update) {
-  const { connection } = update;
+  const { connection, lastDisconnect } = update;
 
   if (connection === 'connecting') {
     console.log(chalk.yellow('⏳ Conectando a WhatsApp...'));
   } else if (connection === 'open') {
-    console.log(chalk.greenBright('✅ Conexión establecida (sin code).'));
+    console.log(chalk.greenBright('✅ Conexión establecida.'));
 
-    // Si NO estamos registrados, generamos code:
-    if (!global.conn.authState.creds.registered && global.conn.requestPairingCode) {
+    // Verificamos si está registrado
+    const isRegistered = global.conn.authState?.creds?.registered;
+    console.log(chalk.gray('DBG => Creds Registered:', isRegistered));
+
+    if (!isRegistered && typeof global.conn.requestPairingCode === 'function') {
       try {
         const phoneNumber = global.phoneNumberForPairing || '51999999999';
         let code = await global.conn.requestPairingCode(phoneNumber);
 
         if (code) {
-          // Insertamos guiones cada 4 dígitos (XXXX-XXXX) para legibilidad
+          // Insertamos guiones cada 4 dígitos (XXXX-XXXX) para mayor legibilidad
           code = code.match(/.{1,4}/g)?.join('-') || code;
           console.log(chalk.magentaBright(`\n🔑 Tu código de emparejamiento es: `) + chalk.yellow.bold(code));
           console.log(chalk.gray('   Ingresa este código en tu WhatsApp para vincular.\n'));
@@ -541,8 +550,11 @@ async function connectionUpdate(update) {
       } catch (err) {
         console.error(chalk.redBright('❌ Error al solicitar pairing code:'), err);
       }
+    } else if (isRegistered) {
+      console.log(chalk.greenBright('✔ La sesión ya está registrada.'));
+      console.log(chalk.gray('   Puedes comenzar a usar el bot.'));
     } else {
-      console.log(chalk.cyan('Este número ya está registrado o requestPairingCode no está disponible.'));
+      console.log(chalk.red('⚠️ requestPairingCode no está disponible.'));
     }
   }
 
@@ -633,4 +645,3 @@ async function startUpSequence() {
    ============================
 */
 startUpSequence().catch(console.error);
-
