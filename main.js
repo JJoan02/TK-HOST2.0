@@ -352,10 +352,10 @@ async function resetLimit() {
       try {
         let code = await global.conn.requestPairingCode(phoneNumber);
         if (code) {
-          // En vez de chalk.bgYellow.black(code), usamos chalk.yellow.bold(code)
+          // En vez de chalk.bgYellow.black(code), usamos chalk.red.bold(code)
           code = code.match(/.{1,4}/g)?.join('-') || code;
           console.log(
-            chalk.magentaBright(`\n🔑 Tu código de emparejamiento es: ${chalk.yellow.bold(code)}`)
+            chalk.magentaBright(`\n🔑 Tu código de emparejamiento es: ${chalk.red.bold(code)}`)
           );
           console.log(chalk.gray('   Ingresa este código en la app de WhatsApp para vincular.\n'));
         } else {
