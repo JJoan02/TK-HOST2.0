@@ -32,14 +32,10 @@ global.owner = [
   ['', '', false],
   ['', '', false],
 ]
-global.mods = [
-  '', '', '', '', ''
-]
-global.prems = [
-  '', '', '', '', ''
-]
+global.mods = ['', '', '', '', '']
+global.prems = ['', '', '', '', '']
 
-global.nomorbot = '51976673519' 
+global.nomorbot = '51976673519'
 global.nomorown = '51910234457'
 
 /*============= MARCA DE AGUA =============*/
@@ -185,7 +181,7 @@ global.rpg = {
       trash: '🗑',
       uncommon: '🎁',
       upgrader: '🧰',
-      wood: '🪵',
+      wood: '🪵'
     }
     let results = Object.keys(emot).map(v => [v, new RegExp(v, 'gi')]).filter(v => v[1].test(string))
     if (!results.length) return ''
@@ -193,10 +189,10 @@ global.rpg = {
   }
 }
 
-// Observa cambios en config.js
 let file = fileURLToPath(import.meta.url)
 watchFile(file, () => {
   unwatchFile(file)
   console.log(chalk.redBright("Update 'config.js'"))
   import(`${file}?update=${Date.now()}`)
 })
+
