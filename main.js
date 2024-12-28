@@ -1,10 +1,4 @@
-/*
-   =======================================
-   main.js - Versión Estable y Corregida
-   =======================================
-*/
-
-import './config.js'; // Importar tu config.js
+import './config.js'; // Importar config
 import chalk from 'chalk';
 import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs';
@@ -21,8 +15,6 @@ import {
 } from 'fs';
 import { tmpdir } from 'os';
 import { spawn } from 'child_process';
-import { format } from 'util';
-import readline from 'readline';
 import pino from 'pino';
 import ws from 'ws';
 
@@ -40,12 +32,12 @@ import { makeWASocket, protoType, serialize } from './lib/simple.js';
 import cloudDBAdapter from './lib/cloudDBAdapter.js';
 import { mongoDB, mongoDBV2 } from './lib/mongoDB.js';
 
-// ============================
-// DECLARAMOS isInit
-// ============================
+// =================================
+// Declaramos isInit para recargar
+// =================================
 let isInit = false;
 
-// Inicializa prototipos de Baileys
+// Inicializa prototipos
 protoType();
 serialize();
 
@@ -60,12 +52,9 @@ global.__filename = function filename(pathURL = import.meta.url, rmPrefix = plat
       : pathURL
     : pathToFileURL(pathURL).toString();
 };
-
 global.__dirname = function dirname(pathURL) {
   return new URL('.', pathURL).pathname;
 };
-
-// Definir projectDir (string)
 const projectDir = global.__dirname(import.meta.url);
 
 global.__require = function require(dir = import.meta.url) {
@@ -92,7 +81,6 @@ global.API = (name, path = '/', query = {}, apikeyqueryname) =>
     : '');
 
 global.timestamp = { start: new Date() };
-
 global.opts = yargs(hideBin(process.argv)).exitProcess(false).parse();
 global.prefix = new RegExp(
   '^[' +
@@ -100,9 +88,9 @@ global.prefix = new RegExp(
     ']'
 );
 
-// ================================
-// Base de datos (LowDB / Mongo)
-// ================================
+// ========================
+// Base de datos
+// ========================
 global.db = new Low(
   /https?:\/\//.test(global.opts['db'] || '')
     ? new cloudDBAdapter(global.opts['db'])
@@ -112,8 +100,7 @@ global.db = new Low(
       : new mongoDB(global.opts['db'])
     : new JSONFile(`${global.opts._[0] ? global.opts._[0] + '_' : ''}database.json`)
 );
-
-global.DATABASE = global.db; // compat con versiones anteriores
+global.DATABASE = global.db;
 
 global.loadDatabase = async function loadDatabase() {
   if (global.db.READ)
@@ -141,26 +128,27 @@ global.loadDatabase = async function loadDatabase() {
 };
 await global.loadDatabase();
 
-// ====================
-// Carpeta de sesiones
-// ====================
+// ================
+// TK-Session
+// ================
 const sessionsFolder = './TK-Session';
 if (!existsSync(sessionsFolder)) {
   mkdirSync(sessionsFolder);
 }
 
-// ====================
+// ================
 // Carpeta plugins
-// ====================
+// ================
 const pluginsFolder = join(projectDir, 'plugins');
 if (!existsSync(pluginsFolder)) {
   mkdirSync(pluginsFolder);
   console.log(chalk.magenta('✔ Carpeta "plugins" creada automáticamente (vacía).'));
 }
 
-// ====================
-// MENÚ INTERACTIVO
-// ====================
+// ===================
+// Menú Interactivo
+// ===================
+import readline from 'readline';
 async function showMenu() {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   const menuText = `\n${chalk.hex('#FF69B4').bold('┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓')}
@@ -189,7 +177,6 @@ Elige una opción ${chalk.magenta('1')} o ${chalk.magenta('2')}: `;
   }
 }
 
-// Pedimos número
 async function askPhoneNumber() {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   const askText = chalk.blueBright('\n📲 Escribe el número de WhatsApp (sin +), ej: 5191052145:\n> ');
@@ -221,7 +208,7 @@ function clearSessions(folder = sessionsFolder) {
   }
 }
 
-// Limpieza de Temporales
+// Limpieza temporales
 function clearTmp() {
   const tmpDirs = [tmpdir(), join(projectDir, 'tmp')];
   const files = [];
@@ -240,7 +227,7 @@ function clearTmp() {
   }
 }
 
-// Reset de límites diario
+// Reset de límites
 async function resetLimit() {
   try {
     const users = global.db.data.users || {};
@@ -257,10 +244,11 @@ async function resetLimit() {
 }
 
 // ============================================
-// RELOAD HANDLER - con try/catch
+// RELOAD HANDLER - sin .catch tras import
 // ============================================
 export async function reloadHandler(restartConn = false) {
   try {
+    // Importación dinámica con try/catch
     const Handler = await import(`./handler.js?update=${Date.now()}`);
     if (Handler && Object.keys(Handler).length) {
       global.handler = Handler;
@@ -280,7 +268,7 @@ export async function reloadHandler(restartConn = false) {
   }
 
   if (!isInit) {
-    // Remueve listeners viejos si existen
+    // Desvincula listeners antiguos
     if (typeof global.conn?.handler?.handler === 'function') {
       global.conn.ev.off('messages.upsert', global.conn.handler.handler);
     }
@@ -325,14 +313,14 @@ Descripción del grupo:
   global.conn.sRestrictOff =
     '🌐 Todos pueden editar la información del grupo.';
 
-  // Re-enlazar handler
+  // Re-enlazar
   if (global.handler) {
     global.conn.handler = global.handler.handler?.bind(global.conn);
     global.conn.participantsUpdate = global.handler.participantsUpdate?.bind(global.conn);
     global.conn.groupsUpdate = global.handler.groupsUpdate?.bind(global.conn);
     global.conn.deleteUpdate = global.handler.deleteUpdate?.bind(global.conn);
 
-    // Volver a enganchar listeners
+    // Volver a enganchar
     if (global.conn.handler) {
       global.conn.ev.on('messages.upsert', global.conn.handler);
     }
@@ -366,20 +354,17 @@ async function initWhatsApp() {
   } else {
     console.log(chalk.bgMagentaBright('\n🔐 Vinculación por código de 8 dígitos.\n'));
   }
-  // Pedimos teléfono
   const phoneNumber = await askPhoneNumber();
 
-  // Obtenemos version Baileys
   const { version } = await fetchLatestBaileysVersion();
   const { state, saveCreds } = await useMultiFileAuthState(sessionsFolder);
-  global.saveCredsFunction = saveCreds; // ref global
+  global.saveCredsFunction = saveCreds;
 
-  // Creamos store en memoria
+  // Store en memoria
   const store = makeInMemoryStore({ logger: pino().child({ level: 'silent', stream: 'store' }) });
   store.readFromFile('./baileys_store.json');
   setInterval(() => store.writeToFile('./baileys_store.json'), 10000);
 
-  // Opciones de conexión
   global.connectionOptions = {
     version,
     logger: pino({ level: 'silent' }),
@@ -393,8 +378,8 @@ async function initWhatsApp() {
       ),
     },
     getMessage: async (key) => {
-      const messageData = await store.loadMessage(key.remoteJid, key.id);
-      return messageData?.message || undefined;
+      const msgData = await store.loadMessage(key.remoteJid, key.id);
+      return msgData?.message || undefined;
     },
     generateHighQualityLinkPreview: true,
     patchMessageBeforeSending: (message) => {
@@ -424,11 +409,9 @@ async function initWhatsApp() {
     markOnlineOnConnect: true,
   };
 
-  // Creamos la conexión
   global.conn = makeWASocket(global.connectionOptions);
   global.conn.isInit = false;
 
-  // Generar pairing code si existe la función
   if (global.conn.requestPairingCode && !global.conn.authState.creds.registered) {
     try {
       let code = await global.conn.requestPairingCode(phoneNumber);
@@ -444,19 +427,19 @@ async function initWhatsApp() {
     }
   }
 
-  // Listeners básicos
   global.conn.ev.on('connection.update', connectionUpdate);
   global.conn.ev.on('creds.update', saveCreds);
 
-  // Cargamos handler la primera vez
+  // Cargamos handler
   global.reloadHandler = async function (restartConn) {
     return reloadHandler(restartConn);
   };
   await global.reloadHandler();
 
-  // Iniciamos TAREAS PERIÓDICAS
+  // TAREAS PERIÓDICAS
   clearSessions();
   resetLimit();
+
   if (!global.opts['test']) {
     console.log(chalk.green(`\n🌐 Servidor listo en puerto => ${PORT}`));
     setInterval(async () => {
@@ -481,16 +464,9 @@ async function connectionUpdate(update) {
   } else if (connection === 'open') {
     console.log(chalk.greenBright('✅ Conexión establecida correctamente!'));
   }
-
-  if (isOnline === true) {
-    console.log(chalk.greenBright('🔵 Estado online'));
-  } else if (isOnline === false) {
-    console.log(chalk.redBright('🔴 Estado offline'));
-  }
-
-  if (receivedPendingNotifications) {
-    console.log(chalk.yellow('✉️ Esperando mensajes entrantes...'));
-  }
+  if (isOnline === true) console.log(chalk.greenBright('🔵 Estado online'));
+  else if (isOnline === false) console.log(chalk.redBright('🔴 Estado offline'));
+  if (receivedPendingNotifications) console.log(chalk.yellow('✉️ Esperando mensajes entrantes...'));
 
   if (connection === 'close') {
     console.log(chalk.red('❌ Se perdió la conexión... Reintentando.'));
@@ -519,7 +495,7 @@ async function connectionUpdate(update) {
 }
 
 // ==============================
-// Prueba rápida - Dependencias
+// Prueba rápida
 // ==============================
 async function _quickTest() {
   let test = await Promise.all(
@@ -555,14 +531,10 @@ async function _quickTest() {
       ])
     )
   );
-  let [ffmpeg, ffprobe, ffmpegWebp, convert, magick, gm, find] = test;
   console.log(chalk.blueBright('🔍 Dependencias checadas:'), test);
-  let s = (global.support = { ffmpeg, ffprobe, ffmpegWebp, convert, magick, gm, find });
-  Object.freeze(global.support);
   console.log(chalk.greenBright('☑️ Prueba rápida realizada, sesión => creds.json'));
 }
 
-// ==================================================
-// EJECUTAR
-// ==================================================
+// Ejecutar
 initWhatsApp().catch(console.error);
+
