@@ -107,19 +107,6 @@ if (!('detect' in chat))
 chat.detect = false
 if (!('sWelcome' in chat))
 chat.sWelcome = ''
-if (!('sByeImageLink' in chat))
-chat.sByeImageLink = 'https://d.uguu.se/mYSkSZPR.jpg'
-if (!('sWelcomeImageLink' in chat)) {
-    const links = [
-        'https://pomf2.lain.la/f/onvv8i5b.jpg',
-        'https://pomf2.lain.la/f/ucogaqax.jpg',
-        'https://pomf2.lain.la/f/m1z5y7ju.jpg',
-        'https://pomf2.lain.la/f/fqeogyqi.jpg'
-    ];
-    chat.sWelcomeImageLink = links[Math.floor(Math.random() * links.length)];
-}
-if (!('sBye' in chat))
-chat.sBye = ''
 if (!('sPromote' in chat))
 chat.sPromote = ''
 if (!('sDemote' in chat))
@@ -162,16 +149,6 @@ modoadmin: false,
 autodl: false,
 detect: false,
 sWelcome: '',
-sBye: '',
-sWelcomeImageLink: (function() {
-    const links = [
-        'https://pomf2.lain.la/f/onvv8i5b.jpg',
-        'https://pomf2.lain.la/f/ucogaqax.jpg',
-        'https://pomf2.lain.la/f/m1z5y7ju.jpg',
-        'https://pomf2.lain.la/f/fqeogyqi.jpg'
-    ];
-    return links[Math.floor(Math.random() * links.length)];
-})(),
 sPromote: '',
 sDemote: '',
 delete: true,
