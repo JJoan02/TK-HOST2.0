@@ -1,9 +1,10 @@
-/* 
+/*
    =======================================
    main.js - Versión Estable y Corregida
    =======================================
 */
 
+import './config.js'; // Importar tu config.js
 import chalk from 'chalk';
 import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs';
@@ -16,11 +17,11 @@ import {
   statSync,
   unlinkSync,
   existsSync,
-  readFileSync,
   mkdirSync,
 } from 'fs';
 import { tmpdir } from 'os';
 import { spawn } from 'child_process';
+import { format } from 'util';
 import readline from 'readline';
 import pino from 'pino';
 import ws from 'ws';
@@ -40,7 +41,7 @@ import cloudDBAdapter from './lib/cloudDBAdapter.js';
 import { mongoDB, mongoDBV2 } from './lib/mongoDB.js';
 
 // ============================
-// DECLARAMOS isInit AQUÍ
+// DECLARAMOS isInit
 // ============================
 let isInit = false;
 
@@ -48,13 +49,10 @@ let isInit = false;
 protoType();
 serialize();
 
-// =======================
-// Variables Globales
-// =======================
 const { CONNECTING } = ws;
 const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
 
-// Definición de __filename y __dirname
+// Definir __filename, __dirname
 global.__filename = function filename(pathURL = import.meta.url, rmPrefix = platform !== 'win32') {
   return rmPrefix
     ? pathURL.startsWith('file://')
@@ -62,16 +60,14 @@ global.__filename = function filename(pathURL = import.meta.url, rmPrefix = plat
       : pathURL
     : pathToFileURL(pathURL).toString();
 };
+
 global.__dirname = function dirname(pathURL) {
   return new URL('.', pathURL).pathname;
-  // Alternativa:
-  // return path.dirname(global.__filename(pathURL, true));
 };
 
-// Usamos projectDir como string real para evitar path issues
+// Definir projectDir (string)
 const projectDir = global.__dirname(import.meta.url);
 
-// createRequire
 global.__require = function require(dir = import.meta.url) {
   return createRequire(dir);
 };
@@ -97,7 +93,6 @@ global.API = (name, path = '/', query = {}, apikeyqueryname) =>
 
 global.timestamp = { start: new Date() };
 
-// Parseo con Yargs
 global.opts = yargs(hideBin(process.argv)).exitProcess(false).parse();
 global.prefix = new RegExp(
   '^[' +
@@ -147,11 +142,20 @@ global.loadDatabase = async function loadDatabase() {
 await global.loadDatabase();
 
 // ====================
-// Carpeta de Sesiones
+// Carpeta de sesiones
 // ====================
 const sessionsFolder = './TK-Session';
 if (!existsSync(sessionsFolder)) {
   mkdirSync(sessionsFolder);
+}
+
+// ====================
+// Carpeta plugins
+// ====================
+const pluginsFolder = join(projectDir, 'plugins');
+if (!existsSync(pluginsFolder)) {
+  mkdirSync(pluginsFolder);
+  console.log(chalk.magenta('✔ Carpeta "plugins" creada automáticamente (vacía).'));
 }
 
 // ====================
@@ -185,7 +189,7 @@ Elige una opción ${chalk.magenta('1')} o ${chalk.magenta('2')}: `;
   }
 }
 
-// Pedimos número WhatsApp
+// Pedimos número
 async function askPhoneNumber() {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   const askText = chalk.blueBright('\n📲 Escribe el número de WhatsApp (sin +), ej: 5191052145:\n> ');
