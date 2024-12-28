@@ -1,28 +1,26 @@
 /* 
    =======================================
-   CÓDIGO PRINCIPAL CORREGIDO (main.js)
+   main.js - Versión Estable y Corregida
    =======================================
 */
 
 import chalk from 'chalk';
 import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs';
-import path, { join } from 'path';
-import { platform } from 'process';
 import { fileURLToPath, pathToFileURL } from 'url';
+import { platform } from 'process';
 import { createRequire } from 'module';
+import { join } from 'path';
 import {
   readdirSync,
   statSync,
   unlinkSync,
   existsSync,
   readFileSync,
-  watch,
   mkdirSync,
 } from 'fs';
 import { tmpdir } from 'os';
 import { spawn } from 'child_process';
-import { format } from 'util';
 import readline from 'readline';
 import pino from 'pino';
 import ws from 'ws';
@@ -30,10 +28,10 @@ import ws from 'ws';
 import pkg from '@adiwajshing/baileys';
 const {
   fetchLatestBaileysVersion,
-  DisconnectReason,
   makeInMemoryStore,
   makeCacheableSignalKeyStore,
   useMultiFileAuthState,
+  DisconnectReason,
 } = pkg;
 
 import { Low, JSONFile } from 'lowdb';
@@ -41,7 +39,12 @@ import { makeWASocket, protoType, serialize } from './lib/simple.js';
 import cloudDBAdapter from './lib/cloudDBAdapter.js';
 import { mongoDB, mongoDBV2 } from './lib/mongoDB.js';
 
-// ======== Inicializa prototipos de Baileys ========
+// ============================
+// DECLARAMOS isInit AQUÍ
+// ============================
+let isInit = false;
+
+// Inicializa prototipos de Baileys
 protoType();
 serialize();
 
@@ -51,8 +54,7 @@ serialize();
 const { CONNECTING } = ws;
 const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
 
-// IMPORTANTE: definimos projectDir en base a __dirname
-// para evitar TypeError [ERR_INVALID_ARG_TYPE]
+// Definición de __filename y __dirname
 global.__filename = function filename(pathURL = import.meta.url, rmPrefix = platform !== 'win32') {
   return rmPrefix
     ? pathURL.startsWith('file://')
@@ -61,10 +63,15 @@ global.__filename = function filename(pathURL = import.meta.url, rmPrefix = plat
     : pathToFileURL(pathURL).toString();
 };
 global.__dirname = function dirname(pathURL) {
-  return path.dirname(global.__filename(pathURL, true));
+  return new URL('.', pathURL).pathname;
+  // Alternativa:
+  // return path.dirname(global.__filename(pathURL, true));
 };
-const projectDir = global.__dirname(import.meta.url); // String con el dir base
 
+// Usamos projectDir como string real para evitar path issues
+const projectDir = global.__dirname(import.meta.url);
+
+// createRequire
 global.__require = function require(dir = import.meta.url) {
   return createRequire(dir);
 };
@@ -88,9 +95,7 @@ global.API = (name, path = '/', query = {}, apikeyqueryname) =>
       )
     : '');
 
-global.timestamp = {
-  start: new Date(),
-};
+global.timestamp = { start: new Date() };
 
 // Parseo con Yargs
 global.opts = yargs(hideBin(process.argv)).exitProcess(false).parse();
@@ -101,7 +106,7 @@ global.prefix = new RegExp(
 );
 
 // ================================
-// Base de datos con LowDB / Mongo
+// Base de datos (LowDB / Mongo)
 // ================================
 global.db = new Low(
   /https?:\/\//.test(global.opts['db'] || '')
@@ -141,23 +146,19 @@ global.loadDatabase = async function loadDatabase() {
 };
 await global.loadDatabase();
 
-// ========================
-// Carpeta de sesiones
-// ========================
+// ====================
+// Carpeta de Sesiones
+// ====================
 const sessionsFolder = './TK-Session';
 if (!existsSync(sessionsFolder)) {
   mkdirSync(sessionsFolder);
 }
 
-// ================================
-// MENÚ INTERACTIVO DE VINCULACIÓN
-// ================================
+// ====================
+// MENÚ INTERACTIVO
+// ====================
 async function showMenu() {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   const menuText = `\n${chalk.hex('#FF69B4').bold('┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓')}
 ${chalk.hex('#FF69B4').bold('┃')}  ${chalk.bold.bgMagenta('  MENÚ DE VINCULACIÓN  ')}  ${chalk.hex('#FF69B4').bold('┃')}
 ${chalk.hex('#FF69B4').bold('┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛')}
@@ -167,11 +168,9 @@ ${chalk.cyanBright('[2]')} Creado por Joan TK ${chalk.greenBright('✅')}
 
 Elige una opción ${chalk.magenta('1')} o ${chalk.magenta('2')}: `;
 
-  async function askMenu() {
+  function askMenu() {
     return new Promise((resolve) => {
-      rl.question(menuText, (answer) => {
-        resolve(answer.trim());
-      });
+      rl.question(menuText, (answer) => resolve(answer.trim()));
     });
   }
 
@@ -186,27 +185,20 @@ Elige una opción ${chalk.magenta('1')} o ${chalk.magenta('2')}: `;
   }
 }
 
+// Pedimos número WhatsApp
 async function askPhoneNumber() {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
-  const askText = chalk.blueBright(
-    '\n📲 Por favor escribe el número de WhatsApp (sin el +), ej: 5191052145:\n> '
-  );
-
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  const askText = chalk.blueBright('\n📲 Escribe el número de WhatsApp (sin +), ej: 5191052145:\n> ');
   return new Promise((resolve) => {
     rl.question(askText, (num) => {
       rl.close();
+      console.log(chalk.greenBright(`[✅ RECEIVED] ${num}`));
       resolve(num.trim());
     });
   });
 }
 
-// ========================
-// Limpieza de Sesiones
-// ========================
+// Limpieza de sesiones
 function clearSessions(folder = sessionsFolder) {
   try {
     const filenames = readdirSync(folder);
@@ -221,13 +213,11 @@ function clearSessions(folder = sessionsFolder) {
   } catch (err) {
     console.error(chalk.redBright(`Error en Clear Sessions: ${err.message}`));
   } finally {
-    setTimeout(() => clearSessions(folder), 1 * 3600000); // cada 1 hora
+    setTimeout(() => clearSessions(folder), 3600000); // cada 1 hora
   }
 }
 
-// ========================
 // Limpieza de Temporales
-// ========================
 function clearTmp() {
   const tmpDirs = [tmpdir(), join(projectDir, 'tmp')];
   const files = [];
@@ -246,13 +236,11 @@ function clearTmp() {
   }
 }
 
-// ====================
-// Reset de límites
-// ====================
+// Reset de límites diario
 async function resetLimit() {
   try {
     const users = global.db.data.users || {};
-    const lim = 25; // Límite por defecto
+    const lim = 25;
     for (let user in users) {
       if (users[user].limit <= lim) {
         users[user].limit = lim;
@@ -260,40 +248,132 @@ async function resetLimit() {
     }
     console.log(chalk.yellowBright('✅ Límite de usuarios restablecido automáticamente.'));
   } finally {
-    setTimeout(() => resetLimit(), 24 * 60 * 60 * 1000); // cada 24 horas
+    setTimeout(() => resetLimit(), 24 * 60 * 60 * 1000);
   }
 }
 
-// ==========================
-// Vinculación / Conexión
-// ==========================
-(async function initWhatsApp() {
-  // Mostrar menú
+// ============================================
+// RELOAD HANDLER - con try/catch
+// ============================================
+export async function reloadHandler(restartConn = false) {
+  try {
+    const Handler = await import(`./handler.js?update=${Date.now()}`);
+    if (Handler && Object.keys(Handler).length) {
+      global.handler = Handler;
+    }
+  } catch (e) {
+    console.error(chalk.redBright('❌ Error al cargar handler:'), e);
+  }
+
+  if (restartConn) {
+    const oldChats = global.conn?.chats || {};
+    try {
+      global.conn?.ws?.close();
+    } catch {}
+    global.conn?.ev?.removeAllListeners();
+    global.conn = makeWASocket(global.connectionOptions, { chats: oldChats });
+    isInit = true;
+  }
+
+  if (!isInit) {
+    // Remueve listeners viejos si existen
+    if (typeof global.conn?.handler?.handler === 'function') {
+      global.conn.ev.off('messages.upsert', global.conn.handler.handler);
+    }
+    if (typeof global.conn?.handler?.participantsUpdate === 'function') {
+      global.conn.ev.off('group-participants.update', global.conn.handler.participantsUpdate);
+    }
+    if (typeof global.conn?.handler?.groupsUpdate === 'function') {
+      global.conn.ev.off('groups.update', global.conn.handler.groupsUpdate);
+    }
+    if (typeof global.conn?.handler?.deleteUpdate === 'function') {
+      global.conn.ev.off('message.delete', global.conn.handler.deleteUpdate);
+    }
+    global.conn.ev.off('connection.update', connectionUpdate);
+    if (typeof global.saveCredsFunction === 'function') {
+      global.conn.ev.off('creds.update', global.saveCredsFunction);
+    }
+  }
+
+  // Mensajes personalizados
+  global.conn.welcome = `🌟 ¡Bienvenido! 🌟
+👋 Hola @user, disfruta tu estadía en:
+@subject
+
+Por favor, regístrate usando:
+.reg nombre.edad
+
+Descripción del grupo:
+@desc
+`;
+  global.conn.spromote = '🦾 @user ahora es administrador!';
+  global.conn.sdemote = '🪓 @user ya no es administrador!';
+  global.conn.sDesc = '📝 La descripción se actualizó a:\n@desc';
+  global.conn.sSubject = '🏷️ El nombre del grupo cambió a:\n@subject';
+  global.conn.sIcon = '🖼️ Cambió la foto del grupo!';
+  global.conn.sRevoke = '🔗 El link del grupo se actualizó:\n@revoke';
+  global.conn.sAnnounceOn =
+    '🚧 Grupo cerrado!\nSólo los admins pueden enviar mensajes.';
+  global.conn.sAnnounceOff =
+    '🚪 El grupo fue abierto!\nAhora todos pueden enviar mensajes.';
+  global.conn.sRestrictOn =
+    '⚙️ Sólo los administradores pueden editar la información del grupo.';
+  global.conn.sRestrictOff =
+    '🌐 Todos pueden editar la información del grupo.';
+
+  // Re-enlazar handler
+  if (global.handler) {
+    global.conn.handler = global.handler.handler?.bind(global.conn);
+    global.conn.participantsUpdate = global.handler.participantsUpdate?.bind(global.conn);
+    global.conn.groupsUpdate = global.handler.groupsUpdate?.bind(global.conn);
+    global.conn.deleteUpdate = global.handler.deleteUpdate?.bind(global.conn);
+
+    // Volver a enganchar listeners
+    if (global.conn.handler) {
+      global.conn.ev.on('messages.upsert', global.conn.handler);
+    }
+    if (global.conn.participantsUpdate) {
+      global.conn.ev.on('group-participants.update', global.conn.participantsUpdate);
+    }
+    if (global.conn.groupsUpdate) {
+      global.conn.ev.on('groups.update', global.conn.groupsUpdate);
+    }
+    if (global.conn.deleteUpdate) {
+      global.conn.ev.on('message.delete', global.conn.deleteUpdate);
+    }
+  }
+
+  global.conn.ev.on('connection.update', connectionUpdate);
+  if (typeof global.saveCredsFunction === 'function') {
+    global.conn.ev.on('creds.update', global.saveCredsFunction);
+  }
+
+  isInit = false;
+  return true;
+}
+
+// ===================================
+// FUNCIÓN PRINCIPAL initWhatsApp
+// ===================================
+async function initWhatsApp() {
   const choice = await showMenu();
-  // Si usuario elige 2 => Simplemente mostramos un texto
   if (choice === '2') {
     console.log(chalk.bgGreenBright('\n🤖 Creado por Joan TK.\n'));
   } else {
     console.log(chalk.bgMagentaBright('\n🔐 Vinculación por código de 8 dígitos.\n'));
   }
-
-  // IGUALMENTE pedimos el teléfono y generamos pairing code
+  // Pedimos teléfono
   const phoneNumber = await askPhoneNumber();
 
-  // Obtenemos la versión de Baileys
+  // Obtenemos version Baileys
   const { version } = await fetchLatestBaileysVersion();
   const { state, saveCreds } = await useMultiFileAuthState(sessionsFolder);
-  // Guardamos la ref a "saveCreds"
-  global.saveCredsFunction = saveCreds;
+  global.saveCredsFunction = saveCreds; // ref global
 
-  // Creación de la store en memoria
-  const store = makeInMemoryStore({
-    logger: pino().child({ level: 'silent', stream: 'store' }),
-  });
+  // Creamos store en memoria
+  const store = makeInMemoryStore({ logger: pino().child({ level: 'silent', stream: 'store' }) });
   store.readFromFile('./baileys_store.json');
-  setInterval(() => {
-    store.writeToFile('./baileys_store.json');
-  }, 10000);
+  setInterval(() => store.writeToFile('./baileys_store.json'), 10000);
 
   // Opciones de conexión
   global.connectionOptions = {
@@ -344,15 +424,14 @@ async function resetLimit() {
   global.conn = makeWASocket(global.connectionOptions);
   global.conn.isInit = false;
 
-  // Si la función requestPairingCode existe y no está registrado, generamos code
+  // Generar pairing code si existe la función
   if (global.conn.requestPairingCode && !global.conn.authState.creds.registered) {
     try {
       let code = await global.conn.requestPairingCode(phoneNumber);
       if (code) {
         code = code.match(/.{1,4}/g)?.join('-') || code;
-        // Sin fondo amarillo, solo letra amarilla
         console.log(chalk.magentaBright(`\n🔑 Tu código de emparejamiento es: `) + chalk.yellow.bold(code));
-        console.log(chalk.gray('   Ingresa este código en la app de WhatsApp para vincular.\n'));
+        console.log(chalk.gray('   Ingresa este código en WhatsApp para vincular.\n'));
       } else {
         console.log(chalk.redBright('⚠️ No se pudo generar el código de emparejamiento.'));
       }
@@ -361,21 +440,19 @@ async function resetLimit() {
     }
   }
 
-  // Registramos eventos
-  global.conn.ev.on('connection.update', (update) => connectionUpdate(update));
+  // Listeners básicos
+  global.conn.ev.on('connection.update', connectionUpdate);
   global.conn.ev.on('creds.update', saveCreds);
 
-  // Cargamos el handler
+  // Cargamos handler la primera vez
   global.reloadHandler = async function (restartConn) {
     return reloadHandler(restartConn);
   };
   await global.reloadHandler();
 
-  // ================
-  // TAREAS PERIÓDICAS
-  // ================
-  clearSessions(); // Limpieza de sesiones cada hora
-  resetLimit();    // Reset de límites
+  // Iniciamos TAREAS PERIÓDICAS
+  clearSessions();
+  resetLimit();
   if (!global.opts['test']) {
     console.log(chalk.green(`\n🌐 Servidor listo en puerto => ${PORT}`));
     setInterval(async () => {
@@ -384,9 +461,8 @@ async function resetLimit() {
     }, 60000);
   }
 
-  // Chequeo rápido de dependencias
   await _quickTest();
-})();
+}
 
 // ========================================
 // Manejo de eventos de conexión
@@ -397,15 +473,15 @@ async function connectionUpdate(update) {
     global.conn.isInit = true;
   }
   if (connection === 'connecting') {
-    console.log(chalk.yellow('⏳ Conectando al servidor de WhatsApp...'));
+    console.log(chalk.yellow('⏳ Conectando a WhatsApp... Por favor espera.'));
   } else if (connection === 'open') {
     console.log(chalk.greenBright('✅ Conexión establecida correctamente!'));
   }
 
   if (isOnline === true) {
-    console.log(chalk.greenBright('🔵 Estado en línea (online)'));
+    console.log(chalk.greenBright('🔵 Estado online'));
   } else if (isOnline === false) {
-    console.log(chalk.redBright('🔴 Estado fuera de línea (offline)'));
+    console.log(chalk.redBright('🔴 Estado offline'));
   }
 
   if (receivedPendingNotifications) {
@@ -421,7 +497,6 @@ async function connectionUpdate(update) {
       lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut &&
       global.conn.ws.readyState !== CONNECTING
     ) {
-      // Forzamos reconexión
       console.log(chalk.cyan('Intentando reconectar...'));
       await global.reloadHandler(true);
     } else if (
@@ -434,116 +509,14 @@ async function connectionUpdate(update) {
     }
   }
   global.timestamp.connect = new Date();
-
   if (global.db.data == null) {
     await global.loadDatabase();
   }
 }
 
-// ============================================
-// FUNCIÓN DE RECARGA DE HANDLER
-// ============================================
-async function reloadHandler(restartConn = false) {
-  try {
-    const Handler = await import(`./handler.js?update=${Date.now()}`);
-    if (Object.keys(Handler || {}).length) {
-      global.handler = Handler;
-    }
-  } catch (e) {
-    console.error(chalk.redBright('❌ Error al cargar handler:'), e);
-  }
-
-  if (restartConn) {
-    const oldChats = global.conn.chats;
-    try {
-      global.conn.ws.close();
-    } catch {}
-    global.conn.ev.removeAllListeners();
-    global.conn = makeWASocket(global.connectionOptions, { chats: oldChats });
-    isInit = true;
-  }
-
-  // Remover listeners viejos
-  if (!isInit) {
-    if (typeof global.conn.handler?.handler === 'function') {
-      global.conn.ev.off('messages.upsert', global.conn.handler.handler);
-    }
-    if (typeof global.conn.handler?.participantsUpdate === 'function') {
-      global.conn.ev.off('group-participants.update', global.conn.handler.participantsUpdate);
-    }
-    if (typeof global.conn.handler?.groupsUpdate === 'function') {
-      global.conn.ev.off('groups.update', global.conn.handler.groupsUpdate);
-    }
-    if (typeof global.conn.handler?.deleteUpdate === 'function') {
-      global.conn.ev.off('message.delete', global.conn.handler.deleteUpdate);
-    }
-    global.conn.ev.off('connection.update', connectionUpdate);
-    if (typeof global.saveCredsFunction === 'function') {
-      global.conn.ev.off('creds.update', global.saveCredsFunction);
-    }
-  }
-
-  // Mensajes personalizados
-  global.conn.welcome = `🌟 ¡Bienvenido! 🌟
-🎉 Disfruta tu estadía en:
-@subject
-(👋 Hola @user)
-
-Por favor, regístrate usando:
-.reg nombre.edad
-
-Descripción del grupo:
-@desc
-`;
-  global.conn.spromote = '🦾 @user ahora es administrador!';
-  global.conn.sdemote = '🪓 @user ya no es administrador!';
-  global.conn.sDesc = '📝 La descripción se actualizó: \n@desc';
-  global.conn.sSubject = '🏷️ El nombre del grupo cambió a: \n@subject';
-  global.conn.sIcon = '🖼️ Cambió la foto del grupo!';
-  global.conn.sRevoke = '🔗 El link del grupo se actualizó: \n@revoke';
-  global.conn.sAnnounceOn =
-    '🚧 Grupo cerrado!\nSólo los admins pueden enviar mensajes.';
-  global.conn.sAnnounceOff =
-    '🚪 El grupo fue abierto!\nAhora todos pueden enviar mensajes.';
-  global.conn.sRestrictOn =
-    '⚙️ Sólo los administradores pueden editar la información del grupo.';
-  global.conn.sRestrictOff =
-    '🌐 Todos pueden editar la información del grupo.';
-
-  // Re-enlazar
-  if (global.handler) {
-    global.conn.handler = global.handler.handler?.bind(global.conn);
-    global.conn.participantsUpdate = global.handler.participantsUpdate?.bind(global.conn);
-    global.conn.groupsUpdate = global.handler.groupsUpdate?.bind(global.conn);
-    global.conn.deleteUpdate = global.handler.deleteUpdate?.bind(global.conn);
-
-    // Re-asignar
-    if (global.conn.handler) {
-      global.conn.ev.on('messages.upsert', global.conn.handler);
-    }
-    if (global.conn.participantsUpdate) {
-      global.conn.ev.on('group-participants.update', global.conn.participantsUpdate);
-    }
-    if (global.conn.groupsUpdate) {
-      global.conn.ev.on('groups.update', global.conn.groupsUpdate);
-    }
-    if (global.conn.deleteUpdate) {
-      global.conn.ev.on('message.delete', global.conn.deleteUpdate);
-    }
-  }
-
-  global.conn.ev.on('connection.update', connectionUpdate);
-  if (typeof global.saveCredsFunction === 'function') {
-    global.conn.ev.on('creds.update', global.saveCredsFunction);
-  }
-
-  isInit = false;
-  return true;
-}
-
-// =========================
-// Prueba Rápida
-// =========================
+// ==============================
+// Prueba rápida - Dependencias
+// ==============================
 async function _quickTest() {
   let test = await Promise.all(
     [
@@ -580,16 +553,12 @@ async function _quickTest() {
   );
   let [ffmpeg, ffprobe, ffmpegWebp, convert, magick, gm, find] = test;
   console.log(chalk.blueBright('🔍 Dependencias checadas:'), test);
-  let s = (global.support = {
-    ffmpeg,
-    ffprobe,
-    ffmpegWebp,
-    convert,
-    magick,
-    gm,
-    find,
-  });
+  let s = (global.support = { ffmpeg, ffprobe, ffmpegWebp, convert, magick, gm, find });
   Object.freeze(global.support);
   console.log(chalk.greenBright('☑️ Prueba rápida realizada, sesión => creds.json'));
 }
 
+// ==================================================
+// EJECUTAR
+// ==================================================
+initWhatsApp().catch(console.error);
