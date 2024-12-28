@@ -1,10 +1,11 @@
 /*
    =========================================================================================
-   main.js - Código "Robusto" + "IA Cobrando Vida" con Vinculación por Código de 8 Dígitos
+   main.js - Bot de WhatsApp con Vinculación por Código de 8 Dígitos utilizando Baileys
    =========================================================================================
 
-   ¡Secuencia de arranque simulando inicialización de una "IA" antes de vincular el WhatsApp!
-   Implementa un flujo inteligente para usar sesiones existentes o resetear y generar un nuevo código.
+   Este script implementa un bot de WhatsApp que utiliza la librería Baileys para manejar
+   la conexión y vinculación mediante un código de emparejamiento de 8 dígitos.
+   Incluye manejo de sesiones, limpieza periódica de archivos temporales y límites de usuarios.
 */
 
 ////////////////////////////////////
@@ -22,6 +23,13 @@ import { spawn } from 'child_process';
 import pino from 'pino';
 import ws from 'ws';
 import readline from 'readline';
+import { format } from 'util';
+import { tmpdir } from 'os';
+import { platform, argv } from 'process';
+import path, { join } from 'path';
+import { fileURLToPath, pathToFileURL } from 'url';
+import { createRequire } from 'module';
+import syntaxerror from 'syntax-error';
 
 import {
   readdirSync,
@@ -29,24 +37,22 @@ import {
   unlinkSync,
   existsSync,
   mkdirSync,
-  rmSync
+  rmSync,
+  readFileSync,
+  watch,
 } from 'fs';
-import { join } from 'path';
-import { tmpdir } from 'os';
-import { platform, argv } from 'process';
-import { fileURLToPath, pathToFileURL } from 'url';
-import { createRequire } from 'module';
 
 ////////////////////////////////////
 // 3) Baileys (whiskeysockets)
 ////////////////////////////////////
-import pkg from '@adiwajshing/baileys'; // "npm:@whiskeysockets/baileys@latest"
+import pkg from '@adiwajshing/baileys'; // Asegúrate de tener la versión correcta instalada
 const {
   makeInMemoryStore,
   useMultiFileAuthState,
   makeCacheableSignalKeyStore,
   fetchLatestBaileysVersion,
   DisconnectReason,
+  makeWASocket,
 } = pkg;
 
 ////////////////////////////////////
@@ -59,15 +65,13 @@ import { mongoDB, mongoDBV2 } from './lib/mongoDB.js'; // Quita si no lo usas
 ////////////////////////////////////
 // 5) Baileys Personal
 ////////////////////////////////////
-import { makeWASocket, protoType, serialize } from './lib/simple.js';
+import { protoType, serialize } from './lib/simple.js';
 protoType();
 serialize();
 
-/*
-   ============================================================
-   6) Variables Globales y Config
-   ============================================================
-*/
+////////////////////////////////////
+// 6) Variables Globales y Config
+////////////////////////////////////
 let isInit = false;
 const { CONNECTING } = ws;
 const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
@@ -81,9 +85,8 @@ global.__filename = function filename(pathURL = import.meta.url, rmPrefix = plat
     : pathToFileURL(pathURL).toString();
 };
 global.__dirname = function dirname(pathURL) {
-  return new URL('.', pathURL).pathname;
+  return path.dirname(global.__filename(pathURL, true));
 };
-const projectDir = global.__dirname(import.meta.url);
 
 // createRequire
 global.__require = function require(dir = import.meta.url) {
@@ -102,14 +105,19 @@ global.API = (name, path = '/', query = {}, apikeyqueryname) =>
           ...(apikeyqueryname
             ? {
                 [apikeyqueryname]:
-                  global.APIKeys[name in global.APIs ? global.APIs[name] : name]
+                  global.APIKeys[name in global.APIs ? global.APIs[name] : name],
               }
-            : {})
+            : {}),
         })
       )
     : '');
 
-global.timestamp = { start: new Date() };
+global.timestamp = {
+  start: new Date(),
+};
+
+const __dirnamePath = global.__dirname(import.meta.url);
+
 global.opts = yargs(hideBin(argv)).exitProcess(false).parse();
 global.prefix = new RegExp(
   '^[' +
@@ -117,11 +125,9 @@ global.prefix = new RegExp(
     ']'
 );
 
-/*
-   ============================
-   7) Base de datos con LowDB
-   ============================
-*/
+////////////////////////////////////
+// 7) Base de Datos con LowDB
+////////////////////////////////////
 global.db = new Low(
   /https?:\/\//.test(global.opts['db'] || '')
     ? new cloudDBAdapter(global.opts['db'])
@@ -131,7 +137,8 @@ global.db = new Low(
       : new mongoDB(global.opts['db'])
     : new JSONFile(`${global.opts._[0] ? global.opts._[0] + '_' : ''}database.json`)
 );
-global.DATABASE = global.db;
+
+global.DATABASE = global.db; // Compatibilidad con versiones anteriores
 
 global.loadDatabase = async function loadDatabase() {
   if (global.db.READ)
@@ -154,34 +161,32 @@ global.loadDatabase = async function loadDatabase() {
     msgs: {},
     sticker: {},
     settings: {},
-    ...(global.db.data || {})
+    ...(global.db.data || {}),
   };
 };
 await global.loadDatabase();
 
-// ========================
+////////////////////////////////////
 // 8) Carpeta de Sesión
-// ========================
-const sessionsFolder = './TK-Session';
+////////////////////////////////////
+const sessionsFolder = './sessions';
 if (!existsSync(sessionsFolder)) {
   mkdirSync(sessionsFolder);
-  console.log(chalk.green('✅ Carpeta TK-Session creada.'));
+  console.log(chalk.green('✅ Carpeta "sessions" creada.'));
 }
 
-// ========================
-// 9) Carpeta plugins
-// ========================
-const pluginsFolder = join(projectDir, 'plugins');
+////////////////////////////////////
+// 9) Carpeta de Plugins
+////////////////////////////////////
+const pluginsFolder = join(__dirnamePath, 'plugins');
 if (!existsSync(pluginsFolder)) {
   mkdirSync(pluginsFolder);
   console.log(chalk.magenta('✔ Carpeta "plugins" creada automáticamente (vacía).'));
 }
 
-/*
-   ==========================================
-   10) Menú Interactivo + phoneNumber
-   ==========================================
-*/
+////////////////////////////////////
+// 10) Menú Interactivo + phoneNumber
+////////////////////////////////////
 async function showMenu() {
   const rl = readline.createInterface({
     input: process.stdin,
@@ -230,14 +235,12 @@ async function askPhoneNumber() {
   });
 }
 
-/*
-   ==========================================
-   11) Limpieza de Sesiones + temporales
-   ==========================================
-*/
+////////////////////////////////////
+// 11) Limpieza de Sesiones y Archivos Temporales
+////////////////////////////////////
 
 /**
- * Resetea por completo la carpeta de sesión (TK-Session) eliminando todos los archivos existentes.
+ * Resetea por completo la carpeta de sesión (sessions) eliminando todos los archivos existentes.
  */
 function resetSession() {
   try {
@@ -252,14 +255,14 @@ function resetSession() {
           rmSync(filePath, { recursive: true, force: true });
         }
       }
-      console.log(chalk.magenta('🔄 Se ha reseteado por completo la carpeta TK-Session (sesiones).'));
+      console.log(chalk.magenta('🔄 Se ha reseteado por completo la carpeta "sessions".'));
     } else {
       mkdirSync(sessionsFolder);
-      console.log(chalk.green('✅ Carpeta TK-Session creada.'));
+      console.log(chalk.green('✅ Carpeta "sessions" creada.'));
     }
     return true;
   } catch (err) {
-    console.error(chalk.red('❌ Error al resetear TK-Session:'), err);
+    console.error(chalk.red('❌ Error al resetear "sessions":'), err);
     return false;
   }
 }
@@ -284,45 +287,54 @@ function clearSessions(folder = sessionsFolder) {
 }
 
 function clearTmp() {
-  const tmpDirs = [tmpdir(), join(global.__dirname(import.meta.url), 'tmp')];
+  const tmpDirs = [tmpdir(), join(__dirnamePath, 'tmp')];
   const files = [];
-  for (let dirname of tmpDirs) {
+
+  tmpDirs.forEach((dirname) => {
     if (existsSync(dirname)) {
-      for (let file of readdirSync(dirname)) {
+      readdirSync(dirname).forEach((file) => {
         files.push(join(dirname, file));
+      });
+    }
+  });
+
+  files.forEach((file) => {
+    try {
+      const stats = statSync(file);
+      if (stats.isFile() && Date.now() - stats.mtimeMs >= 1000 * 60 * 3) {
+        unlinkSync(file);
       }
+    } catch (err) {
+      console.error(`❌ Error al eliminar archivo temporal "${file}":`, err);
     }
-  }
-  for (let file of files) {
-    const stats = statSync(file);
-    if (stats.isFile() && Date.now() - stats.mtimeMs >= 1000 * 60 * 3) {
-      unlinkSync(file);
-    }
-  }
+  });
 }
 
-// Reset de límites
+////////////////////////////////////
+// 12) Manejo de Límites de Usuarios
+////////////////////////////////////
 async function resetLimit() {
   try {
     const users = global.db.data.users || {};
-    const lim = 25;
+    const lim = 25; // Valor de límite predeterminado
+
     for (let user in users) {
       if (users[user].limit <= lim) {
         users[user].limit = lim;
       }
     }
+
     console.log(chalk.yellowBright('✅ Límite de usuarios restablecido automáticamente.'));
   } finally {
     setTimeout(() => resetLimit(), 24 * 60 * 60 * 1000); // Cada 24 horas
   }
 }
+resetLimit();
 
-/*
-   ========================================
-   12) reloadHandler => "handler.js"
-   ========================================
-*/
-export async function reloadHandler(restartConn = false) {
+////////////////////////////////////
+// 13) Recarga de Handlers
+////////////////////////////////////
+async function reloadHandler(restartConn = false) {
   try {
     const Handler = await import(`./handler.js?update=${Date.now()}`);
     if (Handler && Object.keys(Handler).length) {
@@ -338,7 +350,7 @@ export async function reloadHandler(restartConn = false) {
       global.conn?.ws?.close();
     } catch {}
     global.conn?.ev?.removeAllListeners();
-    global.conn = makeWASocket(global.connectionOptions, { chats: oldChats });
+    global.conn = makeWASocket(connectionOptions, { chats: oldChats });
     isInit = true;
   }
 
@@ -361,7 +373,7 @@ export async function reloadHandler(restartConn = false) {
     }
   }
 
-  // Mensajes de grupo (opcional)
+  // Mensajes personalizados
   global.conn.welcome = `🌟 ¡Bienvenido! 🌟
 👋 Hola @user, disfruta tu estadía en:
 @subject
@@ -372,22 +384,27 @@ Por favor, regístrate usando:
 Descripción del grupo:
 @desc
 `;
-  global.conn.spromote = '🦾 @user ahora es administrador!';
-  global.conn.sdemote = '🪓 @user ya no es administrador!';
-  global.conn.sDesc = '📝 La descripción se actualizó a:\n@desc';
-  global.conn.sSubject = '🏷️ El nombre del grupo cambió a:\n@subject';
-  global.conn.sIcon = '🖼️ Cambió la foto del grupo!';
-  global.conn.sRevoke = '🔗 El link del grupo se actualizó:\n@revoke';
-  global.conn.sAnnounceOn = '🚧 Grupo cerrado!\nSólo los admins pueden enviar mensajes.';
-  global.conn.sAnnounceOff = '🚪 El grupo fue abierto!\nAhora todos pueden enviar mensajes.';
-  global.conn.sRestrictOn = '⚙️ Sólo los administradores pueden editar la información del grupo.';
-  global.conn.sRestrictOff = '🌐 Todos pueden editar la información del grupo.';
+  global.conn.bye = '🌟 ¡Adiós! 🌟\nSayonara @user 👋😃';
+  global.conn.spromote = '*✧ @user ahora es admin!*';
+  global.conn.sdemote = '*✧ @user ya no es admin!*';
+  global.conn.sDesc = '*✧ La descripción se actualizó a* \n@desc';
+  global.conn.sSubject = '*✧ El nombre del grupo fue alterado a* \n@subject';
+  global.conn.sIcon = '*✧ Se actualizó el icono del grupo!*';
+  global.conn.sRevoke = '*✧ El link del grupo se actualizó a* \n@revoke';
+  global.conn.sAnnounceOn =
+    '*✧ Grupo cerrado!*\n> Ahora solo los admins pueden enviar mensajes.';
+  global.conn.sAnnounceOff =
+    '*✧ El grupo fue abierto!*\n> Ahora todos pueden enviar mensajes.';
+  global.conn.sRestrictOn =
+    '*✧ Ahora solo los admin podrán editar la información del grupo!*';
+  global.conn.sRestrictOff =
+    '*✧ Ahora todos pueden editar la información del grupo!*';
 
   if (global.handler) {
     global.conn.handler = global.handler.handler?.bind(global.conn);
     global.conn.participantsUpdate = global.handler.participantsUpdate?.bind(global.conn);
     global.conn.groupsUpdate = global.handler.groupsUpdate?.bind(global.conn);
-    global.conn.deleteUpdate = global.handler.deleteUpdate?.bind(global.conn);
+    global.conn.onDelete = global.handler.deleteUpdate?.bind(global.conn);
 
     if (global.conn.handler) {
       global.conn.ev.on('messages.upsert', global.conn.handler);
@@ -398,8 +415,8 @@ Descripción del grupo:
     if (global.conn.groupsUpdate) {
       global.conn.ev.on('groups.update', global.conn.groupsUpdate);
     }
-    if (global.conn.deleteUpdate) {
-      global.conn.ev.on('message.delete', global.conn.deleteUpdate);
+    if (global.conn.onDelete) {
+      global.conn.ev.on('message.delete', global.conn.onDelete);
     }
   }
 
@@ -412,36 +429,13 @@ Descripción del grupo:
   return true;
 }
 
-/*
-   ===============================================================
-   13) postLinkFlow => Mensajes tras code (Límite, server, etc.)
-   ===============================================================
-*/
-let postLinkOnce = false;
-async function postLinkFlow() {
-  if (postLinkOnce) return;
-  postLinkOnce = true;
-
-  console.log(chalk.yellow('✅ Ya estás registrado con el code => iniciamos postLinkFlow'));
-  // 1) resetLimit => "Límite restablecido"
-  resetLimit();
-
-  // 2) "Servidor listo en => PORT"
-  console.log(chalk.green(`\n🌐 Servidor listo en puerto => ${PORT}`));
-
-  // 3) Dependencias checadas => se hace _quickTest
-  await _quickTest();
-}
-
-/*
-   =======================================================
-   14) initWhatsApp => Menú => phone => crea conn => ...
-   =======================================================
-*/
+////////////////////////////////////
+// 14) Generación y Vinculación de WhatsApp
+////////////////////////////////////
 async function initWhatsApp() {
   // Menú
   const choice = await showMenu();
-  console.log(chalk.blueBright(`Elegiste la opción ${choice} => Generar code 8 díg.`));
+  console.log(chalk.blueBright(`Elegiste la opción ${choice} => Generar código de emparejamiento de 8 dígitos.`));
 
   // Pedimos número de teléfono
   const phoneNumber = await askPhoneNumber();
@@ -546,11 +540,9 @@ async function initWhatsApp() {
   // Se hará cuando se registre => postLinkFlow
 }
 
-/*
-   ==========================================================
-   15) connectionUpdate => Pedir code en "open", reset en close
-   ==========================================================
-*/
+////////////////////////////////////
+// 15) Manejo de Eventos de Conexión
+////////////////////////////////////
 async function connectionUpdate(update) {
   const { connection, lastDisconnect } = update;
 
@@ -571,10 +563,10 @@ async function connectionUpdate(update) {
         if (code) {
           // Insertamos guiones cada 4 dígitos (XXXX-XXXX) para mayor legibilidad
           code = code.match(/.{1,4}/g)?.join('-') || code;
-          console.log(chalk.magentaBright(`\n🔑 Tu código de emparejamiento es: `) + chalk.yellow.bold(code));
+          console.log(chalk.magentaBright(`\n🔑 Tu código de emparejamiento es: ${code}`));
           console.log(chalk.gray('   Ingresa este código en tu WhatsApp para vincular.\n'));
         } else {
-          console.log(chalk.redBright('⚠️ No se pudo generar el code de emparejamiento.'));
+          console.log(chalk.redBright('⚠️ No se pudo generar el código de emparejamiento.'));
         }
       } catch (err) {
         console.error(chalk.redBright('❌ Error al solicitar pairing code:'), err);
@@ -588,7 +580,7 @@ async function connectionUpdate(update) {
   }
 
   if (connection === 'close') {
-    console.log(chalk.red('❌ Se perdió la conexión... Reseteando TK-Session.'));
+    console.log(chalk.red('❌ Se perdió la conexión... Reseteando "sessions".'));
     resetSession();
     console.log(chalk.cyan('⏳ Esperamos 45s y re-iniciamos la vinculación...'));
     setTimeout(async () => {
@@ -602,11 +594,9 @@ async function connectionUpdate(update) {
   }
 }
 
-/*
-   =========================================
-   16) _quickTest => Chequeo de dependencias
-   =========================================
-*/
+////////////////////////////////////
+// 16) Prueba Rápida de Dependencias
+////////////////////////////////////
 async function _quickTest() {
   let test = await Promise.all(
     [
@@ -622,12 +612,12 @@ async function _quickTest() {
         '1',
         '-f',
         'webp',
-        '-'
+        '-',
       ]),
       spawn('convert'),
       spawn('magick'),
       spawn('gm'),
-      spawn('find', ['--version'])
+      spawn('find', ['--version']),
     ].map((p) =>
       Promise.race([
         new Promise((resolve) => {
@@ -637,19 +627,18 @@ async function _quickTest() {
         }),
         new Promise((resolve) => {
           p.on('error', (_) => resolve(false));
-        })
+        }),
       ])
     )
   );
+
   console.log(chalk.blueBright('🔍 Dependencias checadas:'), test);
   console.log(chalk.greenBright('☑️ Prueba rápida realizada, sesión => creds.json'));
 }
 
-/*
-   ============================
-   17) Secuencia de Arranque
-   ============================
-*/
+////////////////////////////////////
+// 17) Secuencia de Arranque
+////////////////////////////////////
 async function startUpSequence() {
   console.clear();
   const steps = [
@@ -668,9 +657,96 @@ async function startUpSequence() {
   await initWhatsApp(); // Iniciamos la parte real del bot
 }
 
-/*
-   ============================
-   18) Llamamos a startUpSequence
-   ============================
-*/
+////////////////////////////////////
+// 18) Ejecutar la Secuencia de Arranque
+////////////////////////////////////
 startUpSequence().catch(console.error);
+
+////////////////////////////////////
+// 19) Importar y Configurar Plugins
+////////////////////////////////////
+async function filesInit() {
+  for (let filename of readdirSync(pluginsFolder).filter(pluginFilter)) {
+    try {
+      let file = global.__filename(join(pluginsFolder, filename));
+      const module = await import(file);
+      global.plugins[filename] = module.default || module;
+    } catch (e) {
+      delete global.plugins[filename];
+      console.error(chalk.redBright(`❌ Error al cargar el plugin '${filename}':`), e);
+    }
+  }
+}
+filesInit().then(() => Object.keys(global.plugins));
+
+global.reload = async (_ev, filename) => {
+  if (pluginFilter(filename)) {
+    let dir = global.__filename(join(pluginsFolder, filename), true);
+    if (filename in global.plugins) {
+      if (existsSync(dir)) console.log(`Re-requerido plugin '${filename}'`);
+      else {
+        console.warn(`Plugin eliminado '${filename}'`);
+        return delete global.plugins[filename];
+      }
+    } else console.log(`Requiriendo nuevo plugin '${filename}'`);
+    let err = syntaxerror(readFileSync(dir), filename, {
+      sourceType: 'module',
+      allowAwaitOutsideFunction: true,
+    });
+    if (err)
+      console.error(
+        `❌ Error de sintaxis al cargar '${filename}'\n${format(err)}`
+      );
+    else
+      try {
+        const module = await import(
+          `${global.__filename(dir)}?update=${Date.now()}`
+        );
+        global.plugins[filename] = module.default || module;
+      } catch (e) {
+        console.error(
+          `❌ Error al requerir plugin '${filename}'\n${format(e)}`
+        );
+      } finally {
+        global.plugins = Object.fromEntries(
+          Object.entries(global.plugins).sort(([a], [b]) => a.localeCompare(b))
+        );
+      }
+  }
+};
+Object.freeze(global.reload);
+watch(pluginsFolder, global.reload);
+
+////////////////////////////////////
+// 20) Importar y Ejecutar el Servidor (Opcional)
+////////////////////////////////////
+if (!global.opts['test']) {
+  (await import('./server.js')).default(PORT);
+  setInterval(async () => {
+    if (global.db.data) await global.db.write().catch(console.error);
+    clearTmp();
+  }, 60 * 1000);
+}
+
+////////////////////////////////////
+// 21) Manejo de Eventos Uncaught Exceptions
+////////////////////////////////////
+process.on('uncaughtException', console.error);
+
+////////////////////////////////////
+// 22) Mensajes de Grupo Personalizados (Opcional)
+////////////////////////////////////
+let handler = await import('./handler.js');
+global.reloadHandler = async function (restartConn) {
+  await reloadHandler(restartConn);
+};
+
+// Prueba rápida de dependencias
+_quickTest().then(() =>
+  console.log(
+    chalk.greenBright(
+      '☑️ Prueba rápida realizada, sesión => creds.json'
+    )
+  )
+);
+
