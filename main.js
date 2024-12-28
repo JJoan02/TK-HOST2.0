@@ -301,7 +301,10 @@ function clearTmp() {
   files.forEach((file) => {
     try {
       const stats = statSync(file);
-      if (stats.isFile() && Date.now() - stats.mtimeMs >= 1000 * 60 * 3) {
+      if (
+        stats.isFile() &&
+        Date.now() - stats.mtimeMs >= 1000 * 60 * 3
+      ) {
         unlinkSync(file);
       }
     } catch (err) {
@@ -665,6 +668,14 @@ startUpSequence().catch(console.error);
 ////////////////////////////////////
 // 19) Importar y Configurar Plugins
 ////////////////////////////////////
+
+/**
+ * Definir la función pluginFilter para filtrar archivos .js
+ */
+const pluginFilter = (filename) => /\.js$/.test(filename);
+
+global.plugins = {};
+
 async function filesInit() {
   for (let filename of readdirSync(pluginsFolder).filter(pluginFilter)) {
     try {
@@ -734,19 +745,10 @@ if (!global.opts['test']) {
 process.on('uncaughtException', console.error);
 
 ////////////////////////////////////
-// 22) Mensajes de Grupo Personalizados (Opcional)
+// 22) Importar y Configurar Handlers (Opcional)
 ////////////////////////////////////
 let handler = await import('./handler.js');
 global.reloadHandler = async function (restartConn) {
   await reloadHandler(restartConn);
 };
-
-// Prueba rápida de dependencias
-_quickTest().then(() =>
-  console.log(
-    chalk.greenBright(
-      '☑️ Prueba rápida realizada, sesión => creds.json'
-    )
-  )
-);
 
