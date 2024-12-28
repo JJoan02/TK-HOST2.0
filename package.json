@@ -1,7 +1,7 @@
 {
-  "name": "Admin-TK",
-  "version": "8.0.0",
-  "description": "Super Admin de WhatsApp - Comunidad TK",
+  "name": "TK-HOST",
+  "version": "2.0.0",
+  "description": "Admin de TK-HOST - Comunidad TK",
   "main": "index.js",
   "type": "module",
   "directories": {
@@ -14,16 +14,16 @@
     "test": "nodemon index.js --server --autocleartmp --autoread",
     "mongodb": "node . --db 'url mongodbmu'"
   },
-  "homepage": "https://github.com/ComunidadTK/Admin-TK",
+  "homepage": "https://github.com/JJoan02/TK-HOST",
   "author": {
     "name": "Comunidad TK"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ComunidadTK/Admin-TK.git"
+    "url": "git+https://github.com/JJoan02/TK-HOST.git"
   },
   "bugs": {
-    "url": "https://github.com/ComunidadTK/Admin-TK/issues"
+    "url": "https://github.com/JJoan02/TK-HOST/issues"
   },
   "license": "GPL-3.0-or-later",
   "dependencies": {
@@ -93,3 +93,4 @@
     "zs-extract": "^1.4.2"
   }
 }
+
