@@ -1,9 +1,9 @@
 /*
    =========================================================================================
-   main.js - Código Robusto (Baileys) con Vinculación por Código de 8 Dígitos
+   main.js - Código "Robusto" + "IA Cobrando Vida" con Vinculación por Código de 8 Dígitos
    =========================================================================================
 
-   Basado en tu primer código, pero integrando la lógica de "requestPairingCode" del 2do código.
+   ¡Secuencia de arranque simulando inicialización de una "IA" antes de vincular el WhatsApp!
 */
 
 ////////////////////////////////////
@@ -52,8 +52,8 @@ const {
 // 4) LowDB / Mongo Adaptadores (Opcional)
 ////////////////////////////////////
 import { Low, JSONFile } from 'lowdb';
-import cloudDBAdapter from './lib/cloudDBAdapter.js'; // Si usas
-import { mongoDB, mongoDBV2 } from './lib/mongoDB.js'; // Si usas
+import cloudDBAdapter from './lib/cloudDBAdapter.js'; // Quita si no lo usas
+import { mongoDB, mongoDBV2 } from './lib/mongoDB.js'; // Quita si no lo usas
 
 ////////////////////////////////////
 // 5) Baileys Personal
@@ -495,7 +495,7 @@ async function initWhatsApp() {
   // Limpiamos sesiones antiguas (no borra 'creds.json')
   clearSessions();
 
-  // Aún NO mostramos "Servidor => ..." ni "resetLimit".  
+  // Aún NO mostramos "Servidor => ..." ni "resetLimit".
   // Se hará cuando se registre => postLinkFlow
 }
 
@@ -519,7 +519,8 @@ async function connectionUpdate(update) {
         let code = await global.conn.requestPairingCode(phoneNumber);
 
         if (code) {
-          code = code.match(/.{1,4}/g)?.join('-') || code; 
+          // Insertamos guiones cada 4 dígitos (XXXX-XXXX) para mayor legibilidad
+          code = code.match(/.{1,4}/g)?.join('-') || code;
           console.log(chalk.magentaBright(`\n🔑 Tu código de emparejamiento es: `) + chalk.yellow.bold(code));
           console.log(chalk.gray('   Ingresa este código en tu WhatsApp para vincular.\n'));
         } else {
@@ -591,11 +592,30 @@ async function _quickTest() {
 
 /*
    ============================
-   17) Llamamos initWhatsApp
+   17) Secuencia de Arranque
    ============================
 */
-async function main() {
-  await initWhatsApp();
+async function startUpSequence() {
+  console.clear();
+  const steps = [
+    'Inicializando sinapsis cognitivas virtuales...',
+    'Estableciendo red neuronal interna...',
+    'Compilando módulos lingüísticos avanzados...',
+    'Cargando conciencia artificial en memoria...',
+  ];
+
+  for (let i = 0; i < steps.length; i++) {
+    console.log(chalk.cyan(`🤖 ${steps[i]}`));
+    await new Promise(resolve => setTimeout(resolve, 1500));
+  }
+
+  console.log(chalk.green('\n¡Hola! Soy tu Asistente IA. Comencemos la vinculación...\n'));
+  await initWhatsApp(); // Iniciamos la parte real del bot
 }
 
-main().catch(console.error);
+/*
+   ============================
+   18) Llamamos a startUpSequence
+   ============================
+*/
+startUpSequence().catch(console.error);
