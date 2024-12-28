@@ -1,15 +1,17 @@
 /*
    =========================================================================================
-   main.js - Código "Robusto" + "IA Cobrando Vida" con Vinculación por Código de 8 Dígitos
+   main.js - Código "Robusto" + "IA Cobrando Vida"
+   con Vinculación por Código de 8 Dígitos (Forzando code cada vez)
    =========================================================================================
 
    ¡Secuencia de arranque simulando inicialización de una "IA" antes de vincular el WhatsApp!
+   Se fuerza el borrado de la carpeta TK-Session para generar un nuevo code de 8 dígitos.
 */
 
 ////////////////////////////////////
 // 1) Importar config.js
 ////////////////////////////////////
-import './config.js'; // Ajusta la ruta según corresponda
+import './config.js'; // Ajusta la ruta si tu config.js está en otro lugar
 
 ////////////////////////////////////
 // 2) Imports Principales
@@ -20,7 +22,7 @@ import yargs from 'yargs';
 import { spawn } from 'child_process';
 import pino from 'pino';
 import ws from 'ws';
-import readline from 'readline'; // Importamos 'readline' UNA sola vez
+import readline from 'readline'; // Importar 'readline' UNA sola vez
 
 import {
   readdirSync,
@@ -37,9 +39,9 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import { createRequire } from 'module';
 
 ////////////////////////////////////
-// 3) Baileys
+// 3) Baileys (whiskeysockets)
 ////////////////////////////////////
-import pkg from '@adiwajshing/baileys'; // O bien: '@whiskeysockets/baileys'
+import pkg from '@adiwajshing/baileys'; // "npm:@whiskeysockets/baileys@latest"
 const {
   makeInMemoryStore,
   useMultiFileAuthState,
@@ -240,7 +242,7 @@ function clearSessions(folder = sessionsFolder) {
     for (let file of filenames) {
       const filePath = join(folder, file);
       const stats = statSync(filePath);
-      // NO borramos "creds.json" si ya existe
+      // No borramos "creds.json" si ya existe => aunque aquí forzaremos reset total luego
       if (stats.isFile() && file !== 'creds.json') {
         unlinkSync(filePath);
         console.log(chalk.gray('Sesión eliminada:', filePath));
@@ -287,7 +289,12 @@ async function resetLimit() {
   }
 }
 
-// Borrar por completo TK-Session
+/*
+  ========================================
+  Función que BORRA LA SESIÓN COMPLETAMENTE
+  y fuerza "registered = false"
+  ========================================
+*/
 function resetSession() {
   try {
     if (existsSync(sessionsFolder)) {
@@ -301,7 +308,7 @@ function resetSession() {
           rmSync(filePath, { recursive: true, force: true });
         }
       }
-      console.log(chalk.magenta('Se ha reseteado la carpeta TK-Session (sesiones).'));
+      console.log(chalk.magenta('Se ha reseteado por completo la carpeta TK-Session (sesiones).'));
     } else {
       mkdirSync(sessionsFolder);
     }
@@ -442,6 +449,10 @@ async function initWhatsApp() {
   const phoneNumber = await askPhoneNumber();
   console.log(chalk.greenBright(`[✅ PHONE RECIBIDO] ${phoneNumber}`));
 
+  // =========== FORZAMOS BORRAR SESIÓN antes de crearla ===========
+  // para garantizar que NO quede "registered" en creds.json
+  resetSession();
+
   // Baileys version, credenciales, store
   const { version } = await fetchLatestBaileysVersion();
   const { state, saveCreds } = await useMultiFileAuthState(sessionsFolder);
@@ -454,7 +465,7 @@ async function initWhatsApp() {
   global.connectionOptions = {
     version,
     logger: pino({ level: 'silent' }),
-    printQRInTerminal: false,  // Importante para no imprimir el QR
+    printQRInTerminal: false, // Importante para NO imprimir el QR
     browser: ['TK-Host', 'Sociedad-TK', '20.0.04'],
     auth: {
       creds: state.creds,
@@ -492,7 +503,8 @@ async function initWhatsApp() {
   };
   await global.reloadHandler();
 
-  // Limpiamos sesiones antiguas (no borra 'creds.json')
+  // Limpiamos sesiones antiguas (no borra 'creds.json' salvo en resetSession)
+  // Este clearSessions ya no es tan crucial, pues ya hicimos "resetSession"
   clearSessions();
 
   // Aún NO mostramos "Servidor => ..." ni "resetLimit".
@@ -505,7 +517,7 @@ async function initWhatsApp() {
    ==========================================================
 */
 async function connectionUpdate(update) {
-  const { connection, lastDisconnect, isOnline, isNewLogin } = update;
+  const { connection } = update;
 
   if (connection === 'connecting') {
     console.log(chalk.yellow('⏳ Conectando a WhatsApp...'));
@@ -519,7 +531,7 @@ async function connectionUpdate(update) {
         let code = await global.conn.requestPairingCode(phoneNumber);
 
         if (code) {
-          // Insertamos guiones cada 4 dígitos (XXXX-XXXX) para mayor legibilidad
+          // Insertamos guiones cada 4 dígitos (XXXX-XXXX) para legibilidad
           code = code.match(/.{1,4}/g)?.join('-') || code;
           console.log(chalk.magentaBright(`\n🔑 Tu código de emparejamiento es: `) + chalk.yellow.bold(code));
           console.log(chalk.gray('   Ingresa este código en tu WhatsApp para vincular.\n'));
@@ -529,6 +541,8 @@ async function connectionUpdate(update) {
       } catch (err) {
         console.error(chalk.redBright('❌ Error al solicitar pairing code:'), err);
       }
+    } else {
+      console.log(chalk.cyan('Este número ya está registrado o requestPairingCode no está disponible.'));
     }
   }
 
@@ -598,10 +612,10 @@ async function _quickTest() {
 async function startUpSequence() {
   console.clear();
   const steps = [
-    'Inicializando sinapsis cognitivas virtuales...',
-    'Estableciendo red neuronal interna...',
-    'Compilando módulos lingüísticos avanzados...',
-    'Cargando conciencia artificial en memoria...',
+    'Creando TK-Session para guardar datos...',
+    'Estableciendo menu de vinculacion...',
+    'Compilando @whiskeysockets/baileys@latest...',
+    'Cargando configuracion...'
   ];
 
   for (let i = 0; i < steps.length; i++) {
@@ -609,7 +623,7 @@ async function startUpSequence() {
     await new Promise(resolve => setTimeout(resolve, 1500));
   }
 
-  console.log(chalk.green('\n¡Hola! Soy tu Asistente IA. Comencemos la vinculación...\n'));
+  console.log(chalk.green('\n¡Hola! Soy tu Admin-TK. Comencemos la vinculación...\n'));
   await initWhatsApp(); // Iniciamos la parte real del bot
 }
 
@@ -619,3 +633,4 @@ async function startUpSequence() {
    ============================
 */
 startUpSequence().catch(console.error);
+
