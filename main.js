@@ -1,6 +1,6 @@
 /*
    =======================================
-   main.js - Menú Vinculación Igual y Fix
+   main.js - Reseteo Completo tras "close"
    =======================================
 */
 
@@ -39,19 +39,15 @@ import { makeWASocket, protoType, serialize } from './lib/simple.js';
 import cloudDBAdapter from './lib/cloudDBAdapter.js';
 import { mongoDB, mongoDBV2 } from './lib/mongoDB.js';
 
-// =================================
-// DECLARAMOS isInit = false AQUI!!
-// =================================
-let isInit = false;
-
-// Inicializa prototipos
 protoType();
 serialize();
+
+let isInit = false; // Para evitar ReferenceError
 
 const { CONNECTING } = ws;
 const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
 
-// Definir __filename, __dirname
+// __filename / __dirname
 global.__filename = function filename(pathURL = import.meta.url, rmPrefix = platform !== 'win32') {
   return rmPrefix
     ? pathURL.startsWith('file://')
@@ -106,8 +102,8 @@ global.db = new Low(
       : new mongoDB(global.opts['db'])
     : new JSONFile(`${global.opts._[0] ? global.opts._[0] + '_' : ''}database.json`)
 );
-
 global.DATABASE = global.db;
+
 global.loadDatabase = async function loadDatabase() {
   if (global.db.READ)
     return new Promise((resolve) =>
@@ -134,27 +130,21 @@ global.loadDatabase = async function loadDatabase() {
 };
 await global.loadDatabase();
 
-// =====================================
-// Carpeta de sesiones: TK-Session
-// =====================================
+// Carpeta de sesiones
 const sessionsFolder = './TK-Session';
 if (!existsSync(sessionsFolder)) {
   mkdirSync(sessionsFolder);
   console.log(chalk.green('Se creó carpeta TK-Session'));
 }
 
-// ==================================
 // Carpeta plugins
-// ==================================
 const pluginsFolder = join(projectDir, 'plugins');
 if (!existsSync(pluginsFolder)) {
   mkdirSync(pluginsFolder);
   console.log(chalk.magenta('✔ Carpeta "plugins" creada automáticamente (vacía).'));
 }
 
-// ================================
-// Función Reset - Para borrar Sess
-// ================================
+// resetSession => borra TK-Session
 function resetSession() {
   try {
     if (existsSync(sessionsFolder)) {
@@ -179,20 +169,17 @@ function resetSession() {
   }
 }
 
-// Para evitar bucle infinito
-let reintentos = 0;
-const MAX_REINTENTOS = 3;
-
-// Menú Interactivo: Opciones 1 y 2 => Ambas generarán code
+// Menú Interactivo
 import readline from 'readline';
 async function showMenu() {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  const menuText = `\n${chalk.hex('#FF69B4').bold('┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓')}
+  const menuText = `
+${chalk.hex('#FF69B4').bold('┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓')}
 ${chalk.hex('#FF69B4').bold('┃')}  ${chalk.bold.bgMagenta('  MENÚ DE VINCULACIÓN  ')}  ${chalk.hex('#FF69B4').bold('┃')}
 ${chalk.hex('#FF69B4').bold('┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛')}
 
 ${chalk.cyanBright('[1]')} Vincular con código de 8 dígitos ${chalk.yellow('🔑')}
-${chalk.cyanBright('[2]')} Creado por Joan TK (También generará código 8 díg) ${chalk.greenBright('✅')}
+${chalk.cyanBright('[2]')} Creado por Joan TK (También genera el code) ${chalk.greenBright('✅')}
 
 Elige una opción ${chalk.magenta('1')} o ${chalk.magenta('2')}: `;
 
@@ -204,7 +191,7 @@ Elige una opción ${chalk.magenta('1')} o ${chalk.magenta('2')}: `;
 
   while (true) {
     const choice = await askMenu();
-    // Ambas opciones generarán pairing code
+    // Ambas opciones generarán el code
     if (choice === '1' || choice === '2') {
       rl.close();
       return choice;
@@ -226,7 +213,7 @@ async function askPhoneNumber() {
   });
 }
 
-// Limpieza de sesiones (archivos viejos excepto creds.json)
+// Limpia sesiones
 function clearSessions(folder = sessionsFolder) {
   try {
     const filenames = readdirSync(folder);
@@ -241,7 +228,7 @@ function clearSessions(folder = sessionsFolder) {
   } catch (err) {
     console.error(chalk.redBright(`Error en Clear Sessions: ${err.message}`));
   } finally {
-    setTimeout(() => clearSessions(folder), 3600000); // 1 hora
+    setTimeout(() => clearSessions(folder), 3600000);
   }
 }
 
@@ -264,7 +251,7 @@ function clearTmp() {
   }
 }
 
-// Resetear límites diario
+// Reset de límites
 async function resetLimit() {
   try {
     const users = global.db.data.users || {};
@@ -280,9 +267,6 @@ async function resetLimit() {
   }
 }
 
-// ======================
-// reloadHandler
-// ======================
 export async function reloadHandler(restartConn = false) {
   try {
     const Handler = await import(`./handler.js?update=${Date.now()}`);
@@ -300,12 +284,10 @@ export async function reloadHandler(restartConn = false) {
     } catch {}
     global.conn?.ev?.removeAllListeners();
     global.conn = makeWASocket(global.connectionOptions, { chats: oldChats });
-    // Aquí definimos isInit = true
     isInit = true;
   }
 
   if (!isInit) {
-    // Quitar listeners
     if (typeof global.conn?.handler?.handler === 'function') {
       global.conn.ev.off('messages.upsert', global.conn.handler.handler);
     }
@@ -324,7 +306,6 @@ export async function reloadHandler(restartConn = false) {
     }
   }
 
-  // Mensajes personal
   global.conn.welcome = `🌟 ¡Bienvenido! 🌟
 👋 Hola @user, disfruta tu estadía en:
 @subject
@@ -375,18 +356,14 @@ Descripción del grupo:
     global.conn.ev.on('creds.update', global.saveCredsFunction);
   }
 
-  // Dejamos isInit = false
   isInit = false;
   return true;
 }
 
-// ========================
-// Iniciar la vinculación
-// ========================
+// Función principal de vinculación
 async function initWhatsApp() {
-  // OJO: Ambas opciones (1 y 2) generarán el code
   const choice = await showMenu();
-  console.log(chalk.blueBright(`Opción elegida: ${choice} => Generar code 8 dígitos`));
+  console.log(chalk.blueBright(`Elegiste la opción ${choice}. Generaremos el código de 8 dígitos...`));
   const phoneNumber = await askPhoneNumber();
 
   const { version } = await fetchLatestBaileysVersion();
@@ -397,6 +374,7 @@ async function initWhatsApp() {
   store.readFromFile('./baileys_store.json');
   setInterval(() => store.writeToFile('./baileys_store.json'), 10000);
 
+  // Ajustamos tiempos de espera:
   global.connectionOptions = {
     version,
     logger: pino({ level: 'silent' }),
@@ -409,6 +387,10 @@ async function initWhatsApp() {
         pino().child({ level: 'silent', stream: 'store' })
       ),
     },
+    connectTimeoutMs: 120000,      // 2 min para conectar
+    defaultQueryTimeoutMs: 120000, // 2 min para queries
+    syncFullHistory: true,
+    markOnlineOnConnect: true,
     getMessage: async (key) => {
       const msgData = await store.loadMessage(key.remoteJid, key.id);
       return msgData?.message || undefined;
@@ -435,16 +417,11 @@ async function initWhatsApp() {
       }
       return message;
     },
-    connectTimeoutMs: 60000,
-    defaultQueryTimeoutMs: 0,
-    syncFullHistory: true,
-    markOnlineOnConnect: true,
   };
 
   global.conn = makeWASocket(global.connectionOptions);
   global.conn.isInit = false;
 
-  // Si no está registrado, pedimos code
   if (global.conn.requestPairingCode && !global.conn.authState.creds.registered) {
     try {
       let code = await global.conn.requestPairingCode(phoneNumber);
@@ -453,23 +430,19 @@ async function initWhatsApp() {
         console.log(chalk.magentaBright(`\n🔑 Tu código de emparejamiento es: `) + chalk.yellow.bold(code));
         console.log(chalk.gray('   Ingresa este código en WhatsApp para vincular.\n'));
       } else {
-        console.log(chalk.redBright('⚠️ No se pudo generar el código de emparejamiento (vacío).'));
+        console.log(chalk.redBright('⚠️ No se generó el código de emparejamiento.'));
       }
     } catch (err) {
       console.error(chalk.redBright('❌ Error al solicitar el pairing code:'), err);
-      // Revisar si es Connection Closed
+      // En caso "Connection Closed"
       if (err?.output?.payload?.message === 'Connection Closed') {
-        if (reintentos < MAX_REINTENTOS) {
-          reintentos++;
-          console.log(chalk.redBright(`Connection Closed. Reintento #${reintentos}`));
-          resetSession();
-          console.log(chalk.cyan('Reintentando vincular desde cero...'));
+        console.log(chalk.redBright('❌ Se cerró la conexión antes de vincular... Reseteando.'));
+        resetSession();
+        console.log(chalk.cyan('Esperaremos 45s y volveremos a iniciar la vinculación.'));
+        setTimeout(async () => {
           await initWhatsApp();
-          return;
-        } else {
-          console.log(chalk.red('Se superaron los reintentos máximos. Abortando.'));
-          return;
-        }
+        }, 45000);
+        return;
       }
     }
   }
@@ -495,9 +468,6 @@ async function initWhatsApp() {
   await _quickTest();
 }
 
-// ========================
-// connectionUpdate
-// ========================
 async function connectionUpdate(update) {
   const { connection, lastDisconnect, isOnline, isNewLogin, receivedPendingNotifications } = update;
   if (isNewLogin) {
@@ -513,34 +483,21 @@ async function connectionUpdate(update) {
   if (receivedPendingNotifications) console.log(chalk.yellow('✉️ Esperando mensajes entrantes...'));
 
   if (connection === 'close') {
-    console.log(chalk.red('❌ Se perdió la conexión... Reintentando.'));
-    if (
-      lastDisconnect &&
-      lastDisconnect.error &&
-      lastDisconnect.error.output &&
-      lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut &&
-      global.conn.ws.readyState !== CONNECTING
-    ) {
-      console.log(chalk.cyan('Intentando reconectar...'));
-      await global.reloadHandler(true);
-    } else if (
-      lastDisconnect &&
-      lastDisconnect.error &&
-      lastDisconnect.error.output &&
-      lastDisconnect.error.output.statusCode === DisconnectReason.loggedOut
-    ) {
-      console.log(chalk.redBright('💥 Se cerró la sesión. Necesitarás volver a iniciar.'));
-    }
+    console.log(chalk.red('❌ Se perdió la conexión... Reseteando.'));
+    // Borramos la sesión
+    resetSession();
+    console.log(chalk.cyan('Esperaremos 45s y luego reiniciamos la vinculación...'));
+    setTimeout(async () => {
+      await initWhatsApp();
+    }, 45000);
   }
+
   global.timestamp.connect = new Date();
   if (global.db.data == null) {
     await global.loadDatabase();
   }
 }
 
-// ======================
-// _quickTest
-// ======================
 async function _quickTest() {
   let test = await Promise.all(
     [
@@ -579,7 +536,5 @@ async function _quickTest() {
   console.log(chalk.greenBright('☑️ Prueba rápida realizada, sesión => creds.json'));
 }
 
-// Por último, llamamos la función principal
+// Ejecutar la función principal
 initWhatsApp().catch(console.error);
-
-
