@@ -1,24 +1,15 @@
 /*
    =========================================================================================
-   main.js - Código Robusto (Baileys @whiskeysockets) con Vinculación por Código de 8 Dígitos
+   main.js - Código Robusto (Baileys) con Vinculación por Código de 8 Dígitos
    =========================================================================================
 
-   CORREGIDO: Se deja UN SOLO import "readline" al principio,
-   evitando "Identifier 'readline' has already been declared".
-
-   - Menú (1,2) => genera code 8 díg.
-   - Pide phoneNumber (sin +).
-   - Espera connection='open' => requestPairingCode => Muestra code antes de mensajes finales.
-   - Cuando "creds.update" indica registered => Se ejecuta postLinkFlow()
-     => Límite restablecido, Servidor => 4021, Dependencias checadas...
-   - Si "close" => reset TK-Session, esperar 45s => initWhatsApp().
-   - Tiempos 120s de connectTimeoutMs / defaultQueryTimeoutMs para dar holgura.
+   Basado en tu primer código, pero integrando la lógica de "requestPairingCode" del 2do código.
 */
 
 ////////////////////////////////////
 // 1) Importar config.js
 ////////////////////////////////////
-import './config.js'; // Ajusta la ruta si tu config.js está en otro lugar
+import './config.js'; // Ajusta la ruta según corresponda
 
 ////////////////////////////////////
 // 2) Imports Principales
@@ -29,7 +20,6 @@ import yargs from 'yargs';
 import { spawn } from 'child_process';
 import pino from 'pino';
 import ws from 'ws';
-/* CORREGIDO: SOLO UNO */
 import readline from 'readline'; // Importamos 'readline' UNA sola vez
 
 import {
@@ -47,9 +37,9 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import { createRequire } from 'module';
 
 ////////////////////////////////////
-// 3) Baileys (whiskeysockets)
+// 3) Baileys
 ////////////////////////////////////
-import pkg from '@adiwajshing/baileys'; // => npm:@whiskeysockets/baileys
+import pkg from '@adiwajshing/baileys'; // O bien: '@whiskeysockets/baileys'
 const {
   makeInMemoryStore,
   useMultiFileAuthState,
@@ -59,11 +49,11 @@ const {
 } = pkg;
 
 ////////////////////////////////////
-// 4) LowDB / Mongo Adaptadores
+// 4) LowDB / Mongo Adaptadores (Opcional)
 ////////////////////////////////////
 import { Low, JSONFile } from 'lowdb';
-import cloudDBAdapter from './lib/cloudDBAdapter.js'; // Comenta si no usas
-import { mongoDB, mongoDBV2 } from './lib/mongoDB.js'; // Comenta si no usas
+import cloudDBAdapter from './lib/cloudDBAdapter.js'; // Si usas
+import { mongoDB, mongoDBV2 } from './lib/mongoDB.js'; // Si usas
 
 ////////////////////////////////////
 // 5) Baileys Personal
@@ -77,7 +67,7 @@ serialize();
    6) Variables Globales y Config
    ============================================================
 */
-let isInit = false; // Evitamos error con 'isInit'
+let isInit = false;
 const { CONNECTING } = ws;
 const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
 
@@ -133,11 +123,11 @@ global.prefix = new RegExp(
 */
 global.db = new Low(
   /https?:\/\//.test(global.opts['db'] || '')
-    ? new cloudDBAdapter(global.opts['db']) // Quita si no usas
+    ? new cloudDBAdapter(global.opts['db'])
     : /mongodb(\+srv)?:\/\//i.test(global.opts['db'])
     ? global.opts['mongodbv2']
-      ? new mongoDBV2(global.opts['db'])    // Quita si no usas
-      : new mongoDB(global.opts['db'])      // Quita si no usas
+      ? new mongoDBV2(global.opts['db'])
+      : new mongoDB(global.opts['db'])
     : new JSONFile(`${global.opts._[0] ? global.opts._[0] + '_' : ''}database.json`)
 );
 global.DATABASE = global.db;
@@ -250,6 +240,7 @@ function clearSessions(folder = sessionsFolder) {
     for (let file of filenames) {
       const filePath = join(folder, file);
       const stats = statSync(filePath);
+      // NO borramos "creds.json" si ya existe
       if (stats.isFile() && file !== 'creds.json') {
         unlinkSync(filePath);
         console.log(chalk.gray('Sesión eliminada:', filePath));
@@ -258,7 +249,7 @@ function clearSessions(folder = sessionsFolder) {
   } catch (err) {
     console.error(chalk.redBright(`Error en Clear Sessions: ${err.message}`));
   } finally {
-    setTimeout(() => clearSessions(folder), 60 * 60 * 1000);
+    setTimeout(() => clearSessions(folder), 60 * 60 * 1000); // Cada 1 hora
   }
 }
 
@@ -296,7 +287,7 @@ async function resetLimit() {
   }
 }
 
-// Borrar completamenet TK-Session
+// Borrar por completo TK-Session
 function resetSession() {
   try {
     if (existsSync(sessionsFolder)) {
@@ -365,6 +356,7 @@ export async function reloadHandler(restartConn = false) {
     }
   }
 
+  // Mensajes de grupo (opcional)
   global.conn.welcome = `🌟 ¡Bienvenido! 🌟
 👋 Hola @user, disfruta tu estadía en:
 @subject
@@ -381,14 +373,10 @@ Descripción del grupo:
   global.conn.sSubject = '🏷️ El nombre del grupo cambió a:\n@subject';
   global.conn.sIcon = '🖼️ Cambió la foto del grupo!';
   global.conn.sRevoke = '🔗 El link del grupo se actualizó:\n@revoke';
-  global.conn.sAnnounceOn =
-    '🚧 Grupo cerrado!\nSólo los admins pueden enviar mensajes.';
-  global.conn.sAnnounceOff =
-    '🚪 El grupo fue abierto!\nAhora todos pueden enviar mensajes.';
-  global.conn.sRestrictOn =
-    '⚙️ Sólo los administradores pueden editar la información del grupo.';
-  global.conn.sRestrictOff =
-    '🌐 Todos pueden editar la información del grupo.';
+  global.conn.sAnnounceOn = '🚧 Grupo cerrado!\nSólo los admins pueden enviar mensajes.';
+  global.conn.sAnnounceOff = '🚪 El grupo fue abierto!\nAhora todos pueden enviar mensajes.';
+  global.conn.sRestrictOn = '⚙️ Sólo los administradores pueden editar la información del grupo.';
+  global.conn.sRestrictOff = '🌐 Todos pueden editar la información del grupo.';
 
   if (global.handler) {
     global.conn.handler = global.handler.handler?.bind(global.conn);
@@ -433,7 +421,7 @@ async function postLinkFlow() {
   // 1) resetLimit => "Límite restablecido"
   resetLimit();
 
-  // 2) "Servidor listo en => 4021"
+  // 2) "Servidor listo en => PORT"
   console.log(chalk.green(`\n🌐 Servidor listo en puerto => ${PORT}`));
 
   // 3) Dependencias checadas => se hace _quickTest
@@ -446,12 +434,15 @@ async function postLinkFlow() {
    =======================================================
 */
 async function initWhatsApp() {
+  // Menú
   const choice = await showMenu();
   console.log(chalk.blueBright(`Elegiste la opción ${choice} => Generar code 8 díg.`));
 
+  // Pedimos número de teléfono
   const phoneNumber = await askPhoneNumber();
   console.log(chalk.greenBright(`[✅ PHONE RECIBIDO] ${phoneNumber}`));
 
+  // Baileys version, credenciales, store
   const { version } = await fetchLatestBaileysVersion();
   const { state, saveCreds } = await useMultiFileAuthState(sessionsFolder);
   global.saveCredsFunction = saveCreds;
@@ -463,7 +454,7 @@ async function initWhatsApp() {
   global.connectionOptions = {
     version,
     logger: pino({ level: 'silent' }),
-    printQRInTerminal: false,
+    printQRInTerminal: false,  // Importante para no imprimir el QR
     browser: ['TK-Host', 'Sociedad-TK', '20.0.04'],
     auth: {
       creds: state.creds,
@@ -478,15 +469,16 @@ async function initWhatsApp() {
     markOnlineOnConnect: true
   };
 
+  // Creamos conexión
   global.conn = makeWASocket(global.connectionOptions);
   global.conn.isInit = false;
 
+  // Guardamos phoneNumber global
   global.phoneNumberForPairing = phoneNumber;
-  postLinkOnce = false; // Permitimos postLinkFlow
+  postLinkOnce = false;
 
   // Listeners
   global.conn.ev.on('connection.update', connectionUpdate);
-
   // Escuchamos "creds.update" => si se registra => postLinkFlow
   global.conn.ev.on('creds.update', () => {
     if (global.conn?.authState?.creds?.registered && !postLinkOnce) {
@@ -494,18 +486,17 @@ async function initWhatsApp() {
     }
   });
 
+  // Handler general
   global.reloadHandler = async function (restartConn) {
     return reloadHandler(restartConn);
   };
   await global.reloadHandler();
 
-  // Aún NO anunciamos "Servidor => ...", ni "Dependencias", ni "Límite"
-  // Se hará tras code => postLinkFlow
-
+  // Limpiamos sesiones antiguas (no borra 'creds.json')
   clearSessions();
-  // No reseteamos los límites ni nada. Esperamos code
 
-  // ... No server ni quickTest => se hará en postLinkFlow
+  // Aún NO mostramos "Servidor => ..." ni "resetLimit".  
+  // Se hará cuando se registre => postLinkFlow
 }
 
 /*
@@ -521,15 +512,16 @@ async function connectionUpdate(update) {
   } else if (connection === 'open') {
     console.log(chalk.greenBright('✅ Conexión establecida (sin code).'));
 
-    // AHORA => requestPairingCode
+    // Si NO estamos registrados, generamos code:
     if (!global.conn.authState.creds.registered && global.conn.requestPairingCode) {
       try {
         const phoneNumber = global.phoneNumberForPairing || '51999999999';
         let code = await global.conn.requestPairingCode(phoneNumber);
+
         if (code) {
-          code = code.match(/.{1,4}/g)?.join('-') || code;
+          code = code.match(/.{1,4}/g)?.join('-') || code; 
           console.log(chalk.magentaBright(`\n🔑 Tu código de emparejamiento es: `) + chalk.yellow.bold(code));
-          console.log(chalk.gray('   Ingresa este código en WhatsApp para vincular.\n'));
+          console.log(chalk.gray('   Ingresa este código en tu WhatsApp para vincular.\n'));
         } else {
           console.log(chalk.redBright('⚠️ No se pudo generar el code de emparejamiento.'));
         }
@@ -547,6 +539,7 @@ async function connectionUpdate(update) {
       await initWhatsApp();
     }, 45000);
   }
+
   global.timestamp.connect = new Date();
   if (global.db.data == null) {
     await global.loadDatabase();
@@ -555,7 +548,7 @@ async function connectionUpdate(update) {
 
 /*
    =========================================
-   16) _quickTest => Dep. ffmpeg, etc.
+   16) _quickTest => Chequeo de dependencias
    =========================================
 */
 async function _quickTest() {
@@ -597,9 +590,9 @@ async function _quickTest() {
 }
 
 /*
-   ===========================
+   ============================
    17) Llamamos initWhatsApp
-   ===========================
+   ============================
 */
 async function main() {
   await initWhatsApp();
