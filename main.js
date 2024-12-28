@@ -178,9 +178,9 @@ if (!existsSync(pluginsFolder)) {
 }
 
 /*
-   ===================================
+   ==========================================
    10) Menú Interactivo + phoneNumber
-   ===================================
+   ==========================================
 */
 async function showMenu() {
   const rl = readline.createInterface({
@@ -674,4 +674,3 @@ async function startUpSequence() {
    ============================
 */
 startUpSequence().catch(console.error);
-
