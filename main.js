@@ -1,14 +1,14 @@
-/* 
-   =====================================
-   EJEMPLO DE CÓDIGO PRINCIPAL ROBUSTO
-   =====================================
-   - Compatible con Baileys para WhatsApp
-   - Soporta conexión de larga duración
-   - Incluye menú interactivo por consola
-   - Auto-reconecta en caso de desconexión
-   - Limpieza periódica de temporales/sesiones
-   - Con chalk (colores y emojis)
-   - Creado por "Joan TK" (en la opción 2)
+/*
+  =======================================
+  EJEMPLO DE CÓDIGO PRINCIPAL ROBUSTO
+  =======================================
+  - Compatible con Baileys para WhatsApp
+  - Soporta conexión de larga duración
+  - Incluye menú interactivo por consola
+  - Auto-reconecta en caso de desconexión
+  - Limpieza periódica de temporales/sesiones
+  - Con chalk (colores y emojis)
+  - Creado por "Joan TK" (opción 2)
 */
 
 import chalk from 'chalk';
@@ -18,7 +18,15 @@ import path, { join } from 'path';
 import { platform } from 'process';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { createRequire } from 'module';
-import { readdirSync, statSync, unlinkSync, existsSync, readFileSync, watch } from 'fs';
+import {
+  readdirSync,
+  statSync,
+  unlinkSync,
+  existsSync,
+  readFileSync,
+  watch,
+  mkdirSync,
+} from 'fs';
 import { tmpdir } from 'os';
 import { spawn } from 'child_process';
 import { format } from 'util';
@@ -40,10 +48,7 @@ import { makeWASocket, protoType, serialize } from './lib/simple.js';
 import cloudDBAdapter from './lib/cloudDBAdapter.js';
 import { mongoDB, mongoDBV2 } from './lib/mongoDB.js';
 
-// Si tienes un server.js
-// import server from './server.js'; // <--- Ajustar a tu gusto
-
-// Inicializa prototipos de Baileys
+// ======== Inicializa prototipos de Baileys ========
 protoType();
 serialize();
 
@@ -54,6 +59,9 @@ const { CONNECTING } = ws;
 const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
 
 let isInit = false; // Para controlar la recarga del handler
+let store; // Para almacenar
+let connectionOptions; // Para reuso en reload
+let saveCredsFunction; // Guardar credenciales
 
 global.__filename = function filename(pathURL = import.meta.url, rmPrefix = platform !== 'win32') {
   return rmPrefix
@@ -71,7 +79,7 @@ global.__require = function require(dir = import.meta.url) {
   return createRequire(dir);
 };
 
-// Ejemplo de definiciones de API (si las usas)
+// (Opcional) Definiciones de API si usas
 global.API = (name, path = '/', query = {}, apikeyqueryname) =>
   (name in global.APIs ? global.APIs[name] : name) +
   path +
@@ -94,7 +102,7 @@ global.timestamp = {
   start: new Date(),
 };
 
-// Parse de Yargs (si quieres usar línea de comandos)
+// Parseo con Yargs
 global.opts = yargs(hideBin(process.argv)).exitProcess(false).parse();
 global.prefix = new RegExp(
   '^[' +
@@ -115,7 +123,7 @@ global.db = new Low(
     : new JSONFile(`${global.opts._[0] ? global.opts._[0] + '_' : ''}database.json`)
 );
 
-global.DATABASE = global.db; // compatibilidad con versiones anteriores
+global.DATABASE = global.db; // compat con versiones anteriores
 
 global.loadDatabase = async function loadDatabase() {
   if (global.db.READ)
@@ -143,45 +151,9 @@ global.loadDatabase = async function loadDatabase() {
 };
 await global.loadDatabase();
 
-// ==========================
-// (Opcional) Iniciar server
-// ==========================
-if (!global.opts['test']) {
-  // server(PORT); // <--- si tuvieras un server.js con export default
-  console.log(chalk.green(`🌐 Servidor listo en puerto => ${PORT}`));
-  setInterval(async () => {
-    if (global.db.data) await global.db.write().catch(console.error);
-    clearTmp(global);
-  }, 60 * 1000);
-}
-
-// ====================
-// Reset de límites
-// ====================
-async function resetLimit() {
-  try {
-    const users = global.db.data.users || {};
-    const lim = 25; // Límite por defecto
-    for (let user in users) {
-      if (users[user].limit <= lim) {
-        users[user].limit = lim;
-      }
-    }
-    console.log(chalk.yellowBright(`✅ Límite de usuarios restablecido automáticamente.`));
-  } finally {
-    setTimeout(() => resetLimit(), 24 * 60 * 60 * 1000); // cada 24 horas
-  }
-}
-resetLimit();
-
-// ==========================
-// Limpieza de sesiones
-// ==========================
-clearSessions();
-
-// ======================
-// MENU INTERACTIVO CLI
-// ======================
+// ======================================
+// MENU INTERACTIVO CLI (Vinculación)
+// ======================================
 /**
  * Muestra un menú en la consola con chalk y espera a que el usuario elija
  * @returns {Promise<'1'|'2'>} opción elegida (string)
@@ -192,15 +164,16 @@ async function showMenu() {
     output: process.stdout,
   });
 
-  const menuText = `
-${chalk.hex('#FF69B4').bold('┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓')}
-${chalk.hex('#FF69B4').bold('┃')}   ${chalk.bold.bgMagenta('   MENÚ DE VINCULACIÓN   ')}   ${chalk.hex('#FF69B4').bold('┃')}
+  // Ajustamos el espaciado del menú
+  const menuText = `\n${chalk.hex('#FF69B4').bold('┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓')}
+${chalk.hex('#FF69B4').bold('┃')}  ${chalk.bold.bgMagenta('  MENÚ DE VINCULACIÓN  ')}  ${chalk.hex('#FF69B4').bold('┃')}
 ${chalk.hex('#FF69B4').bold('┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛')}
+
 ${chalk.cyanBright('[1]')} Vincular por código de 8 dígitos ${chalk.yellow('🔑')}
 ${chalk.cyanBright('[2]')} Creado por Joan TK ${chalk.greenBright('✅')}
-    
-Elige una opción ${chalk.magenta('1')} o ${chalk.magenta('2')}:
-`;
+
+Elige una opción ${chalk.magenta('1')} o ${chalk.magenta('2')}: `;
+
   // Función para preguntar
   async function askMenu() {
     return new Promise((resolve) => {
@@ -231,7 +204,7 @@ async function askPhoneNumber() {
     output: process.stdout,
   });
 
-  const askText = chalk.blueBright('📲 Por favor escribe el número de WhatsApp (sin el +), ej: 5191052145:\n> ');
+  const askText = chalk.blueBright('\n📲 Por favor escribe el número de WhatsApp (sin el +), ej: 5191052145:\n> ');
 
   return new Promise((resolve) => {
     rl.question(askText, (num) => {
@@ -241,15 +214,82 @@ async function askPhoneNumber() {
   });
 }
 
-// =====================================
-// Vinculación / Creación de conexión
-// =====================================
-let store; // Para almacenar
-let connectionOptions; // Para reuso en reload
-let saveCredsFunction; // Guardar credenciales
+// ====================================================
+// Preparativos para que no falle el Clear Sessions
+// ====================================================
 
+// 1. Verifica si existe la carpeta "sessions"
+const sessionsFolder = './sessions';
+if (!existsSync(sessionsFolder)) {
+  mkdirSync(sessionsFolder);
+}
+
+// ==================================
+// Limpieza de Sesiones (existe ya)
+// ==================================
+function clearSessions(folder = './sessions') {
+  try {
+    const filenames = readdirSync(folder); // ya no falla, existe
+    filenames.forEach((file) => {
+      const filePath = join(folder, file);
+      const stats = statSync(filePath);
+      if (stats.isFile() && file !== 'creds.json') {
+        unlinkSync(filePath);
+        console.log(chalk.gray('Sesión eliminada:', filePath));
+      }
+    });
+  } catch (err) {
+    console.error(chalk.redBright(`Error en Clear Sessions: ${err.message}`));
+  } finally {
+    // Se reprograma cada 1 hora
+    setTimeout(() => clearSessions(folder), 1 * 3600000);
+  }
+}
+
+// ========================
+// Limpieza de Temporales
+// ========================
+function clearTmp(global) {
+  const tmpDirs = [tmpdir(), join(global.__dirname, './tmp')];
+  const files = [];
+  tmpDirs.forEach((dirname) => {
+    if (existsSync(dirname)) {
+      readdirSync(dirname).forEach((file) => {
+        files.push(join(dirname, file));
+      });
+    }
+  });
+  files.forEach((file) => {
+    const stats = statSync(file);
+    if (stats.isFile() && Date.now() - stats.mtimeMs >= 1000 * 60 * 3) {
+      unlinkSync(file);
+    }
+  });
+}
+
+// ====================
+// Reset de límites
+// ====================
+async function resetLimit() {
+  try {
+    const users = global.db.data.users || {};
+    const lim = 25; // Límite por defecto
+    for (let user in users) {
+      if (users[user].limit <= lim) {
+        users[user].limit = lim;
+      }
+    }
+    console.log(chalk.yellowBright('✅ Límite de usuarios restablecido automáticamente.'));
+  } finally {
+    setTimeout(() => resetLimit(), 24 * 60 * 60 * 1000); // cada 24 horas
+  }
+}
+
+// ==========================
+// Vinculación / Conexión
+// ==========================
 (async function initWhatsApp() {
-  // Muestra el menú interactivo
+  // Mostrar menú
   const choice = await showMenu();
   if (choice === '1') {
     console.log(chalk.bgMagentaBright('\n🔐 Has elegido la vinculación por código de 8 dígitos.\n'));
@@ -261,7 +301,7 @@ let saveCredsFunction; // Guardar credenciales
   // Obtenemos la versión más reciente de Baileys
   const { version } = await fetchLatestBaileysVersion();
   // Autenticación multi-sesión
-  const { state, saveCreds } = await useMultiFileAuthState('./sessions');
+  const { state, saveCreds } = await useMultiFileAuthState(sessionsFolder);
   saveCredsFunction = saveCreds;
 
   // Creación de la store en memoria
@@ -333,26 +373,45 @@ let saveCredsFunction; // Guardar credenciales
         let code = await global.conn.requestPairingCode(phoneNumber);
         if (code) {
           code = code.match(/.{1,4}/g)?.join('-') || code;
-          console.log(chalk.magentaBright(`\n🔑 Tu código de emparejamiento es: ${chalk.bgYellow.black(code)}`));
-          console.log(chalk.gray('   Ingresa este código en la app de WhatsApp para vincular.\n'));
+          console.log(
+            chalk.magentaBright(`\n🔑 Tu código de emparejamiento es: ${chalk.bgYellow.black(code)}`)
+          );
+          console.log(
+            chalk.gray('   Ingresa este código en la app de WhatsApp para vincular.\n')
+          );
         } else {
           console.log(chalk.redBright('⚠️ No se pudo generar el código de emparejamiento.'));
         }
       } catch (err) {
-        console.error(chalk.redBright('❌ Error al solicitar el pairing code:', err));
+        console.error(chalk.redBright('❌ Error al solicitar el pairing code:'), err);
       }
     }
   }
 
-  // Manejamos eventos
+  // Registramos eventos
   global.conn.ev.on('connection.update', (update) => connectionUpdate(update));
   global.conn.ev.on('creds.update', saveCreds);
 
-  // Carga el handler
+  // Cargamos el handler
   global.reloadHandler = async function (restartConn) {
     return reloadHandler(restartConn);
   };
   await global.reloadHandler();
+
+  // =============================
+  // Iniciamos TAREAS PERIÓDICAS
+  // (luego de la vinculación)
+  // =============================
+  clearSessions(); // Limpieza de sesiones
+  resetLimit();    // Reset de límites
+  if (!global.opts['test']) {
+    // (Opcional) Arranca tu server aquí, si quieres
+    console.log(chalk.green(`\n🌐 Servidor listo en puerto => ${PORT}`));
+    setInterval(async () => {
+      if (global.db.data) await global.db.write().catch(console.error);
+      clearTmp(global);
+    }, 60 * 1000);
+  }
 
   // Chequeo rápido de dependencias
   await _quickTest();
@@ -478,6 +537,7 @@ Descripción del grupo:
   global.conn.participantsUpdate = global.handler.participantsUpdate.bind(global.conn);
   global.conn.groupsUpdate = global.handler.groupsUpdate.bind(global.conn);
   global.conn.onDelete = global.handler.deleteUpdate.bind(global.conn);
+
   global.conn.ev.on('messages.upsert', global.conn.handler);
   global.conn.ev.on('group-participants.update', global.conn.participantsUpdate);
   global.conn.ev.on('groups.update', global.conn.groupsUpdate);
@@ -489,50 +549,8 @@ Descripción del grupo:
   return true;
 }
 
-// ===================================
-// Limpieza de Temporales
-// ===================================
-function clearTmp(global) {
-  const tmpDirs = [tmpdir(), join(global.__dirname, './tmp')];
-  const files = [];
-  tmpDirs.forEach((dirname) => {
-    if (existsSync(dirname)) {
-      readdirSync(dirname).forEach((file) => {
-        files.push(join(dirname, file));
-      });
-    }
-  });
-  files.forEach((file) => {
-    const stats = statSync(file);
-    if (stats.isFile() && Date.now() - stats.mtimeMs >= 1000 * 60 * 3) {
-      unlinkSync(file);
-    }
-  });
-}
-
-// ===================================
-// Limpieza de Sesiones
-// ===================================
-function clearSessions(folder = './sessions') {
-  try {
-    const filenames = readdirSync(folder);
-    filenames.forEach((file) => {
-      const filePath = join(folder, file);
-      const stats = statSync(filePath);
-      if (stats.isFile() && file !== 'creds.json') {
-        unlinkSync(filePath);
-        console.log(chalk.gray('Sesión eliminada:', filePath));
-      }
-    });
-  } catch (err) {
-    console.error(chalk.redBright(`Error en Clear Sessions: ${err.message}`));
-  } finally {
-    setTimeout(() => clearSessions(folder), 1 * 3600000); // cada 1 hora
-  }
-}
-
 // =========================
-// Prueba Rápida (FFmpeg...)
+// Prueba Rápida
 // =========================
 async function _quickTest() {
   let test = await Promise.all(
@@ -580,7 +598,5 @@ async function _quickTest() {
     find,
   });
   Object.freeze(global.support);
-  console.log(chalk.greenBright('☑️ Prueba rápida realizada, la sesión => creds.json'));
+  console.log(chalk.greenBright('☑️ Prueba rápida realizada, sesión => creds.json'));
 }
-
-
