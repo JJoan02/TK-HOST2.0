@@ -12,10 +12,8 @@ let segundo = moment.tz('America/Lima').format('ss')
 let horario = `${hora} H ${minuto} M ${segundo} S`
 let horario_general = `${hora}:${minuto}:${segundo}`
 
-// Obtener la fecha y día de la semana en español
 let d = new Date(new Date() + 3600000)
 let locale = 'es'
-let weton = ['Pahing', 'Pon', 'Wage', 'Kliwon', 'Legi'][Math.floor(d / 84600000) % 5]
 let week = d.toLocaleDateString(locale, { weekday: 'long' })
 let date = d.toLocaleDateString(locale, {
   day: 'numeric',
@@ -26,8 +24,6 @@ const more = String.fromCharCode(8206)
 const readMore = more.repeat(4001)
 
 /*============= INFO PRINCIPAL =============*/
-
-// Propietarios del bot (ID, Nombre, isDeveloper)
 global.owner = [
   ['5493865860048', 'KenisawaDev', true],
   ['51910234457', 'Joan TK', true],
@@ -36,20 +32,15 @@ global.owner = [
   ['', '', false],
   ['', '', false],
 ]
-
-// Moderadores (ID)
 global.mods = [
   '', '', '', '', ''
 ]
-
-// Usuarios premium (ID)
 global.prems = [
   '', '', '', '', ''
 ]
 
-// Info del Bot
-global.nomorbot = '51976673519'  // Número del bot
-global.nomorown = '51910234457'  // Número principal del propietario
+global.nomorbot = '51976673519' 
+global.nomorown = '51910234457'
 
 /*============= MARCA DE AGUA =============*/
 global.readMore = readMore
@@ -130,7 +121,7 @@ global.fla = [
 ]
 
 /*============= RPG GAME =============*/
-global.multiplier = 69 // The higher, The harder levelup
+global.multiplier = 69
 global.rpg = {
   emoticon(string) {
     string = string.toLowerCase()
@@ -194,7 +185,7 @@ global.rpg = {
       trash: '🗑',
       uncommon: '🎁',
       upgrader: '🧰',
-      wood: '🪵'
+      wood: '🪵',
     }
     let results = Object.keys(emot).map(v => [v, new RegExp(v, 'gi')]).filter(v => v[1].test(string))
     if (!results.length) return ''
@@ -202,11 +193,10 @@ global.rpg = {
   }
 }
 
-// Observamos cambios en este archivo para recargar
+// Observa cambios en config.js
 let file = fileURLToPath(import.meta.url)
 watchFile(file, () => {
   unwatchFile(file)
   console.log(chalk.redBright("Update 'config.js'"))
   import(`${file}?update=${Date.now()}`)
 })
-
