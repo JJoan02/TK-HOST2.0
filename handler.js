@@ -1,6 +1,6 @@
 /*
    =======================================
-   handler.js - Sin sintaxis catch "rara"
+   handler.js - Corregido
    =======================================
 */
 import { smsg } from './lib/simple.js'
@@ -19,7 +19,6 @@ export async function handler(chatUpdate) {
   if (!chatUpdate?.messages || !Array.isArray(chatUpdate.messages) || !chatUpdate.messages.length) {
     return
   }
-
   this.msgqueque = this.msgqueque || []
   try {
     await this.pushMessage(chatUpdate.messages)
@@ -232,18 +231,18 @@ export async function handler(chatUpdate) {
         m.plugin = name
 
         if (m.chat in global.db.data.chats || m.sender in global.db.data.users) {
-          let chat = global.db.data.chats[m.chat]
-          let usr = global.db.data.users[m.sender]
+          let c = global.db.data.chats[m.chat]
+          let u = global.db.data.users[m.sender]
           if (
             name !== 'owner-unbanchat.js' &&
             name !== 'owner-exec.js' &&
             name !== 'owner-exec2.js' &&
             name !== 'tool-delete.js' &&
-            chat?.isBanned
+            c?.isBanned
           ) {
             return
           }
-          if (name !== 'owner-unbanuser.js' && usr?.banned) {
+          if (name !== 'owner-unbanuser.js' && u?.banned) {
             return
           }
         }
@@ -305,7 +304,6 @@ export async function handler(chatUpdate) {
           )
           continue
         }
-
         if (plugin.level > global.db.data.users[m.sender].level) {
           this.reply(
             m.chat,
@@ -388,10 +386,10 @@ export async function handler(chatUpdate) {
     let stats = global.db.data.stats
     if (m) {
       if (m.sender) {
-        let user = global.db.data.users[m.sender]
-        if (user) {
-          user.exp += m.exp
-          user.limit -= m.limit * 1
+        let usr = global.db.data.users[m.sender]
+        if (usr) {
+          usr.exp += m.exp
+          usr.limit -= m.limit * 1
         }
       }
       if (m.plugin) {
@@ -428,15 +426,14 @@ export async function participantsUpdate({ id, participants, action }) {
         let groupMetadata = (await this.groupMetadata(id).catch(_ => null)) || (this.chats[id] || {}).metadata || {}
         for (let user of participants) {
           try {
-            // obtener foto, etc.
+            // ...
           } catch (e) {
             // ...
           } finally {
-            let textp =
-              (chat.sWelcome || this.welcome || 'Bienvenido, @user!')
-                .replace('@subject', groupMetadata.subject || 'Grupo')
-                .replace('@desc', groupMetadata.desc?.toString() || '')
-                .replace('@user', this.getName(user))
+            let textp = (chat.sWelcome || this.welcome || 'Bienvenido, @user!')
+              .replace('@subject', groupMetadata.subject || 'Grupo')
+              .replace('@desc', groupMetadata.desc?.toString() || '')
+              .replace('@user', this.getName(user))
             let linkimgk = chat.sWelcomeImageLink || 'https://d.uguu.se/mYSkSZPR.jpg'
             this.sendFile(id, linkimgk, '', textp)
           }
@@ -509,7 +506,6 @@ global.dfail = (type, m, conn) => {
   if (msg) return conn.reply(m.chat, msg, m)
 }
 
-// Observamos cambios en handler.js
 let file = global.__filename(import.meta.url, true)
 watchFile(file, async () => {
   unwatchFile(file)
@@ -518,5 +514,4 @@ watchFile(file, async () => {
     console.log(await global.reloadHandler())
   }
 })
-
 
