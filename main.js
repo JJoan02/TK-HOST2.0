@@ -464,7 +464,7 @@ async function initWhatsApp() {
     version,
     logger: pino({ level: 'silent' }),
     printQRInTerminal: false,
-    browser: ['Ubuntu', 'Chrome', '20.0.04'],
+    browser: ['TK-Host', 'Sociedad-TK', '20.0.04'],
     auth: {
       creds: state.creds,
       keys: makeCacheableSignalKeyStore(
