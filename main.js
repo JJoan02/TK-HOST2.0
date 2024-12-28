@@ -388,7 +388,7 @@ global.reloadHandler = async function (restartConn) {
 │☘︎ @subject
 ┣━━━━━━━━┅┅┅
 │( 👋 Hola @user)
-├[ ¡Soy *Admin-TK* ]
+├[ ¡Soy *TK-HOST* ]
 ├ tu administrador en este grupo! —
 
 │ Por favor, regístrate con el comando:
@@ -398,7 +398,6 @@ global.reloadHandler = async function (restartConn) {
 ------┅┅ Descripción ┅┅––––––
 
 @desc`;
-  conn.bye = '❖━━━━━━[ BYEBYE ]━━━━━━❖\n\nSayonara @user 👋😃';
   conn.spromote = '*✧ @user ahora es admin!*';
   conn.sdemote = '*✧ @user ya no es admin!*';
   conn.sDesc = '*✧ La descripción se actualizó a* \n@desc';
@@ -540,3 +539,4 @@ _quickTest().then(() =>
     '☑️ Prueba rápida realizada, nombre de la sesión ~> creds.json'
   )
 );
+
