@@ -7,7 +7,7 @@ export async function before(m, { conn, participants, groupMetadata }) {
   // Detecta solo eventos de entrada (27)
   if (m.messageStubType == 27) {
     // Obtención de la foto de perfil
-    let pp = await conn.profilePictureUrl(m.messageStubParameters[0], 'image').catch(_ => 'https://pomf2.lain.la/f/fr4b8stz.jpg');
+    let pp = await conn.profilePictureUrl(m.messageStubParameters[0], 'image').catch(_ => 'https://qu.ax/TJkec.jpg');
     let img = await (await fetch(`${pp}`)).buffer();
 
     let chat = global.db.data.chats[m.chat];
