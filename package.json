@@ -53,7 +53,7 @@
   "license": "GPL-3.0-or-later",
   "dependencies": {
     "@adiwajshing/baileys": "npm:@whiskeysockets/baileys@latest",
-    "@whiskeysockets/baileys": "github:OfcKing/Bailey",
+    "@whiskeysockets/baileys": "git+https://github.com/OfcKing/Bailey.git",
     "@bochilteam/scraper": "^5.0.1",
     "@bochilteam/scraper-youtube": "^5.0.0",
     "@ibaraki-douji/pixivts": "^2.4.1",
