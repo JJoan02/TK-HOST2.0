@@ -10,9 +10,22 @@
     "src": "src"
   },
   "scripts": {
-    "start": "node index.js --autocleartmp --autoread",
-    "test": "nodemon index.js --server --autocleartmp --autoread",
-    "mongodb": "node . --db 'url mongodbmu'"
+    "start": "node index.js",                         
+    "start:dev": "nodemon index.js",                  
+    "qr": "node index.js qr",                         
+    "code": "node index.js code",                     
+    "test": "node test.js",                           
+    "test:watch": "nodemon test.js",                  
+    "install-deps": "npm install --registry=https://registry.npmjs.org/", 
+    "update-npm": "npm install -g npm@latest",        
+    "check-updates": "npm outdated",                 
+    "update-deps": "npm update",                     
+    "lint": "eslint .",                              
+    "lint:fix": "eslint . --fix",                    
+    "build": "node build.js",                        
+    "clean": "rm -rf node_modules && npm cache clean --force && npm install", 
+    "debug": "node --inspect index.js",              
+    "prepare": "npm run clean && npm run install-deps" 
   },
   "keywords": [
     "termux-whatsapp-bot",
@@ -25,16 +38,16 @@
     "MD",
     "baileys-md"
   ],
-  "homepage": "https://github.com/JJoan02/TK-HOST2.0",
+  "homepage": "https://github.com/JJoan02/TK-HOST",
   "author": {
     "name": "JJoan02, Comunidad TK"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/JJoan02/TK-HOST2.0.git"
+    "url": "git+https://github.com/JJoan02/TK-HOST.git"
   },
   "bugs": {
-    "url": "https://github.com/JJoan02/TK-HOST2.0/issues"
+    "url": "https://github.com/JJoan02/TK-HOST/issues"
   },
   "license": "GPL-3.0-or-later",
   "dependencies": {
