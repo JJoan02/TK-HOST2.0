@@ -10,10 +10,10 @@
     "src": "src"
   },
   "scripts": {
-    "start": "node index.js",                         
-    "start:dev": "nodemon index.js",                  
-    "qr": "node index.js qr",                         
-    "code": "node index.js code",                     
+    "start": "npm run check-install && node index.js",                         
+    "start:dev": "npm run check-install && nodemon index.js",                  
+    "qr": "npm run check-install && node index.js qr",                         
+    "code": "npm run check-install && node index.js code",                     
     "test": "node test.js",                           
     "test:watch": "nodemon test.js",                  
     "install-deps": "npm install --registry=https://registry.npmjs.org/", 
@@ -25,7 +25,8 @@
     "build": "node build.js",                        
     "clean": "rm -rf node_modules && npm cache clean --force && npm install", 
     "debug": "node --inspect index.js",              
-    "prepare": "npm run clean && npm run install-deps" 
+    "prepare": "npm run clean && npm run install-deps",
+    "check-install": "node checkInstall.js"
   },
   "keywords": [
     "termux-whatsapp-bot",
