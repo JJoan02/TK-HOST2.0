@@ -44,7 +44,6 @@
     "baileys-whiskey-6.7.5": "@whiskeysockets/baileys@^6.7.5",
     "baileys-adi-3.5.0": "@adiwajshing/baileys@^3.5.0",
     "@adiwajshing/keyed-db": "^0.2.4",
-    "baileys-ofcking": "github:OfcKing/Bailey",
     "@bochilteam/scraper": "^4.2.4",
     "@ibaraki-douji/pixivts": "^2.4.1",
     "@StarlightsTeam/Scraper": "github:StarlightsTeam/StarlightsTeam-Scraper",
