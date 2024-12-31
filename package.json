@@ -16,27 +16,16 @@
     "clean": "rm -rf node_modules package-lock.json && npm cache clean --force",
     "update-deps": "npm update"
   },
-  "keywords": [
-    "termux-whatsapp-bot",
-    "whatsapp-bot",
-    "whatsapp",
-    "js-whatsapp",
-    "Games-wabot",
-    "wabot-aq",
-    "multi-device",
-    "MD",
-    "baileys-md"
-  ],
-  "homepage": "https://github.com/JJoan02/TK-HOST",
+  "homepage": "https://github.com/ComunidadTK/Admin-TK",
   "author": {
-    "name": "JJoan02"
+    "name": "Comunidad TK"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/JJoan02/TK-HOST.git"
+    "url": "git+https://github.com/ComunidadTK/Admin-TK.git"
   },
   "bugs": {
-    "url": "https://github.com/JJoan02/TK-HOST/issues"
+    "url": "https://github.com/ComunidadTK/Admin-TK/issues"
   },
   "license": "GPL-3.0-or-later",
   "dependencies": {
@@ -91,7 +80,17 @@
     "yargs": "^17.7.2",
     "wa-sticker-formatter": "^4.4.4",
     "yt-search": "^2.10.4",
-    "ytdl-mp3": "github:HanSamu-27/ytdl-mp3"
+    "ytdl-mp3": "github:HanSamu-27/ytdl-mp3",
+    "node-cron": "^3.0.2",
+    "puppeteer": "^21.6.0",
+    "socket.io": "^4.6.1",
+    "steno": "^3.0.0",
+    "sqlite": "^4.0.25",
+    "sqlite3": "^5.1.6",
+    "ocr-space-api-wrapper": "^2.3.0",
+    "googleapis": "^126.0.0",
+    "dotenv": "^16.3.1",
+    "emoji-api": "^1.0.2"
   },
   "optionalDependencies": {
     "@vitalets/google-translate-api": "^9.2.0"
