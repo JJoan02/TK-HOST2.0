@@ -67,14 +67,21 @@ global.API = (name, p = '/', q = {}, key) =>
     : '');
 
 // DB
-global.timestamp = { start: new Date() };
-const __dir = global.__dirname(import.meta.url);
+global.timestamp = { start: new Date() }
+const __dir = global.__dirname(import.meta.url)
 
-global.opts = yargs(hideBin(process.argv)).exitProcess(false).parse();
+global.opts = yargs(hideBin(process.argv)).exitProcess(false).parse()
+
+// Corrección segura para el prefijo
+const defaultPrefix = '/'
+const rawPrefix = global.opts.prefix || defaultPrefix
+const safePrefix = Array.isArray(rawPrefix) ? rawPrefix.join('') : rawPrefix
+
 global.prefix = new RegExp(
-  `^[${(global.opts.prefix || '/.*\\\\^').replace(/[|\\{}()[\\]^$+*?.\\-]/g, '\\$&')}]`
-);
+  `^[${safePrefix.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}]`
+)
 
+// Configuración de base de datos
 global.db = new Low(
   /https?:\/\//.test(global.opts.db)
     ? new cloudDBAdapter(global.opts.db)
@@ -83,27 +90,36 @@ global.db = new Low(
       ? new mongoDBV2(global.opts.db)
       : new mongoDB(global.opts.db)
     : new JSONFile(`${global.opts._[0] ? global.opts._[0] + '_' : ''}database.json`)
-);
-global.DATABASE = global.db;
+)
+global.DATABASE = global.db
 
+// Carga segura de la base de datos
 global.loadDatabase = async () => {
   if (global.db.READ) {
     return new Promise((resolve) =>
       setInterval(async function () {
         if (!global.db.READ) {
-          clearInterval(this);
-          resolve(global.db.data ?? global.loadDatabase());
+          clearInterval(this)
+          resolve(global.db.data ?? global.loadDatabase())
         }
       }, 1000)
-    );
+    )
   }
-  if (global.db.data !== null) return;
-  global.db.READ = true;
-  await global.db.read().catch(console.error);
-  global.db.READ = null;
-  global.db.data = { users: {}, chats: {}, stats: {}, msgs: {}, sticker: {}, settings: {}, ...(global.db.data || {}) };
-};
-loadDatabase();
+  if (global.db.data !== null) return
+  global.db.READ = true
+  await global.db.read().catch(console.error)
+  global.db.READ = null
+  global.db.data = {
+    users: {},
+    chats: {},
+    stats: {},
+    msgs: {},
+    sticker: {},
+    settings: {},
+    ...(global.db.data || {})
+  }
+}
+loadDatabase()
 
 // Pairing
 const usePairingCode = true;
