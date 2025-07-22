@@ -104,7 +104,7 @@ global.loadDatabase = async () => {
     ...(global.db.data || {})
   };
 };
-loadDatabase();
+loadDatabase()
 
 // Pairing
 const usePairingCode = true;
