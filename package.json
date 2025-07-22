@@ -4,9 +4,30 @@
   "description": "Bot Oficial de TK-HOST",
   "main": "index.js",
   "type": "module",
-  "scripts": {
-    "start": "node index.js --autocleartmp --autoread"
+  "directories": {
+    "lib": "lib",
+    "plugins": "plugins"
   },
+  "scripts": {
+    "start": "node index.js --autocleartmp --autoread",
+    "test": "nodemon index.js --server --autocleartmp --autoread",
+    "mongodb": "node . --db 'url mongodbmu'",
+    "install-deps": "npm install --registry=https://registry.npmjs.org/",
+    "clean": "rm -rf node_modules package-lock.json && npm cache clean --force",
+    "update-deps": "npm update"
+  },
+  "homepage": "https://github.com/ComunidadTK/Admin-TK",
+  "author": {
+    "name": "Comunidad TK"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ComunidadTK/Admin-TK.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ComunidadTK/Admin-TK/issues"
+  },
+  "license": "GPL-3.0-or-later",
   "dependencies": {
     "@whiskeysockets/baileys": "^6.7.5",
     "@adiwajshing/baileys": "npm:@whiskeysockets/baileys@^6.7.5",
