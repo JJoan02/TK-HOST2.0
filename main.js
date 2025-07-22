@@ -112,21 +112,21 @@ const rl = readline.createInterface({ input: process.stdin, output: process.stdo
 const question = (t) => new Promise((r) => rl.question(t, r));
 
 // Baileys auth & store
+// Baileys auth & store
 const { version } = await fetchLatestBaileysVersion();
 const { state, saveCreds } = await useMultiFileAuthState('./sessions');
 
 // Opciones de conexión
-the connectionOptions = {
+const connectionOptions = {
   version,
   logger: pino({ level: 'silent' }),
   printQRInTerminal: false,
   browser: ['Ubuntu', 'Chrome', '20.0.04'],
   auth: {
     creds: state.creds,
-    keys: makeCacheableSignalKeyStore(state.keys, pino().child({ level: 'silent', stream: 'store' }))
+    keys: makeCacheableSignalKeyStore(state.keys, pino().child({ level: 'silent' }))
   },
   getMessage: async (key) => {
-    // Si necesitas historial lo implementas aquí
     return null;
   },
   generateHighQualityLinkPreview: true,
@@ -140,7 +140,7 @@ the connectionOptions = {
   markOnlineOnConnect: true
 };
 
-// ─── REEMPLAZO en lugar de makeInMemoryStore ──────────────────────────
+// CORRECTO: NO USAR makeInMemoryStore
 global.conn = simpleSocket(connectionOptions);
 conn.isInit = false;
 
