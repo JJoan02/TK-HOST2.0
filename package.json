@@ -29,10 +29,7 @@
   },
   "license": "GPL-3.0-or-later",
   "dependencies": {
-    "baileys-whiskey-latest": "npm:@whiskeysockets/baileys@latest",
-    "npm install @adiwajshing/baileys",
-    "baileys-whiskey-6.7.5": "@whiskeysockets/baileys@^6.7.5",
-    "baileys-adi-3.5.0": "@adiwajshing/baileys@^3.5.0",
+    "@whiskeysockets/baileys": "^6.7.5",
     "@adiwajshing/keyed-db": "^0.2.4",
     "@bochilteam/scraper": "^4.2.4",
     "@ibaraki-douji/pixivts": "^2.4.1",
