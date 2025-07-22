@@ -19,7 +19,7 @@ import pino from 'pino';
 import { tmpdir } from 'os';
 import ws from 'ws';
 
-// ——— Aquí usamos createRequire para cargar el CJS de Baileys ———
+// ——— Usa createRequire para cargar Baileys como CommonJS ———
 const requireCJS = createRequire(import.meta.url);
 const baileys = requireCJS('@whiskeysockets/baileys');
 const {
@@ -40,58 +40,43 @@ import { mongoDB, mongoDBV2 } from './lib/mongoDB.js';
 const { CONNECTING } = ws;
 const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
 
-// Inicializa adaptaciones de simple.js
+// Prepara simple.js
 protoType();
 serialize();
 
-global.__filename = function filename(pathURL = import.meta.url, rmPrefix = platform !== 'win32') {
-  return rmPrefix
+// Helpers globales
+global.__filename = (pathURL = import.meta.url, rm = platform !== 'win32') =>
+  rm
     ? pathURL.startsWith('file://')
       ? fileURLToPath(pathURL)
       : pathURL
     : pathToFileURL(pathURL).toString();
-};
 
-global.__dirname = function dirname(pathURL) {
-  return path.dirname(global.__filename(pathURL, true));
-};
+global.__dirname = (pathURL) => path.dirname(global.__filename(pathURL, true));
+global.__require = (dir = import.meta.url) => createRequire(dir);
 
-global.__require = function require(dir = import.meta.url) {
-  return createRequire(dir);
-};
-
-global.API = (name, path = '/', query = {}, apikeyqueryname) =>
+global.API = (name, p = '/', q = {}, key) =>
   (name in global.APIs ? global.APIs[name] : name) +
-  path +
-  (query || apikeyqueryname
+  p +
+  (q || key
     ? '?' +
-      new URLSearchParams(
-        Object.entries({
-          ...query,
-          ...(apikeyqueryname
-            ? {
-                [apikeyqueryname]:
-                  global.APIKeys[
-                    name in global.APIs ? global.APIs[name] : name
-                  ],
-              }
-            : {})
-        })
-      )
+      new URLSearchParams({
+        ...q,
+        ...(key ? { [key]: global.APIKeys[name in global.APIs ? global.APIs[name] : name] } : {})
+      })
     : '');
 
+// DB
 global.timestamp = { start: new Date() };
-const __dirname = global.__dirname(import.meta.url);
+const __dir = global.__dirname(import.meta.url);
 
 global.opts = yargs(hideBin(process.argv)).exitProcess(false).parse();
 global.prefix = new RegExp(
-  '^[' +
-    (global.opts.prefix || '\\/*.\\\\^').replace(/[|\\{}()[\]^$+*?.\-\^]/g, '\\$&') +
-    ']'
+  `^[${(global.opts.prefix || '/.*\\\\^').replace(/[|\\{}()[\\]^$+*?.\\-]/g, '\\$&')}]`
 );
 
 global.db = new Low(
-  /https?:\/\//.test(global.opts.db || '')
+  /https?:\/\//.test(global.opts.db)
     ? new cloudDBAdapter(global.opts.db)
     : /mongodb(\+srv)?:\/\//i.test(global.opts.db)
     ? global.opts.mongodbv2
@@ -99,16 +84,15 @@ global.db = new Low(
       : new mongoDB(global.opts.db)
     : new JSONFile(`${global.opts._[0] ? global.opts._[0] + '_' : ''}database.json`)
 );
-
 global.DATABASE = global.db;
 
-global.loadDatabase = async function loadDatabase() {
+global.loadDatabase = async () => {
   if (global.db.READ) {
     return new Promise((resolve) =>
       setInterval(async function () {
         if (!global.db.READ) {
           clearInterval(this);
-          resolve(global.db.data == null ? global.loadDatabase() : global.db.data);
+          resolve(global.db.data ?? global.loadDatabase());
         }
       }, 1000)
     );
@@ -117,32 +101,26 @@ global.loadDatabase = async function loadDatabase() {
   global.db.READ = true;
   await global.db.read().catch(console.error);
   global.db.READ = null;
-  global.db.data = {
-    users: {},
-    chats: {},
-    stats: {},
-    msgs: {},
-    sticker: {},
-    settings: {},
-    ...(global.db.data || {})
-  };
+  global.db.data = { users: {}, chats: {}, stats: {}, msgs: {}, sticker: {}, settings: {}, ...(global.db.data || {}) };
 };
 loadDatabase();
 
+// Pairing
 const usePairingCode = true;
 const useMobile = process.argv.includes('--mobile');
-
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-const question = (text) => new Promise((resolve) => rl.question(text, resolve));
+const question = (t) => new Promise((r) => rl.question(t, r));
 
+// Baileys auth & store
 const { version } = await fetchLatestBaileysVersion();
 const { state, saveCreds } = await useMultiFileAuthState('./sessions');
 
-// Aquí `makeInMemoryStore` existe correctamente gracias al requireCJS
+// ¡Aquí estaba el error! Ahora sí existe:
 const store = makeInMemoryStore({ logger: pino().child({ level: 'silent', stream: 'store' }) });
 store.readFromFile('./baileys_store.json');
 setInterval(() => store.writeToFile('./baileys_store.json'), 10_000);
 
+// Opciones de conexión
 const connectionOptions = {
   version,
   logger: pino({ level: 'silent' }),
@@ -157,22 +135,10 @@ const connectionOptions = {
     return msg?.message;
   },
   generateHighQualityLinkPreview: true,
-  patchMessageBeforeSending: (message) => {
-    if (message.buttonsMessage || message.templateMessage || message.listMessage) {
-      return {
-        viewOnceMessage: {
-          message: {
-            messageContextInfo: {
-              deviceListMetadataVersion: 2,
-              deviceListMetadata: {}
-            },
-            ...message
-          }
-        }
-      };
-    }
-    return message;
-  },
+  patchMessageBeforeSending: (m) =>
+    m.buttonsMessage || m.templateMessage || m.listMessage
+      ? { viewOnceMessage: { message: { messageContextInfo: { deviceListMetadataVersion: 2, deviceListMetadata: {} }, ...m } } }
+      : m,
   connectTimeoutMs: 60000,
   defaultQueryTimeoutMs: 0,
   syncFullHistory: true,
@@ -182,7 +148,7 @@ const connectionOptions = {
 global.conn = simpleSocket(connectionOptions);
 conn.isInit = false;
 
-// … El resto de tu main.js permanece igual …
+// El resto de tu lógica queda igual...
 
 if (usePairingCode && !conn.authState.creds.registered) {
   const phoneNumber = await question(
