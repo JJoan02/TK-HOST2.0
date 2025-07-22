@@ -7,14 +7,7 @@ import path, { join } from 'path';
 import { platform } from 'process';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { createRequire } from 'module';
-import {
-  readdirSync,
-  statSync,
-  unlinkSync,
-  existsSync,
-  readFileSync,
-  watch,
-} from 'fs';
+import { readdirSync, statSync, unlinkSync, existsSync, readFileSync, watch } from 'fs';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { spawn } from 'child_process';
@@ -26,14 +19,14 @@ import pino from 'pino';
 import { tmpdir } from 'os';
 import ws from 'ws';
 
-// Import actualizado al paquete mantenido
+// ← Import actualizado al paquete correcto
 import pkg from '@whiskeysockets/baileys';
 const {
   useMultiFileAuthState,
   DisconnectReason,
   fetchLatestBaileysVersion,
   makeInMemoryStore,
-  makeCacheableSignalKeyStore,
+  makeCacheableSignalKeyStore
 } = pkg;
 
 import { Low, JSONFile } from 'lowdb';
@@ -47,10 +40,7 @@ const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
 protoType();
 serialize();
 
-global.__filename = function filename(
-  pathURL = import.meta.url,
-  rmPrefix = platform !== 'win32'
-) {
+global.__filename = function filename(pathURL = import.meta.url, rmPrefix = platform !== 'win32') {
   return rmPrefix
     ? pathURL.startsWith('file://')
       ? fileURLToPath(pathURL)
@@ -70,52 +60,46 @@ global.API = (name, path = '/', query = {}, apikeyqueryname) =>
   (name in global.APIs ? global.APIs[name] : name) +
   path +
   (query || apikeyqueryname
-    ?    '?' +
-         new URLSearchParams(
-           Object.entries({
-             ...query,
-             ...(apikeyqueryname
-               ? {
-                   [apikeyqueryname]:
-                     global.APIKeys[
-                       name in global.APIs ? global.APIs[name] : name
-                     ],
-                 }
-               : {}),
-           })
-         )
+    ? '?' +
+      new URLSearchParams(
+        Object.entries({
+          ...query,
+          ...(apikeyqueryname
+            ? {
+                [apikeyqueryname]:
+                  global.APIKeys[
+                    name in global.APIs ? global.APIs[name] : name
+                  ],
+              }
+            : {})
+        })
+      )
     : '');
 
-global.timestamp = {
-  start: new Date(),
-};
-
+global.timestamp = { start: new Date() };
 const __dirname = global.__dirname(import.meta.url);
 
 global.opts = yargs(hideBin(process.argv)).exitProcess(false).parse();
 global.prefix = new RegExp(
   '^[' +
-    (global.opts['prefix'] || '\/*.\\^').replace(
-      /[|\\{}()[\]^$+*?.\-\^]/g,
-      '\\$&'
-    ) +
+    (global.opts.prefix || '\\/*.\\\\^').replace(/[|\\{}()[\]^$+*?.\-\^]/g, '\\$&') +
     ']'
 );
 
 global.db = new Low(
-  /https?:\/\//.test(global.opts['db'] || '')
-    ? new cloudDBAdapter(global.opts['db'])
-    : /mongodb(\+srv)?:\/\//i.test(global.opts['db'])
-    ? global.opts['mongodbv2']
-      ? new mongoDBV2(global.opts['db'])
-      : new mongoDB(global.opts['db'])
+  /https?:\/\//.test(global.opts.db || '')
+    ? new cloudDBAdapter(global.opts.db)
+    : /mongodb(\+srv)?:\/\//i.test(global.opts.db)
+    ? global.opts.mongodbv2
+      ? new mongoDBV2(global.opts.db)
+      : new mongoDB(global.opts.db)
     : new JSONFile(`${global.opts._[0] ? global.opts._[0] + '_' : ''}database.json`)
 );
 
 global.DATABASE = global.db;
 
 global.loadDatabase = async function loadDatabase() {
-  if (global.db.READ)
+  if (global.db.READ) {
     return new Promise((resolve) =>
       setInterval(async function () {
         if (!global.db.READ) {
@@ -124,6 +108,7 @@ global.loadDatabase = async function loadDatabase() {
         }
       }, 1000)
     );
+  }
   if (global.db.data !== null) return;
   global.db.READ = true;
   await global.db.read().catch(console.error);
@@ -135,7 +120,7 @@ global.loadDatabase = async function loadDatabase() {
     msgs: {},
     sticker: {},
     settings: {},
-    ...(global.db.data || {}),
+    ...(global.db.data || {})
   };
 };
 loadDatabase();
@@ -143,27 +128,15 @@ loadDatabase();
 const usePairingCode = true;
 const useMobile = process.argv.includes('--mobile');
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
-
-const question = function (text) {
-  return new Promise(function (resolve) {
-    rl.question(text, resolve);
-  });
-};
+const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+const question = (text) => new Promise((resolve) => rl.question(text, resolve));
 
 const { version } = await fetchLatestBaileysVersion();
 const { state, saveCreds } = await useMultiFileAuthState('./sessions');
 
-const store = makeInMemoryStore({
-  logger: pino().child({ level: 'silent', stream: 'store' }),
-});
+const store = makeInMemoryStore({ logger: pino().child({ level: 'silent', stream: 'store' }) });
 store.readFromFile('./baileys_store.json');
-setInterval(() => {
-  store.writeToFile('./baileys_store.json');
-}, 10_000);
+setInterval(() => store.writeToFile('./baileys_store.json'), 10_000);
 
 const connectionOptions = {
   version,
@@ -172,48 +145,39 @@ const connectionOptions = {
   browser: ['Ubuntu', 'Chrome', '20.0.04'],
   auth: {
     creds: state.creds,
-    keys: makeCacheableSignalKeyStore(
-      state.keys,
-      pino().child({ level: 'silent', stream: 'store' })
-    ),
+    keys: makeCacheableSignalKeyStore(state.keys, pino().child({ level: 'silent', stream: 'store' }))
   },
   getMessage: async (key) => {
-    const messageData = await store.loadMessage(key.remoteJid, key.id);
-    return messageData?.message || undefined;
+    const msg = await store.loadMessage(key.remoteJid, key.id);
+    return msg?.message;
   },
   generateHighQualityLinkPreview: true,
   patchMessageBeforeSending: (message) => {
-    const requiresPatch = !!(
-      message.buttonsMessage ||
-      message.templateMessage ||
-      message.listMessage
-    );
-    if (requiresPatch) {
-      message = {
+    if (message.buttonsMessage || message.templateMessage || message.listMessage) {
+      return {
         viewOnceMessage: {
           message: {
             messageContextInfo: {
               deviceListMetadataVersion: 2,
-              deviceListMetadata: {},
+              deviceListMetadata: {}
             },
-            ...message,
-          },
-        },
+            ...message
+          }
+        }
       };
     }
-
     return message;
   },
   connectTimeoutMs: 60000,
   defaultQueryTimeoutMs: 0,
   syncFullHistory: true,
-  markOnlineOnConnect: true,
+  markOnlineOnConnect: true
 };
 
 global.conn = makeWASocket(connectionOptions);
 conn.isInit = false;
 
-// … resto del código sin cambios …
+// … resto de tu código, sin cambios en la parte de baileys …
 
 if (usePairingCode && !conn.authState.creds.registered) {
   const phoneNumber = await question(
