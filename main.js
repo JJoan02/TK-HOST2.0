@@ -26,7 +26,8 @@ import pino from 'pino';
 import { tmpdir } from 'os';
 import ws from 'ws';
 
-import pkg from '@whiskeysockets/baileys'; // Importar el paquete correcto
+// Import actualizado al paquete mantenido
+import pkg from '@whiskeysockets/baileys';
 const {
   useMultiFileAuthState,
   DisconnectReason,
@@ -69,20 +70,20 @@ global.API = (name, path = '/', query = {}, apikeyqueryname) =>
   (name in global.APIs ? global.APIs[name] : name) +
   path +
   (query || apikeyqueryname
-    ? '?' +
-      new URLSearchParams(
-        Object.entries({
-          ...query,
-          ...(apikeyqueryname
-            ? {
-                [apikeyqueryname]:
-                  global.APIKeys[
-                    name in global.APIs ? global.APIs[name] : name
-                  ],
-              }
-            : {}),
-        })
-      )
+    ?    '?' +
+         new URLSearchParams(
+           Object.entries({
+             ...query,
+             ...(apikeyqueryname
+               ? {
+                   [apikeyqueryname]:
+                     global.APIKeys[
+                       name in global.APIs ? global.APIs[name] : name
+                     ],
+                 }
+               : {}),
+           })
+         )
     : '');
 
 global.timestamp = {
@@ -94,7 +95,7 @@ const __dirname = global.__dirname(import.meta.url);
 global.opts = yargs(hideBin(process.argv)).exitProcess(false).parse();
 global.prefix = new RegExp(
   '^[' +
-    (global.opts['prefix'] || '\/\*\.\\\^').replace(
+    (global.opts['prefix'] || '\/*.\\^').replace(
       /[|\\{}()[\]^$+*?.\-\^]/g,
       '\\$&'
     ) +
@@ -111,7 +112,7 @@ global.db = new Low(
     : new JSONFile(`${global.opts._[0] ? global.opts._[0] + '_' : ''}database.json`)
 );
 
-global.DATABASE = global.db; // Compatibilidad con versiones anteriores
+global.DATABASE = global.db;
 
 global.loadDatabase = async function loadDatabase() {
   if (global.db.READ)
@@ -139,7 +140,7 @@ global.loadDatabase = async function loadDatabase() {
 };
 loadDatabase();
 
-const usePairingCode = true; // Usar siempre el código de emparejamiento de 8 dígitos
+const usePairingCode = true;
 const useMobile = process.argv.includes('--mobile');
 
 const rl = readline.createInterface({
@@ -167,16 +168,13 @@ setInterval(() => {
 const connectionOptions = {
   version,
   logger: pino({ level: 'silent' }),
-  printQRInTerminal: false, // No imprimir QR
+  printQRInTerminal: false,
   browser: ['Ubuntu', 'Chrome', '20.0.04'],
   auth: {
     creds: state.creds,
     keys: makeCacheableSignalKeyStore(
       state.keys,
-      pino().child({
-        level: 'silent',
-        stream: 'store',
-      })
+      pino().child({ level: 'silent', stream: 'store' })
     ),
   },
   getMessage: async (key) => {
@@ -214,6 +212,8 @@ const connectionOptions = {
 
 global.conn = makeWASocket(connectionOptions);
 conn.isInit = false;
+
+// … resto del código sin cambios …
 
 if (usePairingCode && !conn.authState.creds.registered) {
   const phoneNumber = await question(
