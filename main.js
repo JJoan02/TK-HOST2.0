@@ -128,14 +128,12 @@ conn.isInit = false;
 conn.ev.on('creds.update', saveCreds);
 
 // Ejemplo básico de “store” usando eventos nativos (mensaje recibido)
-conn.ev.on('messages.upsert', async ({ messages }) => {
-  for (const msg of messages) {
-    if (!msg.message) continue;              // ignora mensajes vacíos
-    const from = msg.key.remoteJid;          // quién envía
-    console.log(`📩 Mensaje de ${from}:`, msg.message);
-    // aquí va tu lógica de manejo / respuestas
-  }
-});
+  conn.ev.on('messages.upsert', async ({ messages }) => {
+    for (const m of messages) {
+      if (!m.message) continue;
+      console.log(`📩 Mensaje de ${m.key.remoteJid}:`, m.message);
+    }
+  });
 // ───────────────────────────────────────────────────────────────────────
 
 // El resto de tu lógica queda igual...
