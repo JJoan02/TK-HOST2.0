@@ -20,7 +20,8 @@ import { tmpdir } from 'os';
 import ws from 'ws';
 
 // ——— Aquí usamos createRequire para cargar el CJS de Baileys ———
-const requireBaileys = createRequire(import.meta.url)('@whiskeysockets/baileys');
+const requireCJS = createRequire(import.meta.url);
+const baileys = requireCJS('@whiskeysockets/baileys');
 const {
   default: makeWASocket,
   useMultiFileAuthState,
@@ -28,15 +29,13 @@ const {
   fetchLatestBaileysVersion,
   makeInMemoryStore,
   makeCacheableSignalKeyStore
-} = requireBaileys;
+} = baileys;
 // —————————————————————————————————————————————————————————————
 
 import { Low, JSONFile } from 'lowdb';
 import { makeWASocket as simpleSocket, protoType, serialize } from './lib/simple.js';
 import cloudDBAdapter from './lib/cloudDBAdapter.js';
 import { mongoDB, mongoDBV2 } from './lib/mongoDB.js';
-
-// … el resto de tu main.js queda igual …
 
 const { CONNECTING } = ws;
 const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
@@ -139,7 +138,7 @@ const question = (text) => new Promise((resolve) => rl.question(text, resolve));
 const { version } = await fetchLatestBaileysVersion();
 const { state, saveCreds } = await useMultiFileAuthState('./sessions');
 
-// ** Aquí el fix: `makeInMemoryStore` ya existe **
+// Aquí `makeInMemoryStore` existe correctamente gracias al requireCJS
 const store = makeInMemoryStore({ logger: pino().child({ level: 'silent', stream: 'store' }) });
 store.readFromFile('./baileys_store.json');
 setInterval(() => store.writeToFile('./baileys_store.json'), 10_000);
@@ -183,7 +182,7 @@ const connectionOptions = {
 global.conn = simpleSocket(connectionOptions);
 conn.isInit = false;
 
-// … el resto de tu main.js igual …
+// … El resto de tu main.js permanece igual …
 
 if (usePairingCode && !conn.authState.creds.registered) {
   const phoneNumber = await question(
