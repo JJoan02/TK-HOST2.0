@@ -26,7 +26,6 @@ const {
   useMultiFileAuthState,
   DisconnectReason,
   fetchLatestBaileysVersion,
-  makeInMemoryStore,
   makeCacheableSignalKeyStore
 } = baileys;
 
@@ -104,7 +103,7 @@ global.loadDatabase = async () => {
     ...(global.db.data || {})
   };
 };
-loadDatabase()
+loadDatabase();
 
 // Pairing
 const usePairingCode = true;
@@ -116,13 +115,8 @@ const question = (t) => new Promise((r) => rl.question(t, r));
 const { version } = await fetchLatestBaileysVersion();
 const { state, saveCreds } = await useMultiFileAuthState('./sessions');
 
-// ¡Aquí estaba el error! Ahora sí existe:
-const store = makeInMemoryStore({ logger: pino().child({ level: 'silent', stream: 'store' }) });
-store.readFromFile('./baileys_store.json');
-setInterval(() => store.writeToFile('./baileys_store.json'), 10_000);
-
 // Opciones de conexión
-const connectionOptions = {
+the connectionOptions = {
   version,
   logger: pino({ level: 'silent' }),
   printQRInTerminal: false,
@@ -132,8 +126,8 @@ const connectionOptions = {
     keys: makeCacheableSignalKeyStore(state.keys, pino().child({ level: 'silent', stream: 'store' }))
   },
   getMessage: async (key) => {
-    const msg = await store.loadMessage(key.remoteJid, key.id);
-    return msg?.message;
+    // Si necesitas historial lo implementas aquí
+    return null;
   },
   generateHighQualityLinkPreview: true,
   patchMessageBeforeSending: (m) =>
@@ -146,8 +140,23 @@ const connectionOptions = {
   markOnlineOnConnect: true
 };
 
+// ─── REEMPLAZO en lugar de makeInMemoryStore ──────────────────────────
 global.conn = simpleSocket(connectionOptions);
 conn.isInit = false;
+
+// Guarda las credenciales cada vez que cambien
+conn.ev.on('creds.update', saveCreds);
+
+// Ejemplo básico de “store” usando eventos nativos (mensaje recibido)
+conn.ev.on('messages.upsert', async ({ messages }) => {
+  for (const msg of messages) {
+    if (!msg.message) continue;              // ignora mensajes vacíos
+    const from = msg.key.remoteJid;          // quién envía
+    console.log(`📩 Mensaje de ${from}:`, msg.message);
+    // aquí va tu lógica de manejo / respuestas
+  }
+});
+// ───────────────────────────────────────────────────────────────────────
 
 // El resto de tu lógica queda igual...
 
@@ -368,7 +377,7 @@ global.reloadHandler = async function (restartConn) {
 };
 
 const pluginFolder = global.__dirname(join(__dirname, './plugins/index'));
-const pluginFilter = (filename) => /\.js$/.test(filename);
+const pluginFilter = (filename) => \.js$/.test(filename);
 global.plugins = {};
 async function filesInit() {
   for (let filename of readdirSync(pluginFolder).filter(pluginFilter)) {
