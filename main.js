@@ -485,3 +485,7 @@ _quickTest().then(() =>
     '☑️ Prueba rápida realizada, nombre de la sesión ~> creds.json'
   )
 );
+
+// ─────────────────────────────────────────────
+// Ejecutar función principal
+startBot().then(() => rl.close()).catch(console.error);
