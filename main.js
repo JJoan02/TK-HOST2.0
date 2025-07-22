@@ -1,34 +1,73 @@
-// ✅ Importaciones necesarias
-import path from 'path'
-import { createRequire } from 'module'
-import { fileURLToPath } from 'url'
-import { Boom } from '@hapi/boom'
-import fs from 'fs'
-import pino from 'pino'
-import yargs from 'yargs'
-import { hideBin } from 'yargs/helpers'
-import syntaxerror from 'syntax-error'
-import { Low, JSONFile } from 'lowdb'
-import chalk from 'chalk'
-import ws from 'ws'
-import { mongoDB, mongoDBV2 } from './lib/mongoDB.js'
-import { cloudDBAdapter } from './lib/cloudDBAdapter.js'
-import { useMultiFileAuthState, makeWASocket, DisconnectReason, fetchLatestBaileysVersion, makeCacheableSignalKeyStore } from '@whiskeysockets/baileys'
+// =======================================
+// CONFIGURACIONES INICIALES Y MÓDULOS
+// =======================================
+import './config.js';
 
-// ✅ Obtener ruta de trabajo y configuración global
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const require = createRequire(import.meta.url)
+import path, { join } from 'path';
+import { platform } from 'process';
+import { fileURLToPath, pathToFileURL } from 'url';
+import { createRequire } from 'module';
+import { readdirSync, statSync, unlinkSync, existsSync, readFileSync, watch } from 'fs';
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
+import { spawn } from 'child_process';
+import syntaxerror from 'syntax-error';
+import chalk from 'chalk';
+import readline from 'readline';
+import { format } from 'util';
+import pino from 'pino';
+import { tmpdir } from 'os';
+import ws from 'ws';
 
-// ✅ Configuración de base de datos
-const __dir = global.__dirname = (url = import.meta.url) => path.dirname(fileURLToPath(url))
-global.opts = yargs(hideBin(process.argv)).exitProcess(false).parse()
+const requireCJS = createRequire(import.meta.url);
+const baileys = requireCJS('@whiskeysockets/baileys');
+const {
+  default: makeWASocket,
+  useMultiFileAuthState,
+  DisconnectReason,
+  fetchLatestBaileysVersion,
+  makeInMemoryStore,
+  makeCacheableSignalKeyStore
+} = baileys;
 
-// ✅ Expresión regular segura para prefijo de comandos
-global.prefix = new RegExp(
-  `^[${(global.opts.prefix || '/').replace(/[|\\{}()[\]^$+*?.\-]/g, '\\$&')}]`
-)
+import { Low, JSONFile } from 'lowdb';
+import { makeWASocket as simpleSocket, protoType, serialize } from './lib/simple.js';
+import cloudDBAdapter from './lib/cloudDBAdapter.js';
+import { mongoDB, mongoDBV2 } from './lib/mongoDB.js';
 
-// ✅ Instancia de base de datos según tipo de URI
+const { CONNECTING } = ws;
+const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
+
+protoType();
+serialize();
+
+// Helpers globales
+global.__filename = (pathURL = import.meta.url, rm = platform !== 'win32') =>
+  rm ? (pathURL.startsWith('file://') ? fileURLToPath(pathURL) : pathURL) : pathToFileURL(pathURL).toString();
+global.__dirname = (pathURL) => path.dirname(global.__filename(pathURL, true));
+global.__require = (dir = import.meta.url) => createRequire(dir);
+
+global.API = (name, p = '/', q = {}, key) =>
+  (name in global.APIs ? global.APIs[name] : name) +
+  p +
+  (q || key
+    ? '?' + new URLSearchParams({
+        ...q,
+        ...(key ? { [key]: global.APIKeys[name in global.APIs ? global.APIs[name] : name] } : {})
+      })
+    : '');
+
+// DB
+global.timestamp = { start: new Date() };
+const __dir = global.__dirname(import.meta.url);
+
+global.opts = yargs(hideBin(process.argv)).exitProcess(false).parse();
+
+const defaultPrefix = '/';
+const rawPrefix = global.opts.prefix || defaultPrefix;
+const safePrefix = Array.isArray(rawPrefix) ? rawPrefix.join('') : rawPrefix;
+global.prefix = new RegExp(`^[${safePrefix.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}]`);
+
 global.db = new Low(
   /https?:\/\//.test(global.opts.db)
     ? new cloudDBAdapter(global.opts.db)
@@ -37,27 +76,24 @@ global.db = new Low(
       ? new mongoDBV2(global.opts.db)
       : new mongoDB(global.opts.db)
     : new JSONFile(`${global.opts._[0] ? global.opts._[0] + '_' : ''}database.json`)
-)
+);
+global.DATABASE = global.db;
 
-// ✅ Acceso global a la base de datos
-global.DATABASE = global.db
-
-// ✅ Función para cargar la base de datos
 global.loadDatabase = async () => {
   if (global.db.READ) {
-    return new Promise((resolve) => {
-      const interval = setInterval(async function () {
+    return new Promise((resolve) =>
+      setInterval(async function () {
         if (!global.db.READ) {
-          clearInterval(interval)
-          resolve(global.db.data ?? global.loadDatabase())
+          clearInterval(this);
+          resolve(global.db.data ?? global.loadDatabase());
         }
       }, 1000)
-    })
+    );
   }
-  if (global.db.data !== null) return
-  global.db.READ = true
-  await global.db.read().catch(console.error)
-  global.db.READ = null
+  if (global.db.data !== null) return;
+  global.db.READ = true;
+  await global.db.read().catch(console.error);
+  global.db.READ = null;
   global.db.data = {
     users: {},
     chats: {},
@@ -66,11 +102,9 @@ global.loadDatabase = async () => {
     sticker: {},
     settings: {},
     ...(global.db.data || {})
-  }
-}
-
-// ✅ Iniciar carga de la base de datos
-loadDatabase()
+  };
+};
+loadDatabase();
 
 // Pairing
 const usePairingCode = true;
