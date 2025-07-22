@@ -377,7 +377,7 @@ global.reloadHandler = async function (restartConn) {
 };
 
 const pluginFolder = global.__dirname(join(__dirname, './plugins/index'));
-const pluginFilter = (filename) => \.js$/.test(filename);
+const pluginFilter = (filename) => /\.js$/.test(filename);
 global.plugins = {};
 async function filesInit() {
   for (let filename of readdirSync(pluginFolder).filter(pluginFilter)) {
