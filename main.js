@@ -19,22 +19,24 @@ import pino from 'pino';
 import { tmpdir } from 'os';
 import ws from 'ws';
 
-// ↓ Exportaciones directas de Baileys moderno
-import {
-  default as makeWASocket,
+// ——— Aquí usamos createRequire para cargar el CJS de Baileys ———
+const requireBaileys = createRequire(import.meta.url)('@whiskeysockets/baileys');
+const {
+  default: makeWASocket,
   useMultiFileAuthState,
   DisconnectReason,
   fetchLatestBaileysVersion,
   makeInMemoryStore,
   makeCacheableSignalKeyStore
-} from '@whiskeysockets/baileys';
+} = requireBaileys;
+// —————————————————————————————————————————————————————————————
 
 import { Low, JSONFile } from 'lowdb';
 import { makeWASocket as simpleSocket, protoType, serialize } from './lib/simple.js';
 import cloudDBAdapter from './lib/cloudDBAdapter.js';
 import { mongoDB, mongoDBV2 } from './lib/mongoDB.js';
 
-// … resto de tu main.js sin cambios respecto a lógica…
+// … el resto de tu main.js queda igual …
 
 const { CONNECTING } = ws;
 const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
