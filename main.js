@@ -19,27 +19,27 @@ import pino from 'pino';
 import { tmpdir } from 'os';
 import ws from 'ws';
 
-// ↓ IGUAL EN TODOS: import pkg desde whiskey
-import pkg from '@whiskeysockets/baileys';
-
-const {
+// ↓ Exportaciones directas de Baileys moderno
+import {
+  default as makeWASocket,
   useMultiFileAuthState,
   DisconnectReason,
   fetchLatestBaileysVersion,
   makeInMemoryStore,
-  makeCacheableSignalKeyStore,
-} = pkg;
+  makeCacheableSignalKeyStore
+} from '@whiskeysockets/baileys';
 
 import { Low, JSONFile } from 'lowdb';
-import { makeWASocket, protoType, serialize } from './lib/simple.js';
+import { makeWASocket as simpleSocket, protoType, serialize } from './lib/simple.js';
 import cloudDBAdapter from './lib/cloudDBAdapter.js';
 import { mongoDB, mongoDBV2 } from './lib/mongoDB.js';
 
-// … el resto de tu main.js sin cambios respecto a Baileys …
+// … resto de tu main.js sin cambios respecto a lógica…
 
 const { CONNECTING } = ws;
 const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
 
+// Inicializa adaptaciones de simple.js
 protoType();
 serialize();
 
@@ -137,6 +137,7 @@ const question = (text) => new Promise((resolve) => rl.question(text, resolve));
 const { version } = await fetchLatestBaileysVersion();
 const { state, saveCreds } = await useMultiFileAuthState('./sessions');
 
+// ** Aquí el fix: `makeInMemoryStore` ya existe **
 const store = makeInMemoryStore({ logger: pino().child({ level: 'silent', stream: 'store' }) });
 store.readFromFile('./baileys_store.json');
 setInterval(() => store.writeToFile('./baileys_store.json'), 10_000);
@@ -177,10 +178,10 @@ const connectionOptions = {
   markOnlineOnConnect: true
 };
 
-global.conn = makeWASocket(connectionOptions);
+global.conn = simpleSocket(connectionOptions);
 conn.isInit = false;
 
-// … resto de tu código, sin cambios en la parte de baileys …
+// … el resto de tu main.js igual …
 
 if (usePairingCode && !conn.authState.creds.registered) {
   const phoneNumber = await question(
