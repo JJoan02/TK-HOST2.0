@@ -8,6 +8,7 @@
     "start": "node index.js --autocleartmp --autoread"
   },
   "dependencies": {
+    "mongoose": "^8.3.1",
     "@whiskeysockets/baileys": "^6.7.5",
     "@adiwajshing/baileys": "npm:@whiskeysockets/baileys@^6.7.5",
     "@adiwajshing/keyed-db": "^0.2.4",
