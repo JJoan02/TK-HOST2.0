@@ -19,20 +19,23 @@ import pino from 'pino';
 import { tmpdir } from 'os';
 import ws from 'ws';
 
-// ← Import actualizado al paquete correcto
+// ↓ IGUAL EN TODOS: import pkg desde whiskey
 import pkg from '@whiskeysockets/baileys';
+
 const {
   useMultiFileAuthState,
   DisconnectReason,
   fetchLatestBaileysVersion,
   makeInMemoryStore,
-  makeCacheableSignalKeyStore
+  makeCacheableSignalKeyStore,
 } = pkg;
 
 import { Low, JSONFile } from 'lowdb';
 import { makeWASocket, protoType, serialize } from './lib/simple.js';
 import cloudDBAdapter from './lib/cloudDBAdapter.js';
 import { mongoDB, mongoDBV2 } from './lib/mongoDB.js';
+
+// … el resto de tu main.js sin cambios respecto a Baileys …
 
 const { CONNECTING } = ws;
 const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
