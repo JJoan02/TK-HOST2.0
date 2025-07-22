@@ -26,7 +26,7 @@ import pino from 'pino';
 import { tmpdir } from 'os';
 import ws from 'ws';
 
-import pkg from '@adiwajshing/baileys'; // Importar el paquete correcto
+import pkg from '@whiskeysockets/baileys'; // Importar el paquete correcto
 const {
   useMultiFileAuthState,
   DisconnectReason,
