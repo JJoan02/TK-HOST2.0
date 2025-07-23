@@ -30,96 +30,116 @@ const {
 } = baileys;
 
 import { Low, JSONFile } from 'lowdb';
-import { simpleSocket, protoType, serialize } from './lib/simple.js';
+import { makeWASocket as simpleSocket, protoType, serialize } from './lib/simple.js';
 import cloudDBAdapter from './lib/cloudDBAdapter.js';
 import { mongoDB, mongoDBV2 } from './lib/mongoDB.js';
 
-// Serializaciones
+const { CONNECTING } = ws;
+const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
+
 protoType();
 serialize();
 
-// Utilidades globales
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const require = createRequire(import.meta.url);
-const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-const question = text => new Promise(resolve => rl.question(text, resolve));
-const opts = yargs(hideBin(process.argv)).exitProcess(false).parse();
+// Helpers globales
+global.__filename = (pathURL = import.meta.url, rm = platform !== 'win32') =>
+  rm ? (pathURL.startsWith('file://') ? fileURLToPath(pathURL) : pathURL) : pathToFileURL(pathURL).toString();
+global.__dirname = (pathURL) => path.dirname(global.__filename(pathURL, true));
+global.__require = (dir = import.meta.url) => createRequire(dir);
 
-// Base de datos
+global.API = (name, p = '/', q = {}, key) =>
+  (name in global.APIs ? global.APIs[name] : name) +
+  p +
+  (q || key
+    ? '?' + new URLSearchParams({
+        ...q,
+        ...(key ? { [key]: global.APIKeys[name in global.APIs ? global.APIs[name] : name] } : {})
+      })
+    : '');
+
+// DB
+global.timestamp = { start: new Date() };
+const __dir = global.__dirname(import.meta.url);
+
+global.opts = yargs(hideBin(process.argv)).exitProcess(false).parse();
+
+const defaultPrefix = '/';
+const rawPrefix = global.opts.prefix || defaultPrefix;
+const safePrefix = Array.isArray(rawPrefix) ? rawPrefix.join('') : rawPrefix;
+global.prefix = new RegExp(`^[${safePrefix.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}]`);
+
 global.db = new Low(
-  /https?:\/\//.test(opts.db)
-    ? new cloudDBAdapter(opts.db)
-    : /mongodb(\+srv)?:\/\//i.test(opts.db)
-      ? opts.mongodbv2 ? new mongoDBV2(opts.db) : new mongoDB(opts.db)
-      : new JSONFile(`${opts._[0] ? opts._[0] + '_' : ''}database.json`)
+  /https?:\/\//.test(global.opts.db)
+    ? new cloudDBAdapter(global.opts.db)
+    : /mongodb(\+srv)?:\/\//i.test(global.opts.db)
+    ? global.opts.mongodbv2
+      ? new mongoDBV2(global.opts.db)
+      : new mongoDB(global.opts.db)
+    : new JSONFile(`${global.opts._[0] ? global.opts._[0] + '_' : ''}database.json`)
 );
-await global.db.read().catch(console.error);
-global.db.data ||= { users: {}, chats: {}, stats: {}, msgs: {}, sticker: {}, settings: {} };
+global.DATABASE = global.db;
 
-// Función principal
-async function startBot() {
-  // 1) Cargar estado y credenciales
-  const { state, saveCreds } = await useMultiFileAuthState('./sessions');
-
-  // 2) Pedir número para vincular
-  const phoneNumber = await question(
-    chalk.blue('Ingresa el número de WhatsApp (código de país, sin +): ')
-  );
-
-  // 3) Menú de método de vinculación
-  console.log('\nSelecciona método de vinculación:');
-  console.log('  1) Escanear QR');
-  console.log('  2) Usar código de emparejamiento (8 dígitos)\n');
-  let method;
-  while (!['1','2'].includes(method)) {
-    method = await question(chalk.green('Elige 1 o 2: '));
+global.loadDatabase = async () => {
+  if (global.db.READ) {
+    return new Promise((resolve) =>
+      setInterval(async function () {
+        if (!global.db.READ) {
+          clearInterval(this);
+          resolve(global.db.data ?? global.loadDatabase());
+        }
+      }, 1000)
+    );
   }
-
-  // 4) Obtener versión de Baileys
-  const { version } = await fetchLatestBaileysVersion();
-
-  // 5) Configurar opciones de conexión
-  const connectionOptions = {
-    version,
-    printQRInTerminal: method==='1',
-    auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, pino().child({ level:'silent' })) },
-    browser: ['Ubuntu','Chrome','20.0.04'],
-    logger: pino({ level:'silent' }),
-    generateHighQualityLinkPreview: true,
-    connectTimeoutMs: 60000,
-    defaultQueryTimeoutMs: 0,
-    syncFullHistory: true,
-    markOnlineOnConnect: true,
-    patchMessageBeforeSending: m => m
+  if (global.db.data !== null) return;
+  global.db.READ = true;
+  await global.db.read().catch(console.error);
+  global.db.READ = null;
+  global.db.data = {
+    users: {},
+    chats: {},
+    stats: {},
+    msgs: {},
+    sticker: {},
+    settings: {},
+    ...(global.db.data || {})
   };
+};
+loadDatabase();
 
-  // 6) Inicializar socket
-  global.conn = simpleSocket(connectionOptions);
-  conn.isInit = false;
-  conn.ev.on('creds.update', saveCreds);
+// Pairing
+const usePairingCode = true;
+const useMobile = process.argv.includes('--mobile');
+const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+const question = (t) => new Promise((r) => rl.question(t, r));
 
-  // 7) Si eligió pairing code, solicitarlo
-  if (method==='2') {
-    const code = await conn.requestPairingCode(phoneNumber);
-    console.log(chalk.magenta(`\n🔗 Código de emparejamiento: ${code}\n`));
-  } else {
-    console.log(chalk.yellow('\n🔍 Escanea el QR que aparece en tu consola...\n'));
-  }
+// Baileys auth & store
+// Baileys auth & store
+const { version } = await fetchLatestBaileysVersion();
+const { state, saveCreds } = await useMultiFileAuthState('./sessions');
 
-  // 8) Monitorear conexión
-  conn.ev.on('connection.update', update => {
-    if (update.connection==='open') console.log(chalk.green('✅ Conectado con éxito.'));
-  });
+// Opciones de conexión
+const connectionOptions = {
+  version,
+  logger: pino({ level: 'silent' }),
+  printQRInTerminal: false,
+  browser: ['Ubuntu', 'Chrome', '20.0.04'],
+  auth: {
+    creds: state.creds,
+    keys: makeCacheableSignalKeyStore(state.keys, pino().child({ level: 'silent' }))
+  },
+  getMessage: async (key) => {
+    return null;
+  },
+  generateHighQualityLinkPreview: true,
+  patchMessageBeforeSending: (m) =>
+    m.buttonsMessage || m.templateMessage || m.listMessage
+      ? { viewOnceMessage: { message: { messageContextInfo: { deviceListMetadataVersion: 2, deviceListMetadata: {} }, ...m } } }
+      : m,
+  connectTimeoutMs: 60000,
+  defaultQueryTimeoutMs: 0,
+  syncFullHistory: true,
+  markOnlineOnConnect: true
+};
 
-  // 9) Manejo básico de mensajes entrantes
-  conn.ev.on('messages.upsert', async ({ messages }) => {
-    for (const m of messages) {
-      if (!m.message) continue;
-      console.log(`📩 Mensaje de ${m.key.remoteJid}:`, m.message);
-    }
-  });
-
-  // 10) —> A partir de aquí continúa TODO el resto de tu lógica original...
 // CORRECTO: NO USAR makeInMemoryStore
 global.conn = simpleSocket(connectionOptions);
 conn.isInit = false;
@@ -128,12 +148,14 @@ conn.isInit = false;
 conn.ev.on('creds.update', saveCreds);
 
 // Ejemplo básico de “store” usando eventos nativos (mensaje recibido)
-  conn.ev.on('messages.upsert', async ({ messages }) => {
-    for (const m of messages) {
-      if (!m.message) continue;
-      console.log(`📩 Mensaje de ${m.key.remoteJid}:`, m.message);
-    }
-  });
+conn.ev.on('messages.upsert', async ({ messages }) => {
+  for (const msg of messages) {
+    if (!msg.message) continue;              // ignora mensajes vacíos
+    const from = msg.key.remoteJid;          // quién envía
+    console.log(`📩 Mensaje de ${from}:`, msg.message);
+    // aquí va tu lógica de manejo / respuestas
+  }
+});
 // ───────────────────────────────────────────────────────────────────────
 
 // El resto de tu lógica queda igual...
@@ -354,7 +376,7 @@ global.reloadHandler = async function (restartConn) {
   return true;
 };
 
-const pluginFolder = global.__dirname(join(__dirname, './plugins/index'));
+const pluginFolder = join(__dirname, './plugins/index');
 const pluginFilter = (filename) => /\.js$/.test(filename);
 global.plugins = {};
 async function filesInit() {
