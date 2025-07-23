@@ -9,9 +9,8 @@ function mostrarInicio() {
 ║        🚀 Starting TK-HOST...        ║
 ╚══════════════════════════════════════╝
   `))
-  console.log(chalk.green('✔ Database initialized and tables created.'))
-  console.log(chalk.green('✔ Scheduled tasks configured.'))
-  console.log(chalk.green('✔ Starting main file: main.js'))
+  console.log(chalk.green('✔ 📲 Ingresa el número de WhatsApp donde estará el Bot') + chalk.white(' (con código de país, sin "+")') + chalk.gray('\n   Ejemplo: ') + chalk.cyanBright('51903347138'))
+
 }
 
 function iniciarVinculacion(callback) {
