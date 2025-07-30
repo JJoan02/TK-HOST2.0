@@ -291,7 +291,7 @@ class MemoryService {
    * @param {string} user_jid - JID del usuario.
    * @returns {Promise<object | null>} Datos del perfil o null si no se encuentra.
    */
-  async getUser Profile(user_jid) {
+  async getUserProfile(user_jid) {
     try {
       const row = await this.#db.get(
         `SELECT profile_data_json, interaction_score FROM user_profiles WHERE user_jid = ?`,
