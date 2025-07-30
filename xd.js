@@ -272,7 +272,7 @@ class MemoryService {
    * @param {object} profile_data - Datos del perfil en formato JSON.
    * @returns {Promise<void>}
    */
-  async saveUser Profile(user_jid, profile_data) {
+  async saveUserProfile(user_jid, profile_data) {
     try {
       await this.#db.run(
         `INSERT OR REPLACE INTO user_profiles (user_jid, profile_data_json, last_updated)
